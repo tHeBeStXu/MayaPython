@@ -1,3 +1,6 @@
+"""
+Basics of OpenMaya
+"""
 import maya.OpenMaya as openmaya
 
 # Create a MSelectionList instance and add the target object "pPlane1"

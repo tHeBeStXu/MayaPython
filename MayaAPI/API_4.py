@@ -1,3 +1,13 @@
+"""
+MSyntax: MSyntax is an object that has collection of flags, flag arguments and command objects. It helps maya to accept
+         only those arguments which are defined in this collection. So when creating the command, it would define what
+         type of flags(arguments) it would accept.When Registering the command and during the execution, maya will check
+         the passed flags in this MSyntax object that it is acceptable or not.
+MArgDatabase: MArgDatabase is a class that provides the function using which could parse, store and retrieve flags, flag
+              Arguments and Command Objects. It derived from MArgParser class(parsing and storing objects)
+
+
+"""
 import maya.OpenMaya as openmaya
 import maya.OpenMayaMPx as openmayampx
 # Use Maya Partical system

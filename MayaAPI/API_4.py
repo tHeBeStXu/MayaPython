@@ -5,8 +5,6 @@ MSyntax: MSyntax is an object that has collection of flags, flag arguments and c
          the passed flags in this MSyntax object that it is acceptable or not.
 MArgDatabase: MArgDatabase is a class that provides the function using which could parse, store and retrieve flags, flag
               Arguments and Command Objects. It derived from MArgParser class(parsing and storing objects)
-
-
 """
 import maya.OpenMaya as openmaya
 import maya.OpenMayaMPx as openmayampx

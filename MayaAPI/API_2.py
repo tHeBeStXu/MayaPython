@@ -1,5 +1,5 @@
 """
-Iterator : Model Iterator
+Iterator : Model Iterator definations
 1. MItDag : is used to iterate a DAG.
 2. MItDependencyGraph : is used to iterate DependencyGraph.
 3. MItMeshEdge : is used to iterate Mesh Edges of polygon surfaces.

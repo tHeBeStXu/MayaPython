@@ -21,6 +21,7 @@ kSparseFlag = "-s"
 kSparseFlag_long = "-sparse"
 helpMessage = "This command is used to attach a particle on each vertex of a poly mesh"
 
+# ##when use the MPxCommand, it receives the MSyntax Object, and pass to the argumentParser method##
 class pluginCommand(openmayampx.MPxCommand):
 
     sparse = None
@@ -32,16 +33,20 @@ class pluginCommand(openmayampx.MPxCommand):
 
     def argumentParser(self, argList):
         syntax = self.syntax()
+        # Use MArgDatabase to parse the argList
         parsedArguments = openmaya.MArgDatabase(syntax, argList)
+
+
         if parsedArguments.isFlagSet(kSparseFlag):
             self.sparse = parsedArguments.flagArgumentDouble(kSparseFlag, 0)
-            # https://help.autodesk.com/view/MAYAUL/2017/ENU/?guid=__files_Maya_Python_API_Using_the_Maya_Python_API_htm
             # return openmaya.MStatus.kSuccess
+            # https://help.autodesk.com/view/MAYAUL/2017/ENU/?guid=__files_Maya_Python_API_Using_the_Maya_Python_API_htm
         if parsedArguments.isFlagSet(kSparseFlag_long):
             self.sparse_long = parsedArguments.flagArgumentDouble(kSparseFlag_long, 0)
             # return openmaya.MStatus.kSuccess
 
         if parsedArguments.isFlagSet(kHelpFlag):
+            # show help message
             self.setResult(helpMessage)
             # return openmaya.MStatus.kSuccess
         if parsedArguments.isFlagSet(kHelpFlag_long):
@@ -65,6 +70,7 @@ class pluginCommand(openmayampx.MPxCommand):
 
 
     def redoIt(self):
+        # Read Selection/Actively selected objects
         mSel = openmaya.MSelectionList()
         mDagPath = openmaya.MDagPath()
         mFnMesh = openmaya.MFnMesh()
@@ -72,6 +78,7 @@ class pluginCommand(openmayampx.MPxCommand):
         if mSel.length() >= 1:
             try:
                 mSel.getDagPath(0, mDagPath)
+                # attach the mesh to the MFnMesh
                 mFnMesh.setObject(mDagPath)
             except:
                 print "Select a poly mesh"
@@ -81,6 +88,7 @@ class pluginCommand(openmayampx.MPxCommand):
             print "Select a poly mesh"
             return openmaya.kUnknownParameter
 
+        # Read vertex positions of selected Mesh
         mPointArray = openmaya.MPointArray()
         mFnMesh.getPoints(mPointArray, openmaya.MSpace.kWorld)
 
@@ -88,10 +96,10 @@ class pluginCommand(openmayampx.MPxCommand):
         mFnParticle = openmayafx.MFnParticleSystem()
         self.mObj_particle = mFnParticle.create()
 
-        #
+        # Attach the particles on the vertex positions
         mFnParticle = openmayafx.MFnParticleSystem(self.mObj_particle)
-        counter = 0
 
+        counter = 0
         for i in xrange(mPointArray.length()):
             if i % self.sparse == 0:
                 mFnParticle.emit(mPointArray[i])
@@ -99,15 +107,15 @@ class pluginCommand(openmayampx.MPxCommand):
         print "Total points :" + str(counter)
 
         mFnParticle.saveInitialState()
-
         # return openmaya.MStatus.kSuccess
-
 
     # Whenever a class is derived from MPxCommand, it should always have a doIt() function
     def doIt(self, argList):
         print "Do it..."
         self.argumentParser(argList)
+        # check the self.sparse variable if it is None
         if self.sparse != None:
+            # why? Because we can do actual function action in redoIt() multi-times
             self.redoIt()
             # return openmaya.MStatus.kSuccess
 
@@ -117,14 +125,15 @@ def cmdsCreator():
     # Create a Pointer and attach it to the pluginCommand instance by .asMPxPtr
     return openmayampx.asMPxPtr(pluginCommand())
 
+# Create a MSyntax object function
 def syntaxCreator():
     # create MSyntax Object
     syntax = openmaya.MSyntax()
-
     # collect / add the flags, 3 arguments: shortName of the flag, longName of the flag,
     # type of the data accepted (optional)
     # Help flag
     syntax.addFlag(kHelpFlag, kHelpFlag_long)
+    #Sparse flag
     syntax.addFlag(kSparseFlag, kSparseFlag_long, openmaya.MSyntax.kDouble)
 
     # return syntax
@@ -137,7 +146,7 @@ def initializePlugin(mObj):
     mplugin = openmayampx.MFnPlugin(mObj)
     try:
         # register the command by the commandName and the Pointer(Pull the Pointer into the Maya Core)
-        # use the syntax by register the plugin
+        # ##use the syntax by register the plugin, and return Syntax objects##
         mplugin.registerCommand(commandName, cmdsCreator, syntaxCreator)
     except:
         sys.stderr.write("Failed to register command: " + commandName)

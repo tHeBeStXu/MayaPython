@@ -56,12 +56,14 @@ class pluginCommand(openmayampx.MPxCommand):
     def isUndoable(self):
         return True
 
-
+    # Delete the particle system
     def undoIt(self):
         print "Undo"
+        # we can use DAG_NODE_FUNCTION_SET or Dag Path
         mFnDagNode = openmaya.MFnDagNode(self.mObj_particle)
 
         mDagMod = openmaya.MDagModifier()
+        # delete the transform node
         mDagMod.deleteNode(mFnDagNode.parent(0))
         mDagMod.doIt()
         # return openmaya.MStatus.kSuccess
@@ -96,17 +98,22 @@ class pluginCommand(openmayampx.MPxCommand):
         mFnParticle = openmayafx.MFnParticleSystem()
         self.mObj_particle = mFnParticle.create()
 
-        # Attach the particles on the vertex positions
+        # Fix maya bug
         mFnParticle = openmayafx.MFnParticleSystem(self.mObj_particle)
 
+        # Attach the particles on the vertex positions
         counter = 0
         for i in xrange(mPointArray.length()):
+            # i % self.sparse 取余
             if i % self.sparse == 0:
                 mFnParticle.emit(mPointArray[i])
                 counter += 1
         print "Total points :" + str(counter)
 
+        # After emitting the particle, we have to save the initial state of the particle as well,
+        # otherwise if you apply any dynamics on it, your particles would never come back to their actual positions.
         mFnParticle.saveInitialState()
+
         # return openmaya.MStatus.kSuccess
 
     # Whenever a class is derived from MPxCommand, it should always have a doIt() function
@@ -133,7 +140,7 @@ def syntaxCreator():
     # type of the data accepted (optional)
     # Help flag
     syntax.addFlag(kHelpFlag, kHelpFlag_long)
-    #Sparse flag
+    # Sparse flag
     syntax.addFlag(kSparseFlag, kSparseFlag_long, openmaya.MSyntax.kDouble)
 
     # return syntax

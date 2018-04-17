@@ -1,3 +1,6 @@
+"""
+OpenMayaMPx and custom maya command
+"""
 import maya.OpenMaya as openmaya
 
 # OpenMayaMPx is MAYA Proxy API, which is used for users to define their own objects,

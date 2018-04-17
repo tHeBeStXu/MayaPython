@@ -1,5 +1,7 @@
+"""
+Basic command structure
+"""
 import maya.OpenMaya as openmaya
-
 # OpenMayaMPx is MAYA Proxy API, which is used for users to define their own objects,
 # such as commands, nodes and any other plugins
 import maya.OpenMayaMPx as openmayampx

@@ -53,8 +53,10 @@ class pluginCommand(openmayampx.MPxCommand):
             self.setResult(helpMessage)
             # return openmaya.MStatus.kSuccess
 
+
     def isUndoable(self):
         return True
+
 
     # Delete the particle system
     def undoIt(self):
@@ -67,8 +69,6 @@ class pluginCommand(openmayampx.MPxCommand):
         mDagMod.deleteNode(mFnDagNode.parent(0))
         mDagMod.doIt()
         # return openmaya.MStatus.kSuccess
-
-
 
 
     def redoIt(self):
@@ -167,4 +167,6 @@ def uninitializePlugin(mObj):
     except:
         sys.stderr.write("Failed to de-register command: " + commandName)
 
-
+"""
+Redo Action not work well...
+"""

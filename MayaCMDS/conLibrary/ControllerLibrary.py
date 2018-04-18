@@ -65,6 +65,10 @@ class ControllerLibrary(dict):
         files = os.listdir(directory)
         mayaFiles = [f for f in files if f.endswith('.ma')]
 
+        # ma = xxx.ma
+        # name = xxx
+        # etx =.ma
+        # infoFile = X:/.../xxx.json
         for ma in mayaFiles:
             name, ext = os.path.splitext(ma)
             path = os.path.join(directory, ma)

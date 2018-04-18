@@ -1,9 +1,10 @@
+
 from maya import cmds
 import os
 import json
 
 USERAPPDIR = cmds.internalVar(userAppDir=1)
-DIRECTORY = os.path.join(USERAPPDIR, 'ControllerLibrary')
+DIRECTORY = os.path.join(USERAPPDIR, 'Controller Library')
 
 
 def createDirectory(directory=DIRECTORY):
@@ -15,9 +16,19 @@ def createDirectory(directory=DIRECTORY):
     if not os.path.exists(directory):
         os.mkdir(directory)
 
+
 class ControllerLibrary(dict):
+    # The class is derived from dict(dictionary) class, it's easy to store the infomation in diction type.
+    # .json file is used to store complex information for the maya files, button Icons and etc..
 
     def save(self, name, directory=DIRECTORY, **info):
+        """
+
+        :param name: name of the file
+        :param directory: directory to the root file of the library
+        :param info: extra parameters stored in the dictionary type
+        :return: None
+        """
         createDirectory(directory)
         path = os.path.join(directory, '%s.ma' % name)
         # save the path into a .json file

@@ -1,7 +1,7 @@
-
 from maya import cmds
 import os
 import json
+
 
 USERAPPDIR = cmds.internalVar(userAppDir=1)
 DIRECTORY = os.path.join(USERAPPDIR, 'Controller Library')
@@ -11,7 +11,7 @@ def createDirectory(directory=DIRECTORY):
     """
     Creates the given directory if it doesn't exist already
     :param directory: str, The directory to create
-    :return:
+    :return: None
     """
     if not os.path.exists(directory):
         os.mkdir(directory)
@@ -21,12 +21,12 @@ class ControllerLibrary(dict):
     # The class is derived from dict(dictionary) class, it's easy to store the infomation in diction type.
     # .json file is used to store complex information for the maya files, button Icons and etc..
 
-    def save(self, name, directory=DIRECTORY, **info):
+    def save(self, name, directory=DIRECTORY, screenshot=True, **info):
         """
-
+        Save the Maya file, Screen shots and relative information .json file
         :param name: name of the file
         :param directory: directory to the root file of the library
-        :param info: extra parameters stored in the dictionary type
+        :param info: extra parameters stored in the dictionary type, for example, a=b in info {'a' : 'b'}
         :return: None
         """
         createDirectory(directory)
@@ -43,6 +43,9 @@ class ControllerLibrary(dict):
             cmds.file(force=1, type='mayaAscii', exportSelected=1)
         else:
             cmds.file(save=1, type='mayaAscii', force=1)
+            
+        if screenshot:
+            info['screenshot'] = self.saveScreenshot(name, directory=directory)
 
         with open(infoFile, 'w') as f:
             json.dump(info, f, indent=4)
@@ -50,6 +53,11 @@ class ControllerLibrary(dict):
         self[name] = info
 
     def find(self, directory=DIRECTORY):
+        """
+        Find the target Maya file, Screen shot.jpg and information .json file
+        :param directory: root file directory
+        :return: None
+        """
 
         if not os.path.exists(directory):
             return
@@ -70,13 +78,39 @@ class ControllerLibrary(dict):
             else:
                  info = {}
 
+            screenshot = '%s.jpg' % name
+            if screenshot in files:
+                info['screenshot'] = os.path.join(directory, screenshot)
+
             info['name'] = name
             info['path'] = path
             # Because our class is derived from dictionary(dict) class
             self[name] = info
 
     def load(self, name):
+        """
+        Load the target Maya file
+        :param name: Maya file name
+        :return: None
+        """
         path = self[name]['path']
         cmds.file(path, i=1, usingNamespaces=0)
+
+    def saveScreenshot(self, name, directory=DIRECTORY):
+        """
+        use maya cmds to save the screen shot picture in .jpg type.
+        :param name: name of the screen shot file, same as the maya file.
+        :param directory: root file directory.
+        :return: full path to the screen shot file.
+        """
+        path = os.path.join(directory, '%s.jpg' % name)
+
+        cmds.viewFit()
+        cmds.setAttr('defaultRenderGlobal.imageFormat', 8)
+        cmds.playblast(completeFilename=path, forceOverwrite=1, format='image',
+                       width=200, height=200, showOrnaments=False, startTime=1, endTime=1, viewer=False)
+
+        return path
+
 
 

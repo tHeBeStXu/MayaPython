@@ -37,7 +37,7 @@ class ControllerLibrary(dict):
         info['name'] = name
         info['path'] = path
 
-        cmds.file(rename='path')
+        cmds.file(rename=path)
 
         if cmds.ls(selection=1):
             cmds.file(force=1, type='mayaAscii', exportSelected=1)
@@ -58,6 +58,8 @@ class ControllerLibrary(dict):
         :param directory: root file directory
         :return: None
         """
+        # clear dictionary
+        self.clear()
 
         if not os.path.exists(directory):
             return
@@ -110,7 +112,7 @@ class ControllerLibrary(dict):
         path = os.path.join(directory, '%s.jpg' % name)
 
         cmds.viewFit()
-        cmds.setAttr('defaultRenderGlobal.imageFormat', 8)
+        cmds.setAttr("defaultRenderGlobals.imageFormat", 8)
         cmds.playblast(completeFilename=path, forceOverwrite=1, format='image',
                        width=200, height=200, showOrnaments=False, startTime=1, endTime=1, viewer=False)
 

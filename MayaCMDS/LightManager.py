@@ -1,8 +1,54 @@
-from PySide2 import QtGui, QtWidgets, QtCore
+from Qt import QtGui, QtWidgets, QtCore
 import pymel.core as pm
 from functools import partial
 
-class LightManager(QtWidgets.QDialog):
+import logging
+
+import maya.OpenMayaUI as omui
+
+
+logging.basicConfig()
+logger = logging.getLogger('LightingManager')
+# logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
+
+import Qt
+if Qt.__binding__ == 'Pyside':
+    logger.debug('Using PySide with shiboken')
+    from shiboken import wrapInstance
+    from Qt.QtCore import Signal
+elif Qt.__binding__.startswith('PyQt'):
+    logger.debug('Using PyQt with sip')
+    from sip import wrapInstance as wrapInstance
+    from Qt.QtCore import pyqtSignal as Signal
+else:
+    logger.debug('Using Pyside2 with shiboken2')
+    from shiboken2 import wrapInstance
+    from Qt.QtCore import Signal
+
+
+def getMayaMainWindow():
+
+    win = omui.MQtUtil_mainWindow()
+    ptr = wrapInstance(long(win), QtWidgets.QMainWindow)
+    return ptr
+
+def getDock(name='LightingManagerDock'):
+    deleteDock(name)
+    ctrl = pm.workspaceControl(name, dockToMainWindow=('right', 1), label='Lighting Manager')
+    qtCtrl = omui.MQtUtil_findControl(ctrl)
+
+    ptr = wrapInstance(long(qtCtrl), QtWidgets.QWidget)
+    return ptr
+
+
+def deleteDock(name='LightingManagerDock'):
+    if pm.workspaceControl(name, query=1, exists=1):
+        pm.deleteUI(name)
+
+
+
+class LightManager(QtWidgets.QWidget):
 
     lightTypes = {"Point Light": pm.pointLight,
                   "Spot Light": pm.spotLight,
@@ -10,23 +56,50 @@ class LightManager(QtWidgets.QDialog):
                   "Area Light": partial(pm.shadingNode, 'areaLight', asLight=1),
                   "Volume Light": partial(pm.shadingNode, 'volumeLight', asLight=1)}
 
-    def __init__(self):
-        super(LightManager, self).__init__()
-        self.setWindowTitle("Lighting Manager")
+    def __init__(self, dock=True):
+        if dock:
+            parent = getDock()
+        else:
+            deleteDock()
+            try:
+                pm.deleteUI('lightingManager')
+            except:
+                logger.debug('No previous UI exits!')
+
+
+            parent = QtWidgets.QDialog(parent=getMayaMainWindow())
+            parent.setObjectName('lightingManager')
+            parent.setWindowTitle('Lighting Manager')
+            layout = QtWidgets.QVBoxLayout(parent)
+
+        super(LightManager, self).__init__(parent=parent)
 
         self.buildUI()
         self.populate()
 
+        self.parent().layout().addWidget(self)
+        if not dock:
+            parent.show()
+
     def populate(self):
+        """
         while self.scrollLayout.count():
             widget = self.scrollLayout.takeAt(0).widget()
-
             if widget:
                 widget.setVisible(False)
                 widget.deleteLater()
+        """
 
-            for light in pm.ls(type=["areaLight", "spotLight", "pointLight", "directionalLight", "volumeLight"]):
-                self.addLight(light)
+        lightWidgets = self.findChildren(LightWidget)
+        for widget in lightWidgets:
+            if widget:
+                self.setParent(None)
+                widget.setVisible(False)
+                widget.deleteLater()
+
+
+        for light in pm.ls(type=["areaLight", "spotLight", "pointLight", "directionalLight", "volumeLight"]):
+            self.addLight(light)
 
 
     def buildUI(self):
@@ -85,7 +158,7 @@ class LightManager(QtWidgets.QDialog):
 class LightWidget(QtWidgets.QWidget):
 
     # Pyside use Signal while PyQt5 use pyqtSignal()
-    onSolo = QtCore.Signal(bool)
+    onSolo = Signal(bool)
 
     def __init__(self, light):
         super(LightWidget, self).__init__()
@@ -172,11 +245,3 @@ class LightWidget(QtWidgets.QWidget):
         pm.delete(self.light.getTransform())
 
 
-def showUI():
-    """
-    This shows and return the handle of the UI.
-    :return: the handle of a Dialog instance.
-    """
-    ui = LightManager()
-    ui.show()
-    return ui

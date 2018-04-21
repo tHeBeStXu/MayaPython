@@ -57,27 +57,6 @@ class LightManager(QtWidgets.QDialog):
         refreshBtn.clicked.connect(self.populate)
         layout.addWidget(refreshBtn, 2, 1)
 
-    def setButtonColor(self, color=None):
-        if not color:
-            color = self.light.color.get()
-
-        assert len(color) == 3, "You must provide a list of 3 colors"
-
-        r, g, b = [c*255 for c in color]
-
-        self.colorBtn.setStyleSheet('background-color: rgba(%s, %s, %s, 1.0)' % (r, g, b))
-
-    def setColor(self):
-        lightColor = self.light.color.get()
-        color = pm.colorEditor(rgbValue=lightColor)
-
-        r, g, b, a = [float(c) for c in color.split()]
-
-        color = (r, g, b)
-
-        self.light.color.set(color)
-
-        self.setButtonColor(color)
 
     def createLight(self):
         lightType = self.lightTypeCB.currentText()
@@ -159,6 +138,28 @@ class LightWidget(QtWidgets.QWidget):
         self.setButtonColor()
         self.colorBtn.clicked.connect(self.setColor)
         layout.addWidget(self.colorBtn, 1, 2)
+
+    def setButtonColor(self, color=None):
+        if not color:
+            color = self.light.color.get()
+
+        assert len(color) == 3, "You must provide a list of 3 colors"
+
+        r, g, b = [c*255 for c in color]
+
+        self.colorBtn.setStyleSheet('background-color: rgba(%s, %s, %s, 1.0)' % (r, g, b))
+
+    def setColor(self):
+        lightColor = self.light.color.get()
+        color = pm.colorEditor(rgbValue=lightColor)
+
+        r, g, b, a = [float(c) for c in color.split()]
+
+        color = (r, g, b)
+
+        self.light.color.set(color)
+
+        self.setButtonColor(color)
 
     def disableLight(self, val):
         self.name.setChecked(not val)

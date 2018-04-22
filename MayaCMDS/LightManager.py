@@ -1,18 +1,20 @@
 from Qt import QtGui, QtWidgets, QtCore
 import pymel.core as pm
 from functools import partial
-
 import logging
-
 import maya.OpenMayaUI as omui
-
+import Qt
+import json
+import os
+import time
 
 logging.basicConfig()
-logger = logging.getLogger('LightingManager')
-# logger.setLevel(logging.DEBUG)
-logger.setLevel(logging.INFO)
+logger = logging.getLogger('LightManager')
+logger.setLevel(logging.DEBUG)
+#logger.setLevel(logging.INFO)
 
-import Qt
+
+
 if Qt.__binding__ == 'Pyside':
     logger.debug('Using PySide with shiboken')
     from shiboken import wrapInstance
@@ -36,11 +38,10 @@ def getMayaMainWindow():
 def getDock(name='LightingManagerDock'):
     deleteDock(name)
     ctrl = pm.workspaceControl(name, dockToMainWindow=('right', 1), label='Lighting Manager')
-    qtCtrl = omui.MQtUtil_findControl(ctrl)
+    qtCtrl = omui.MQtUtil.findControl(ctrl)
 
     ptr = wrapInstance(long(qtCtrl), QtWidgets.QWidget)
     return ptr
-
 
 def deleteDock(name='LightingManagerDock'):
     if pm.workspaceControl(name, query=1, exists=1):
@@ -65,7 +66,6 @@ class LightManager(QtWidgets.QWidget):
                 pm.deleteUI('lightingManager')
             except:
                 logger.debug('No previous UI exits!')
-
 
             parent = QtWidgets.QDialog(parent=getMayaMainWindow())
             parent.setObjectName('lightingManager')
@@ -97,10 +97,8 @@ class LightManager(QtWidgets.QWidget):
                 widget.setVisible(False)
                 widget.deleteLater()
 
-
         for light in pm.ls(type=["areaLight", "spotLight", "pointLight", "directionalLight", "volumeLight"]):
             self.addLight(light)
-
 
     def buildUI(self):
         layout = QtWidgets.QGridLayout(self)
@@ -110,11 +108,11 @@ class LightManager(QtWidgets.QWidget):
         for lightType in sorted(self.lightTypes):
             self.lightTypeCB.addItem(lightType)
 
-        layout.addWidget(self.lightTypeCB, 0, 0)
+        layout.addWidget(self.lightTypeCB, 0, 0, 1, 2)
 
         createBtn = QtWidgets.QPushButton('Create')
         createBtn.clicked.connect(self.createLight)
-        layout.addWidget(createBtn, 0, 1)
+        layout.addWidget(createBtn, 0, 2)
 
         # New Widget
         scrollWidget = QtWidgets.QWidget()
@@ -124,19 +122,85 @@ class LightManager(QtWidgets.QWidget):
         scrollArea = QtWidgets.QScrollArea()
         scrollArea.setWidgetResizable(True)
         scrollArea.setWidget(scrollWidget)
-        layout.addWidget(scrollArea, 1, 0, 1, 2)
+        layout.addWidget(scrollArea, 1, 0, 1, 3)
 
-        refreshBtn = QtWidgets.QPushButton('Refresh!')
+        saveBtn = QtWidgets.QPushButton('Save')
+        saveBtn.clicked.connect(self.saveLight)
+        layout.addWidget(saveBtn, 2, 0)
+
+        importBtn = QtWidgets.QPushButton('Import')
+        importBtn.clicked.connect(self.importLight)
+        layout.addWidget(importBtn, 2, 1)
+
+        refreshBtn = QtWidgets.QPushButton('Refresh')
         refreshBtn.clicked.connect(self.populate)
-        layout.addWidget(refreshBtn, 2, 1)
+        layout.addWidget(refreshBtn, 2, 2 )
 
+    def saveLight(self):
+        properties = {}
+        for lightWidget in self.findChildren(LightWidget):
+            light = lightWidget.light
+            transform = light.getTransform()
 
-    def createLight(self):
-        lightType = self.lightTypeCB.currentText()
+            properties[str(transform)] = {'translate': list(transform.translate.get()),
+                                          'rotation': list(transform.rotate.get()),
+                                          'lightType': pm.objectType(light),
+                                          'intensity': light.intensity.get(),
+                                          'color': light.color.get()}
+
+        directory = self.getDirectory()
+
+        lightFile = os.path.join(directory, 'lightFile_%s.json' % time.strftime('%m%d'))
+        with open(lightFile, 'w') as f:
+            json.dump(properties, f, indent=4)
+
+        logger.info('Saving file to %s' % str(lightFile))
+
+    def getDirectory(self):
+        directory = os.path.join(pm.internalVar(userAppDir=True), 'lightManager')
+        if not os.path.exists(directory):
+            os.mkdir(directory)
+        return directory
+
+    def importLight(self):
+        directory = self.getDirectory()
+        fileName = QtWidgets.QFileDialog.getOpenFileName(self, "Light Browser", directory)
+
+        with open(fileName[0], 'r') as f:
+            properties = json.load(f)
+
+        for light, info in properties.items():
+            lightType = info.get('lightType')
+            for lt in self.lightTypes:
+                if ('%sLight' % lt.split()[0].lower()) == lightType:
+                    break
+            else:
+                logger.info('Can not find a corresponding light type for %s (%s)' % (light, lightType))
+                continue
+
+            light = self.createLight(lightType=lt)
+
+            light.intensity.set(info.get('intensity'))
+            light.color.set(info.get('color'))
+
+            transform = light.getTransform()
+            transform.translate.set(info.get('translate'))
+            transform.rotate.set(info.get('rotation'))
+
+        self.populate()
+
+    def createLight(self, lightType=None, add=True):
+        if not lightType:
+            lightType = self.lightTypeCB.currentText()
+
         func = self.lightTypes[lightType]
 
         light = func()
-        self.addLight(light)
+
+        if add:
+            self.addLight(light)
+
+        return light
 
     def addLight(self, light):
 
@@ -164,6 +228,8 @@ class LightWidget(QtWidgets.QWidget):
         super(LightWidget, self).__init__()
         if isinstance(light, basestring):
             light = pm.PyNode(light)
+        if isinstance(light, pm.nodetypes.Transform):
+            light = light.getShape()
 
         self.light = light
         self.buildUI()

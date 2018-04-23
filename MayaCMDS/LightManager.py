@@ -61,7 +61,7 @@ class LightManager(QtWidgets.QWidget):
                   "Area Light": partial(pm.shadingNode, 'areaLight', asLight=1),
                   "Volume Light": partial(pm.shadingNode, 'volumeLight', asLight=1)}
 
-    def __init__(self, dock=True):
+    def __init__(self, dock=False):
         if dock:
             parent = getDock()
         else:

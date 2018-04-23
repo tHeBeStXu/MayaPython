@@ -1,7 +1,7 @@
 from PySide2 import QtGui, QtWidgets, QtCore
 import pymel.core as pm
 from functools import partial
-
+###
 class LightManager(QtWidgets.QDialog):
 
     lightTypes = {"Point Light": pm.pointLight,

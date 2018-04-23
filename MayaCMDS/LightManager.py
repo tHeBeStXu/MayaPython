@@ -196,7 +196,7 @@ class LightManager(QtWidgets.QWidget):
             transform.translate.set(info.get('translate'))
             transform.rotate.set(info.get('rotation'))
 
-        self.populate()
+        self.refresh()
 
     def createLight(self, lightType=None, add=True):
         if not lightType:

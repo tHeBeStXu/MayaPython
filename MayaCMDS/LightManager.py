@@ -1,9 +1,9 @@
-from Qt import QtGui, QtWidgets, QtCore
+from PySide2 import QtGui, QtWidgets, QtCore
 import pymel.core as pm
 from functools import partial
 import logging
 import maya.OpenMayaUI as omui
-import Qt
+# import Qt
 import json
 import os
 import time
@@ -13,8 +13,7 @@ logger = logging.getLogger('LightManager')
 logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.INFO)
 
-
-
+"""
 if Qt.__binding__ == 'Pyside':
     logger.debug('Using PySide with shiboken')
     from shiboken import wrapInstance
@@ -27,7 +26,7 @@ else:
     logger.debug('Using Pyside2 with shiboken2')
     from shiboken2 import wrapInstance
     from Qt.QtCore import Signal
-
+"""
 
 def getMayaMainWindow():
 

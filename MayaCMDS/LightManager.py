@@ -3,17 +3,19 @@ import pymel.core as pm
 from functools import partial
 import logging
 import maya.OpenMayaUI as omui
-# import Qt
+import Qt
+# www.github.com/mottosso
 import json
 import os
 import time
+# from shiboken2 import wrapInstance
 
 logging.basicConfig()
 logger = logging.getLogger('LightManager')
 logger.setLevel(logging.DEBUG)
 #logger.setLevel(logging.INFO)
 
-"""
+
 if Qt.__binding__ == 'Pyside':
     logger.debug('Using PySide with shiboken')
     from shiboken import wrapInstance
@@ -26,7 +28,8 @@ else:
     logger.debug('Using Pyside2 with shiboken2')
     from shiboken2 import wrapInstance
     from Qt.QtCore import Signal
-"""
+
+
 
 def getMayaMainWindow():
 
@@ -34,16 +37,18 @@ def getMayaMainWindow():
     ptr = wrapInstance(long(win), QtWidgets.QMainWindow)
     return ptr
 
+
 def getDock(name='LightingManagerDock'):
     deleteDock(name)
-    ctrl = pm.workspaceControl(name, dockToMainWindow=('right', 1), label='Lighting Manager')
-    qtCtrl = omui.MQtUtil.findControl(ctrl)
+    ctrl = pm.workspaceControl(name, dockToMainWindow=('right', 1), label='Light Manager')
 
+    qtCtrl = omui.MQtUtil_findControl(ctrl)
     ptr = wrapInstance(long(qtCtrl), QtWidgets.QWidget)
     return ptr
 
+
 def deleteDock(name='LightingManagerDock'):
-    if pm.workspaceControl(name, query=1, exists=1):
+    if pm.workspaceControl(name, query=True, exists=True):
         pm.deleteUI(name)
 
 
@@ -81,6 +86,10 @@ class LightManager(QtWidgets.QWidget):
             parent.show()
 
     def populate(self):
+        for light in pm.ls(type=["areaLight", "spotLight", "pointLight", "directionalLight", "volumeLight"]):
+            self.addLight(light)
+
+    def refresh(self):
         """
         while self.scrollLayout.count():
             widget = self.scrollLayout.takeAt(0).widget()
@@ -92,12 +101,11 @@ class LightManager(QtWidgets.QWidget):
         lightWidgets = self.findChildren(LightWidget)
         for widget in lightWidgets:
             if widget:
-                self.setParent(None)
+                #self.setParent(None)
                 widget.setVisible(False)
                 widget.deleteLater()
 
-        for light in pm.ls(type=["areaLight", "spotLight", "pointLight", "directionalLight", "volumeLight"]):
-            self.addLight(light)
+        self.populate()
 
     def buildUI(self):
         layout = QtWidgets.QGridLayout(self)
@@ -113,7 +121,7 @@ class LightManager(QtWidgets.QWidget):
         createBtn.clicked.connect(self.createLight)
         layout.addWidget(createBtn, 0, 2)
 
-        # New Widget
+        # Scroll Widget
         scrollWidget = QtWidgets.QWidget()
         scrollWidget.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
         self.scrollLayout = QtWidgets.QVBoxLayout(scrollWidget)
@@ -123,17 +131,20 @@ class LightManager(QtWidgets.QWidget):
         scrollArea.setWidget(scrollWidget)
         layout.addWidget(scrollArea, 1, 0, 1, 3)
 
+        # Save Button
         saveBtn = QtWidgets.QPushButton('Save')
         saveBtn.clicked.connect(self.saveLight)
         layout.addWidget(saveBtn, 2, 0)
 
+        # Import Button
         importBtn = QtWidgets.QPushButton('Import')
         importBtn.clicked.connect(self.importLight)
         layout.addWidget(importBtn, 2, 1)
 
+        # Refresh Button
         refreshBtn = QtWidgets.QPushButton('Refresh')
-        refreshBtn.clicked.connect(self.populate)
-        layout.addWidget(refreshBtn, 2, 2 )
+        refreshBtn.clicked.connect(self.refresh)
+        layout.addWidget(refreshBtn, 2, 2)
 
     def saveLight(self):
         properties = {}
@@ -153,7 +164,7 @@ class LightManager(QtWidgets.QWidget):
         with open(lightFile, 'w') as f:
             json.dump(properties, f, indent=4)
 
-        logger.info('Saving file to %s' % str(lightFile))
+        logger.info('Saving file to %s' % lightFile)
 
     def getDirectory(self):
         directory = os.path.join(pm.internalVar(userAppDir=True), 'lightManager')
@@ -164,7 +175,6 @@ class LightManager(QtWidgets.QWidget):
     def importLight(self):
         directory = self.getDirectory()
         fileName = QtWidgets.QFileDialog.getOpenFileName(self, "Light Browser", directory)
-
         with open(fileName[0], 'r') as f:
             properties = json.load(f)
 

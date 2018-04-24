@@ -4,6 +4,8 @@ Push & Pull Mechanism: Sceen Mechanism. First from Input_Side to the Destination
                        Then, from the Destination_Side to Input_Side, Pull by the Updation Request
 Lazy Evaluation : maya does evaluation(compute()) action in Dependency node unless updating the Updation Request!
 Updation Request : ViewPort change, attribute Editor, Channel Box, cmds.getAttr()
+Dependency Graph Node(DG Node): Any node of Dependency Graph that has ability to perform computation is DG Node,
+                                it compose of Attributes(accessed by plug) and Data Block(accessed by Data Handle)
 """
 
 # OpenMayaMPx is MAYA Proxy API, which is used for users to define their own objects,
@@ -16,6 +18,12 @@ import sys
 nodeName = 'wheelNode'
 nodeID = openmaya.MTypeId(0x100fff)
 
+
+# 1. Creator Function step
+def nodeCreator():
+    return openmayampx.asMPxPtr(wheelNode())
+
+
 class wheelNode(openmayampx.MPxNode):
 
     inRadius = openmaya.MObject()
@@ -26,12 +34,13 @@ class wheelNode(openmayampx.MPxNode):
         openmayampx.MPxNode.__init__(self)
         # super(wheelNode, self).__init__()
 
+    # be careful about the name of the method, it must be "compute"
     def compute(self, plug, dataBlock):
         """
         rotate = translate / (2 * 3.14 * radius) * (-360)
-        :param plug:
-        :param dataBlock:
-        :return:
+        :param plug: a special handle to access the attributes
+        :param dataBlock: holds all the data(inputs and outputs) for the nodes
+        :return: None
         """
         if plug == wheelNode.outRotate:
 
@@ -52,17 +61,20 @@ class wheelNode(openmayampx.MPxNode):
             return openmaya.kUnknownParameter()
 
 
-def nodeCreator():
-    return openmayampx.asMPxPtr(wheelNode())
-
-
+# 2. Initialize step
 def nodeInitializer():
-    # 1. creating a function set for numeric attributes
+    # 1. creating a functionSet for numeric attributes
     mFnAttr = openmaya.MFnNumericAttribute()
 
     # 2. create the attributes
-    wheelNode.inRadius = mFnAttr.create('radius', 'r', openmaya.MFnNumericData.kFloat, 0.0)
+    # 2.1 create the attributes, return MObject handle
 
+    wheelNode.inRadius = mFnAttr.create('radius', 'r', openmaya.MFnNumericData.kFloat, 0.0)
+    # 2.2 set the properties
+    # readable -> source , output
+    # writable -> destination, input
+    # storable -> store with file
+    # keyable -> can be key or not
     mFnAttr.setReadable(1)
     mFnAttr.setWritable(1)
     mFnAttr.setStorable(1)
@@ -92,6 +104,7 @@ def nodeInitializer():
     wheelNode.attributeAffects(wheelNode.inTranslate, wheelNode.outRotate)
 
 
+# 3. initialize Plugin
 def initializePlugin(mObj):
     # Because mayaCore has already prepared a handle(named mObj here, which is in form of MObject)
     # for the Pointer above, define a plugin function set and pass the handle to it.
@@ -103,6 +116,7 @@ def initializePlugin(mObj):
         sys.stderr.write("Failed to register command: " + nodeName)
 
 
+# 4. unitialize Plugin
 def uninitializePlugin(mObj):
     mplugin = openmayampx.MFnPlugin(mObj)
     try:

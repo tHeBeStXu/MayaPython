@@ -28,8 +28,32 @@ class wheelNode(openmayampx.MPxNode):
         openmayampx.MPxNode.__init__(self)
         # super(wheelNode, self).__init__()
 
-    def compute(self):
-        pass
+    def compute(self, plug, dataBlock):
+        """
+        rotate = translate / (2 * 3.14 * radius) * (-360)
+        :param plug:
+        :param dataBlock:
+        :return:
+        """
+        if plug == wheelNode.outRotate:
+
+            dataHandleRadius = dataBlock.inputValue(wheelNode.inRadius)
+            dataHandleTranslate = dataBlock.inputValue(wheelNode.inTranslate)
+
+            inRadiusVal = dataHandleRadius.asFloat()
+            inTranslateVal = dataHandleTranslate.asFloat()
+
+            outRotate = float(inTranslateVal) / float(2 * 3.14 * inRadiusVal) * (-360)
+
+            dataHandleRotate = dataBlock.outputValue(wheelNode.outRotate)
+
+            dataHandleRotate.setFloat(outRotate)
+            dataBlock.setClean(plug)
+
+        else:
+            return openmaya.kUnknownParameter()
+
+
 
 
 def nodeCreator():
@@ -63,9 +87,9 @@ def nodeInitializer():
     mFnAttr.setKeyable(0)
 
     # 3. attach attributes to the node:
-    wheelNode.addAttributes(wheelNode.inRadius)
-    wheelNode.addAttributes(wheelNode.inTranslate)
-    wheelNode.addAttributes(wheelNode.outRotate)
+    wheelNode.addAttribute(wheelNode.inRadius)
+    wheelNode.addAttribute(wheelNode.inTranslate)
+    wheelNode.addAttribute(wheelNode.outRotate)
 
     # 4. design circuitry
     wheelNode.attributeAffects(wheelNode.inRadius, wheelNode.outRotate)
@@ -77,7 +101,7 @@ def initializePlugin(mObj):
     # for the Pointer above, define a plugin function set and pass the handle to it.
     mplugin = openmayampx.MFnPlugin(mObj)
     try:
-        # register the command by the nodeName and the Pointer(Pull the Pointer into the Maya Core)
+
         mplugin.registerNode(nodeName, nodeID, nodeCreator, nodeInitializer)
     except:
         sys.stderr.write("Failed to register command: " + nodeName)

@@ -55,6 +55,7 @@ class wheelNode(openmayampx.MPxNode):
             dataHandleRotate = dataBlock.outputValue(wheelNode.outRotate)
 
             dataHandleRotate.setFloat(outRotate)
+            # this is important!~
             dataBlock.setClean(plug)
 
         else:

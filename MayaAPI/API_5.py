@@ -5,9 +5,7 @@ Push & Pull Mechanism: Sceen Mechanism. First from Input_Side to the Destination
 Lazy Evaluation : maya does evaluation(compute()) action in Dependency node unless updating the Updation Request!
 Updation Request : ViewPort change, attribute Editor, Channel Box, cmds.getAttr()
 """
-"""
-Basic command structure
-"""
+
 # OpenMayaMPx is MAYA Proxy API, which is used for users to define their own objects,
 # such as commands, nodes and any other plugins
 
@@ -15,7 +13,7 @@ import maya.OpenMaya as openmaya
 import maya.OpenMayaMPx as openmayampx
 import sys
 
-nodeName = 'WheelNode'
+nodeName = 'wheelNode'
 nodeID = openmaya.MTypeId(0x100fff)
 
 class wheelNode(openmayampx.MPxNode):
@@ -43,7 +41,7 @@ class wheelNode(openmayampx.MPxNode):
             inRadiusVal = dataHandleRadius.asFloat()
             inTranslateVal = dataHandleTranslate.asFloat()
 
-            outRotate = float(inTranslateVal) / float(2 * 3.14 * inRadiusVal) * (-360)
+            outRotate = float(inTranslateVal) / float(2 * 3.14 * inRadiusVal) * (360)
 
             dataHandleRotate = dataBlock.outputValue(wheelNode.outRotate)
 
@@ -52,8 +50,6 @@ class wheelNode(openmayampx.MPxNode):
 
         else:
             return openmaya.kUnknownParameter()
-
-
 
 
 def nodeCreator():
@@ -106,7 +102,7 @@ def initializePlugin(mObj):
     except:
         sys.stderr.write("Failed to register command: " + nodeName)
 
-# Be careful of with the FUNCTION NAME and the CAPITALS
+
 def uninitializePlugin(mObj):
     mplugin = openmayampx.MFnPlugin(mObj)
     try:

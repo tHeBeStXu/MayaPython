@@ -48,12 +48,18 @@ class Ripple(openmayampx.MPxDeformerNode):
         input = openmayampx.cvar.MPxGeometryFilter_input
 
         # 1. Attach a handle to input Array Attribute
+        # Whenever using MDatablock.inputValue, it will check the Dependency Node plugs are clean or dirty.
+        # If the plugs are dirty, it will starting evaluating the whole linked Dependency Graph.
+        # The complete Dependency Graph will be evaluated, it will return the clean values.
+        # Then it will start compute() i.e deform() method.
+        # To prevent the re-computation of the mesh, we need to replace the inputArrayValue with outputArrayValue.
         dataHandleInputArray = dataBlock.outputArrayValue(input)
 
         # 2. Jump to particular element in array
         dataHandleInputArray.jumpToElement(geometryIndex)
 
         # 3. Attach a handle to specific data block
+        # To prevent the re-computation of the mesh, we need to replace the inputValue with outputValue.
         dataHandleInputElement = dataHandleInputArray.outputValue()
 
         # 4. Reach to the child - inputGeom
@@ -80,8 +86,8 @@ class Ripple(openmayampx.MPxDeformerNode):
         mFnMesh = openmaya.MFnMesh(inMesh)
         mFnMesh.getVertexNormals(False, mFloatVectorArray_normal, openmaya.MSpace.kObject)
 
-
         mPointArray_meshVert = openmaya.MPointArray()
+
         while (not geoIterator.isDone()):
             pointPosition = geoIterator.position()
             pointPosition.x = pointPosition.x + math.sin(geoIterator.index() + disPlaceValue) * amplitudeValue * mFloatVectorArray_normal[geoIterator.index()].x * envelopeValue

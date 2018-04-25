@@ -7,7 +7,7 @@ Usage:  1. Load the Plug-in with maya.cmds.loadPlugin(r"X:\THE\PATH\TO\THE\FILE\
 For some global variable differences between different MAYA API versions, we can check the link below:
 https://knowledge.autodesk.com/search-result/caas/CloudHelp/cloudhelp/2016/ENU/Maya-SDK/files/GUID-10CE99A6-2C32-49E1-85ED-2E2F6782CF23-htm.html
 
-if MAYA API 1.0 version < 201600 i.e. MAYA 2016 Before:
+if MAYA API 1.0 version < 201600 (i.e. MAYA 2016 Before):
     OpenMayaMPx.cvar.MPxDeformerNode_input
     OpenMayaMPx.cvar.MPxDeformerNode_inputGeom
     OpenMayaMPx.cvar.MPxDeformerNode_outputGeom

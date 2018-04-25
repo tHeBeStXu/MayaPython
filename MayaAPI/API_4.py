@@ -104,7 +104,6 @@ class pluginCommand(openmayampx.MPxCommand):
         # Attach the particles on the vertex positions
         counter = 0
         for i in xrange(mPointArray.length()):
-            # i % self.sparse 取余
             if i % self.sparse == 0:
                 mFnParticle.emit(mPointArray[i])
                 counter += 1

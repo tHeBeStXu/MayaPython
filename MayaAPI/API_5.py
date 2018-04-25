@@ -1,5 +1,8 @@
 """
-Dirty Propagation :
+Node: custom Node for compute the rotation
+Usage:  1. Load the Plug-in with maya.cmds.loadPlugin(r"X:\THE\PATH\TO\THE\FILE\API_5.py")
+        2. Run: maya.cmds.createNode("wheelNode") in python command
+
 Push & Pull Mechanism: Sceen Mechanism. First from Input_Side to the Destination_Side, Push by the Dirty Propagation.
                        Then, from the Destination_Side to Input_Side, Pull by the Updation Request
 Lazy Evaluation : maya does evaluation(compute()) action in Dependency node unless updating the Updation Request!
@@ -112,17 +115,17 @@ def initializePlugin(mObj):
     mplugin = openmayampx.MFnPlugin(mObj)
     try:
 
-        mplugin.registerNode(nodeName, nodeID, nodeCreator, nodeInitializer)
+        mplugin.registerNode(nodeName, nodeID, nodeCreator, nodeInitializer, openmayampx.MPxNode.kDependNode)
     except:
-        sys.stderr.write("Failed to register command: " + nodeName)
+        sys.stderr.write("Failed to register Node: " + nodeName)
 
 
 # 4. unitialize Plugin
 def uninitializePlugin(mObj):
     mplugin = openmayampx.MFnPlugin(mObj)
     try:
-        # For de-registering command, we just need the nodeName and the Pointer is already in Maya Core
-        mplugin.deregisterCommand(nodeName)
+        # For de-registering NODE, we just need the NodeID and the Pointer is already in Maya Core
+        mplugin.deregisterNode(nodeID)
     except:
-        sys.stderr.write("Failed to de-register command: " + nodeName)
+        sys.stderr.write("Failed to de-register Node: " + nodeName)
 

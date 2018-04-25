@@ -23,9 +23,6 @@ import sys
 import math
 import maya.OpenMaya as openmaya
 import maya.OpenMayaMPx as openmayampx
-import maya.cmds as cmds
-
-cmds.deformer()
 
 nodeName = "Ripple"
 nodeID = openmaya.MTypeId(0x102fff)
@@ -41,28 +38,32 @@ class Ripple(openmayampx.MPxDeformerNode):
     mObj_Displace = openmaya.MObject()
 
     def __init__(self):
-        # super(Ripple, self).__init__()
-        openmayampx.MPxDeformerNode.__init__(self)
+        super(Ripple, self).__init__()
+        # openmayampx.MPxDeformerNode.__init__(self)
 
     def deform(self, dataBlock, geoIterator, matrix, geometryIndex):
 
+        # 0. Grab the input Attribute come with the deformer node
+        # input = openmayampx.cvar.MPxDeformerNode_input
         input = openmayampx.cvar.MPxGeometryFilter_input
 
         # 1. Attach a handle to input Array Attribute
         dataHandleInputArray = dataBlock.inputArrayValue(input)
 
-        # 2. Jump to particular element
+        # 2. Jump to particular element in array
         dataHandleInputArray.jumpToElement(geometryIndex)
 
         # 3. Attach a handle to specific data block
         dataHandleInputElement = dataHandleInputArray.inputValue()
 
         # 4. Reach to the child - inputGeom
+        # inputGeom = openmayampx.cvar.MPxDeformerNode_inputGeom
         inputGeom = openmayampx.cvar.MPxGeometryFilter_inputGeom
         dataHandleInputGeom = dataHandleInputElement.child(inputGeom)
         inMesh = dataHandleInputGeom.asMesh()
 
         # Envelope
+        # envelope = openmayampx.cvar.MPxDeformerNode_envelope
         envelope = openmayampx.cvar.MPxGeometryFilter_envelope
         dataHandleEnvolope = dataBlock.inputValue(envelope)
         envelopeValue = dataHandleEnvolope.asFloat()
@@ -104,6 +105,7 @@ def nodeInitializer():
     3. Design Circuitry
     :return: None
     """
+    # 1. Create Attributes
     mFnAttr = openmaya.MFnNumericAttribute()
     Ripple.mObj_Amplitude = mFnAttr.create("AmplitudeValue", "AmpliVal", openmaya.MFnNumericData.kFloat, 0.0)
     mFnAttr.setKeyable(1)
@@ -115,6 +117,7 @@ def nodeInitializer():
     mFnAttr.setMin(0.0)
     mFnAttr.setMax(10.0)
 
+    # 2. Attach Attributes
     Ripple.addAttribute(Ripple.mObj_Amplitude)
     Ripple.addAttribute(Ripple.mObj_Displace)
 
@@ -124,6 +127,7 @@ def nodeInitializer():
     # outputGeom = openmayampx.cvar.MPxDeformerNode_outputGeom
     outputGeom = openmayampx.cvar.MPxGeometryFilter_outputGeom
 
+    # 3. Design Circuitry
     Ripple.attributeAffects(Ripple.mObj_Amplitude, outputGeom)
     Ripple.attributeAffects(Ripple.mObj_Displace, outputGeom)
 

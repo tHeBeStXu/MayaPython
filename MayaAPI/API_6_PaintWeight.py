@@ -19,7 +19,7 @@ else:
     OpenMayaMPx.cvar.MPxGeometryFilter_envelope
 """
 import sys
-
+from maya import cmds
 import math
 import maya.OpenMaya as openmaya
 import maya.OpenMayaMPx as openmayampx
@@ -153,8 +153,12 @@ def initializePlugin(mObj):
     # for the Pointer above, define a plugin function set and pass the handle to it.
     mplugin = openmayampx.MFnPlugin(mObj, "Yixiong Xu", "1.0")
     try:
-
         mplugin.registerNode(nodeName, nodeID, deformerCreator, nodeInitializer, openmayampx.MPxNode.kDeformerNode)
+
+        ''' This is to explicitly define that weights attribute of the deformer is paintable'''
+        # openmaya.MGlobal.executeCommand("makePaintable -attrType \"multiFloat\" -sm deformer \"" + nodeName + "\" \"weights\";")
+        cmds.makePaintable(nodeName, 'weights', at='multiFloat', sm='deformer')
+
     except:
         sys.stderr.write("Failed to register command: %s .\n" % nodeName)
 

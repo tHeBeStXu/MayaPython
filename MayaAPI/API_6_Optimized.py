@@ -1,6 +1,6 @@
 """
 Deformer: Custom Ripple Deformer
-Usage:  1. Load the Plug-in with maya.cmds.loadPlugin(r"X:\THE\PATH\TO\THE\FILE\API_6.py")
+Usage:  1. Load the Plug-in with maya.cmds.loadPlugin(r"X:\THE\PATH\TO\THE\FILE\API_6_Optimized.py")
         2. Select a polygon mesh in the scene;
         3. Run: maya.cmds.deformer(type="Ripple") in python command
 
@@ -24,7 +24,7 @@ import math
 import maya.OpenMaya as openmaya
 import maya.OpenMayaMPx as openmayampx
 
-nodeName = "Ripple"
+nodeName = "RippleDeformer"
 nodeID = openmaya.MTypeId(0x102fff)
 
 
@@ -86,6 +86,7 @@ class Ripple(openmayampx.MPxDeformerNode):
         mFnMesh = openmaya.MFnMesh(inMesh)
         mFnMesh.getVertexNormals(False, mFloatVectorArray_normal, openmaya.MSpace.kObject)
 
+        # store the vertex positions of the mesh.
         mPointArray_meshVert = openmaya.MPointArray()
 
         while (not geoIterator.isDone()):
@@ -98,7 +99,7 @@ class Ripple(openmayampx.MPxDeformerNode):
             mPointArray_meshVert.append(pointPosition)
 
             geoIterator.next()
-
+        # Set all the Position at once.
         geoIterator.setAllPosition(mPointArray_meshVert)
 
 
@@ -146,12 +147,12 @@ def nodeInitializer():
 def initializePlugin(mObj):
     # Because mayaCore has already prepared a handle(named mObj here, which is in form of MObject)
     # for the Pointer above, define a plugin function set and pass the handle to it.
-    mplugin = openmayampx.MFnPlugin(mObj, "Yixiong Xu", "1.0")
+    mplugin = openmayampx.MFnPlugin(mObj, "Yixiong Xu", "1.1")
     try:
 
         mplugin.registerNode(nodeName, nodeID, deformerCreator, nodeInitializer, openmayampx.MPxNode.kDeformerNode)
     except:
-        sys.stderr.write("Failed to register command: %s .\n" % nodeName)
+        sys.stderr.write("Failed to register node: %s .\n" % nodeName)
 
 
 # 4. unitialize Plugin
@@ -161,5 +162,5 @@ def uninitializePlugin(mObj):
         # For de-registering Node, we just need the NodeId and the Pointer is already in Maya Core
         mplugin.deregisterNode(nodeID)
     except:
-        sys.stderr.write("Failed to de-register command: %s .\n" % nodeName)
+        sys.stderr.write("Failed to de-register node: %s .\n" % nodeName)
 

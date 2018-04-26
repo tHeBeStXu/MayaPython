@@ -100,7 +100,7 @@ class Ripple(openmayampx.MPxDeformerNode):
 
             geoIterator.next()
         # Set all the Position at once.
-        geoIterator.setAllPosition(mPointArray_meshVert)
+        geoIterator.setAllPositions(mPointArray_meshVert)
 
 
 # 1. Creator()

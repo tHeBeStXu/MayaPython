@@ -1,6 +1,8 @@
 """
-Accessory Object/Node: It is a optional or additional node created for Deformer,
-Usage:  1. Load the Plug-in with maya.cmds.loadPlugin(r"X:\THE\PATH\TO\THE\FILE\API_7.py")
+Accessory Object/Node: It is a optional or additional node created with Deformer node, and it is required by deformer
+                       node to drive the deformation. Properties: 1. it should help deformer to derive the deformation
+                       2. When you delete the accessory object/node, the relative deformer node should delete as well.
+Usage:  1. Load the Plug-in with maya.cmds.loadPlugin(r"X:\THE\PATH\TO\THE\FILE\API_6.py")
         2. Select a polygon mesh in the scene;
         3. Run: maya.cmds.deformer(type="Ripple") in python command
 

@@ -137,14 +137,3 @@ class simpleUI(QtWidgets.QDialog):
     def addToTextEdit(self, buttonName):
         buttonText = buttonName.text()
         self.example_te.setText(str(self.example_te.toPlainText()) + str(buttonText))
-
-
-
-
-
-
-
-
-
-
-

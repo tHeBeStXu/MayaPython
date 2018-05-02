@@ -56,8 +56,6 @@ class locatorNode(openmayampx.MPxLocatorNode):
         glFuncTable.glVertex3f(0.809, 0.1, -2.337)
         glFuncTable.glVertex3f(0.035, 0, -2.807)
 
-        view.drawText("Left Foot", openmaya.MPoint(0, 0, 0), view.kLeft)
-
         glFuncTable.glEnd()
         # Disable blend shape
         glFuncTable.glDisable(openmayarender.MGL_BLEND)
@@ -65,6 +63,9 @@ class locatorNode(openmayampx.MPxLocatorNode):
         glFuncTable.glPopAttrib()
 
         view.endGL()
+
+        view.setDrawColor(openmaya.MColor(0.1, 0.8, 0.7, 1.0))
+        view.drawText("Left Foot", openmaya.MPoint(0, 0, 0), view.kLeft)
 
 
 # 1. Creator Function step

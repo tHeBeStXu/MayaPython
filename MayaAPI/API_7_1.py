@@ -1,3 +1,7 @@
+"""
+Maya ADN example
+"""
+
 import maya.OpenMaya as openmaya
 import maya.OpenMayaMPx as openmayampx
 import maya.OpenMayaRender as openmayarender

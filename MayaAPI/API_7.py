@@ -1,7 +1,7 @@
 """
 Node:
 Usage:  1. Load the Plug-in with maya.cmds.loadPlugin(r"X:\THE\PATH\TO\THE\FILE\API_7.py")
-        2. Run:
+        2. Run: maya.cmds.createNode('LeftFoot')
 
 """
 

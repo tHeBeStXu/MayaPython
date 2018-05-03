@@ -110,6 +110,57 @@ class SkinCluster(object):
             if not isinstance(filePath, basestring):
                 filePath = filePath[0]
 
+            # Read the data from the file
+            fh = open(filePath, 'rb')
+            data = pickle.load(fh)
+            fh.close()
+
+            # Make sure the vertex count is the same
+            meshVertices = cmds.polyEvaluate(shape, vertex=1)
+
+            importedVertices = len(data['blendWeights'])
+            if meshVertices != importedVertices:
+                raise RuntimeError('Vertex counts do not match. %d != %d' % (meshVertices, importedVertices))
+
+            # check if the shape already has a skinCluster
+            if SkinCluster.getSkinCluster(shape):
+                skinCluster = SkinCluster(shape)
+            else:
+                # create a new skinCluster
+                joints = data['weights'].key()
+
+                # Make sure all the joints exist
+                unusedImports = []
+                noMatch = set([SkinCluster.removeNamespaceFromString(x) for x in cmds.ls(type='joint')])
+
+                for j in joints:
+                    if j in noMatch:
+                        noMatch.remove(j)
+                    else:
+                        unusedImports.append(j)
+
+                # Remapping the joints
+                # if there were unmapped influences ask the user to map them
+                if unusedImports and noMatch:
+                    mappingDialog = WeightRemapDialog(getMayaWindow())
+                    mappingDialog.setInfluences(unusedImports, noMatch)
+                    mappingDialog.exec_()
+
+                    for src, dst in mappingDialog.mapping.items():
+                        # swap the mapping
+                        data['weights'][dst] = data['weights'][src]
+                        del data['weights'][src]
+
+                # Create the skinCluster with post normalization so setting the weights does not
+                # normalize all weights
+                joints = data['weights'].keys()
+                skinCluster = cmds.skinCluster(joints, shape, tsb=1, nw=2, n=data['name'])
+                skinCluster = SkinCluster(shape)
+
+            skinCluster.setData(data)
+            print "Imported %s" % filePath
+
+
 
     @classmethod
     def getSkinCluster(cls, shape):
@@ -221,6 +272,19 @@ class SkinCluster(object):
 
         fh.close()
         print "Exported skinCluster (%d influences, %d vertices) %s" % (len(self.data['weight'].keys()), len(self.data['blendWeights']), filePath)
+
+    def setData(self, data):
+        """
+        Sets the data and stores it in the Maya skinCluster node.
+        :return:
+        """
+        self.data = data
+        dagPath, components =self._getGeometryComponents()
+        self.setInfluenceWeights(dagPath, components)
+        self.setBlendWeights(dagPath, components)
+
+        for attr in ['skinningMethod', 'normalizeWeights']:
+            cmds.setAttr('%s.%s' % (self.node, attr), self.data[attr])
 
 
 

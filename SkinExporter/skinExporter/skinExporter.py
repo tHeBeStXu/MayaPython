@@ -287,6 +287,60 @@ class SkinCluster(object):
             cmds.setAttr('%s.%s' % (self.node, attr), self.data[attr])
 
 
+    def setInfluenceWeights(self, dagPath, components):
+        """
+
+        :param dagPath:
+        :param components:
+        :return:
+        """
+        weights = self._getCurrentWeights(dagPath, components)
+        influencePaths = openmaya.MDagPathArray()
+        numInfluences = self.fn.influenceObjects(influencePaths)
+        numComponentsPerInfluence = weights.length() / numInfluences
+
+
+
+        # Keep track of which imported influences aren't used
+        unusedImports = []
+        # Keep track of which existing influences don't get anything imported
+        noMatch = [influencePaths[ii].partialPathName() for ii in range(influencePaths.length())]
+
+        for importedInfluence, importedWeights in self.data['weight'].items():
+            for ii in range(influencePaths.length()):
+                # partialPathName used to return exclusive partial path name of the object
+                influenceName = influencePaths[ii].partialPathName()
+                influenceWithoutNamespace = SkinCluster.removeNamespaceFromString(influenceName)
+
+                if influenceWithoutNamespace == importedInfluence:
+                    # Store the imported weights into the MDoubeArray
+                    for jj in range(numComponentsPerInfluence):
+                        weights.set(importedWeights[jj], jj * numInfluences + ii)
+
+                    noMatch.remove(influenceName)
+                    break
+            else:
+                unusedImports.append(importedInfluence)
+
+        influenceIndics = openmaya.MIntArray()
+        for ii in range(numInfluences):
+            influenceIndics.set(ii, ii)
+        self.fn.setWeights(dagPath, components, influenceIndics, weights, False)
+
+    def setBlendWeights(self, dagPath, components):
+        """
+        Set BlendWeights
+        :param dagPath:
+        :param components:
+        :return:
+        """
+        blendWeights = openmaya.MDoubleArray(len(self.data['blendWeights']))
+        for i, w in enumerate(self.data['blendWeights']):
+            blendWeights.set(w, i)
+
+        self.fn.setBlendWeights(dagPath, components, blendWeights)
+
+
 
 
 

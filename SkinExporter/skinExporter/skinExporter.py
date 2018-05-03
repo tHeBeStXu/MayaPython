@@ -23,8 +23,8 @@ def getShape(node, intermediate=False):
             isIntermediate = cmds.getAttr('%s.intermediateObject' % shape)
             # Sometimes there are left over intermediate shapes that are not used to(the duplicated deformed shape)
             # check the connections to make sure we get the one that is used
-            # return intermediate shape
-            if intermediate and isIntermediate and cmds.listConnections(shape, source=0):
+            # return intermediate shape which has incoming objects
+            if intermediate and isIntermediate and cmds.listConnections(shape, source=0, destination=1):
                 return shape
 
             # return visible shape
@@ -33,7 +33,7 @@ def getShape(node, intermediate=False):
 
         if shapes:
             return shapes[0]
-
+    # return the shape which just is a Shape Node
     elif cmds.nodeType(node) in ['mesh', 'nurbsCurve', 'nurbsSurface']:
         return node
 

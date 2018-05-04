@@ -40,47 +40,7 @@ def getShape(node, intermediate=False):
     return None
 
 
-
-
 class SkinCluster(object):
-
-    kFileExtension = '.skin'
-
-    def __init__(self, shape=None):
-        if not shape:
-            try:
-                shape = cmds.ls(sl=1)[0]
-
-            except:
-                raise RuntimeError('No shape selected')
-
-        self.shape = getShape(shape)
-
-        if not self.shape:
-            raise RuntimeError('No shape connected to %s' % shape)
-
-        # Get the skinCluster node attached to the shape
-        self.node = SkinCluster.getSkinCluster(self.shape)
-
-        # Get the skinCluster MObject
-        selectionList = openmaya.MSelectionList()
-        selectionList.add(self.node)
-        self.mobj = openmaya.MObject()
-        selectionList.getDependNode(0, self.mobj)
-        self.fn = openmayaanim.MFnSkinCluster(self.mobj)
-        self.data = {'weight': {},
-                     'blendWeights': [],
-                     'name': self.node}
-
-    def gatherData(self):
-        dagPath, components = self._getGeometryComponents()
-        self.gatherInfluenceWeights(dagPath, components)
-        self.gatherBlendWeights(dagPath, components)
-
-        for attr in ['skinningMethod', 'normalizeWeights']:
-            self.data[attr] = cmds.getAttr('%s.%s' % (self.node, attr))
-
-
     @classmethod
     def export(cls, filePath=None, shape=None):
         skin = SkinCluster(shape)
@@ -163,8 +123,6 @@ class SkinCluster(object):
             skinCluster.setData(data)
             print "Imported %s" % filePath
 
-
-
     @classmethod
     def getSkinCluster(cls, shape):
         """
@@ -202,10 +160,47 @@ class SkinCluster(object):
 
         return result
 
+    kFileExtension = '.skin'
+
+    def __init__(self, shape=None):
+        if not shape:
+            try:
+                shape = cmds.ls(sl=1)[0]
+
+            except:
+                raise RuntimeError('No shape selected')
+
+        self.shape = getShape(shape)
+
+        if not self.shape:
+            raise RuntimeError('No shape connected to %s' % shape)
+
+        # Get the skinCluster node attached to the shape
+        self.node = SkinCluster.getSkinCluster(self.shape)
+
+        # Get the skinCluster MObject
+        selectionList = openmaya.MSelectionList()
+        selectionList.add(self.node)
+        self.mobj = openmaya.MObject()
+        selectionList.getDependNode(0, self.mobj)
+        self.fn = openmayaanim.MFnSkinCluster(self.mobj)
+        self.data = {'weight': {},
+                     'blendWeights': [],
+                     'name': self.node}
+
+    def gatherData(self):
+        dagPath, components = self._getGeometryComponents()
+        self.gatherInfluenceWeights(dagPath, components)
+        self.gatherBlendWeights(dagPath, components)
+
+        for attr in ['skinningMethod', 'normalizeWeights']:
+            self.data[attr] = cmds.getAttr('%s.%s' % (self.node, attr))
+
     def _getGeometryComponents(self):
         # get dagPath and member components of skined shape
         fnSet = openmaya.MFnSet(self.fn.deformerSet())
         members = openmaya.MSelectionList()
+        # the MSelectionList contains the vertex information in the deformerSet above
         fnSet.getMembers(members, False)
 
         dagPath = openmaya.MDagPath()
@@ -219,7 +214,9 @@ class SkinCluster(object):
         weights = self._getCurrentWeights(dagPath, components)
 
         influencePaths = openmaya.MDagPathArray()
+        # influencePaths is the fullPath of the object(joint)
         numInfluences = self.fn.influenceObjects(influencePaths)
+        # weight size = number of components(vertex) * number of influenceObjects(joints)
         numComponentsPerInfluence = weights.length() / numInfluences
 
         for ii in range(influencePaths.length()):
@@ -227,8 +224,9 @@ class SkinCluster(object):
 
             # we want to store the weights by influence without the namespace so it is easier
             # to import if the namespace is different
-            influenceWithoutNamespace = SkinCluster.removeNamespaceFromString(influenceName)
-            self.data['weight'][influenceWithoutNamespace] = [weights[jj * numInfluences + ii] for jj in range(numComponentsPerInfluence)]
+            influenceNameWithoutNamespace = SkinCluster.removeNamespaceFromString(influenceName)
+            self.data['weight'][influenceNameWithoutNamespace] = [weights[jj * numInfluences + ii] for jj in
+                                                                  range(numComponentsPerInfluence)]
 
     def gatherBlendWeights(self, dagPath, components):
         """Gather the BlendWeights"""
@@ -246,7 +244,8 @@ class SkinCluster(object):
         pUInt = util.asUintPtr()
 
         self.fn.getWeights(dagPath, components, weights, pUInt)
-
+        # weights is a giant single Double Array
+        # size = number of components(vertex) * number of influenceObjects(joints)
         return weights
 
     def exportSkin(self, filePath=None):
@@ -274,7 +273,8 @@ class SkinCluster(object):
         pickle.dump(self.data, fh, pickle.HIGHEST_PROTOCOL)
 
         fh.close()
-        print "Exported skinCluster (%d influences, %d vertices) %s" % (len(self.data['weight'].keys()), len(self.data['blendWeights']), filePath)
+        print "Exported skinCluster (%d influences, %d vertices) %s" % (
+        len(self.data['weight'].keys()), len(self.data['blendWeights']), filePath)
 
     def setData(self, data):
         """
@@ -282,13 +282,12 @@ class SkinCluster(object):
         :return:
         """
         self.data = data
-        dagPath, components =self._getGeometryComponents()
+        dagPath, components = self._getGeometryComponents()
         self.setInfluenceWeights(dagPath, components)
         self.setBlendWeights(dagPath, components)
 
         for attr in ['skinningMethod', 'normalizeWeights']:
             cmds.setAttr('%s.%s' % (self.node, attr), self.data[attr])
-
 
     def setInfluenceWeights(self, dagPath, components):
         """
@@ -301,8 +300,6 @@ class SkinCluster(object):
         influencePaths = openmaya.MDagPathArray()
         numInfluences = self.fn.influenceObjects(influencePaths)
         numComponentsPerInfluence = weights.length() / numInfluences
-
-
 
         # Keep track of which imported influences aren't used
         unusedImports = []
@@ -342,13 +339,3 @@ class SkinCluster(object):
             blendWeights.set(w, i)
 
         self.fn.setBlendWeights(dagPath, components, blendWeights)
-
-
-
-
-
-
-
-
-
-

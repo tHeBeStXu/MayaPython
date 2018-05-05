@@ -1,3 +1,4 @@
+import os
 import cPickle as pickle
 import maya.cmds as cmds
 import maya.OpenMaya as openmaya
@@ -64,6 +65,8 @@ def getShape(node, intermediate=False):
 
 
 class SkinCluster(object):
+    # global variable extension
+    kFileExtension = '.skin'
 
     @classmethod
     def export(cls, filePath=None, shape=None):
@@ -92,64 +95,65 @@ class SkinCluster(object):
             filePath = cmds.fileDialog2(dialogStyle=2, fileMode=1, startingDirectory=startDir,
                                         fileFilter='Skin Files (*%s)' % SkinCluster.kFileExtension)
 
-            if not filePath:
-                return
-            if not isinstance(filePath, basestring):
-                filePath = filePath[0]
+        if not filePath:
+            return
+        if not isinstance(filePath, basestring):
+            filePath = filePath[0]
 
-            # Read the data from the file
-            fh = open(filePath, 'rb')
-            data = pickle.load(fh)
-            fh.close()
+        # Read the data from the file
+        fh = open(filePath, 'rb')
+        data = pickle.load(fh)
+        fh.close()
 
-            # Make sure the vertex count is the same
-            meshVertices = cmds.polyEvaluate(shape, vertex=1)
+        # Make sure the vertex count is the same
+        meshVertices = cmds.polyEvaluate(shape, vertex=1)
 
-            importedVertices = len(data['blendWeights'])
-            if meshVertices != importedVertices:
-                raise RuntimeError('Vertex counts do not match. %d != %d' % (meshVertices, importedVertices))
+        importedVertices = len(data['blendWeights'])
+        if meshVertices != importedVertices:
+            raise RuntimeError('Vertex counts do not match. %d != %d' % (meshVertices, importedVertices))
 
 
-            # check if the shape already has a skinCluster
-            if SkinCluster.getSkinCluster(shape):
-                skinCluster = SkinCluster(shape)
-            else:
-                # create a new skinCluster
-                joints = data['weights'].keys()
+        # check if the shape already has a skinCluster
+        if SkinCluster.getSkinCluster(shape):
+            skinCluster = SkinCluster(shape)
+        else:
+            # create a new skinCluster
+            joints = data['weights'].keys()
 
-                # Make sure all the joints exist
+            # Make sure all the joints exist
 
-                unusedImports = []
-                # Create a set for get which joint in the scene doesn't have weights
-                noMatch = set([SkinCluster.removeNamespaceFromString(x) for x in cmds.ls(type='joint')])
+            unusedImports = []
+            # Create a set for get which joint in the scene doesn't have weights
+            noMatch = set([SkinCluster.removeNamespaceFromString(x) for x in cmds.ls(type='joint')])
 
-                for j in joints:
-                    if j in noMatch:
-                        noMatch.remove(j)
-                    else:
-                        unusedImports.append(j)
+            for j in joints:
+                if j in noMatch:
+                    noMatch.remove(j)
+                else:
+                    unusedImports.append(j)
 
-                # Remapping the joints
-                # if there were unmapped influences ask the user to map them
-                if unusedImports and noMatch:
-                    mappingDialog = WeightRemapDialog(getMayaWindow())
-                    mappingDialog.setInfluences(unusedImports, noMatch)
-                    mappingDialog.exec_()
+            # Remapping the joints
+            # if there were unmapped influences ask the user to map them
+            if unusedImports and noMatch:
 
-                    for src, dst in mappingDialog.mapping.items():
-                        # swap the mapping
-                        data['weights'][dst] = data['weights'][src]
-                        del data['weights'][src]
+                mappingDialog = WeightRemapDialog(getMayaWindow())
+                mappingDialog.setInfluences(unusedImports, noMatch)
+                mappingDialog.exec_()
 
-                # Create the skinCluster with post normalization so setting the weights does not
-                # normalize all weights 
-                joints = data['weights'].keys()
+                for src, dst in mappingDialog.mapping.items():
+                    # swap the mapping
+                    data['weights'][dst] = data['weights'][src]
+                    del data['weights'][src]
 
-                skinCluster = cmds.skinCluster(joints, shape, tsb=1, nw=2, n=data['name'])
-                skinCluster = SkinCluster(shape)
+            # Create the skinCluster with post normalization so setting the weights does not
+            # normalize all weights
+            joints = data['weights'].keys()
 
-            skinCluster.setData(data)
-            print "Imported %s" % filePath
+            skinCluster = cmds.skinCluster(joints, shape, tsb=1, nw=2, n=data['name'])
+            skinCluster = SkinCluster(shape)
+
+        skinCluster.setData(data)
+        print "Imported %s" % filePath
 
     @classmethod
     def getSkinCluster(cls, shape):
@@ -188,8 +192,6 @@ class SkinCluster(object):
 
         return result
 
-    # global variable extension
-    kFileExtension = '.skin'
 
     def __init__(self, shape=None):
         if not shape:
@@ -465,7 +467,7 @@ class WeightRemapDialog(QtWidgets.QDialog):
     def setInfluences(self, importedInfluences, existingInfluences):
         infs = list(existingInfluences)
         infs.sort()
-        self.existingInfluences.addItem(infs)
+        self.existingInfluences.addItems(infs)
 
         width = 200
         for inf in importedInfluences:

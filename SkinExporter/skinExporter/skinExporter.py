@@ -3,6 +3,29 @@ import maya.cmds as cmds
 import maya.OpenMaya as openmaya
 import maya.OpenMayaUI as openmayaui
 import maya.OpenMayaAnim as openmayaanim
+from functools import partial
+
+
+from PySide2 import QtGui, QtWidgets, QtCore
+from shiboken2 import wrapInstance
+
+
+def show():
+    """
+    Show Export and Import dialog UI
+    :return:
+    """
+    dialog = SkinIODialog(getMayaWindow())
+    dialog.show()
+
+
+def getMayaWindow():
+    """
+    Get the mayaMainWindow as parent
+    :return: mayaMainWindow Ptr
+    """
+    ptr = openmayaui.MQtUtil.mainWindow()
+    return wrapInstance(long(ptr), QtWidgets.QMainWindow)
 
 
 def getShape(node, intermediate=False):
@@ -41,6 +64,7 @@ def getShape(node, intermediate=False):
 
 
 class SkinCluster(object):
+
     @classmethod
     def export(cls, filePath=None, shape=None):
         skin = SkinCluster(shape)
@@ -51,8 +75,8 @@ class SkinCluster(object):
         """
         Create a skinCluster on the specified shape if one does not already exist
         and then import the weight data.
-        :param filePath:
-        :param shape:
+        :param filePath: filePath of the skinWeights
+        :param shape: mesh shape which skinCluster deforms
         :return:
         """
 
@@ -85,15 +109,18 @@ class SkinCluster(object):
             if meshVertices != importedVertices:
                 raise RuntimeError('Vertex counts do not match. %d != %d' % (meshVertices, importedVertices))
 
+
             # check if the shape already has a skinCluster
             if SkinCluster.getSkinCluster(shape):
                 skinCluster = SkinCluster(shape)
             else:
                 # create a new skinCluster
-                joints = data['weights'].key()
+                joints = data['weights'].keys()
 
                 # Make sure all the joints exist
+
                 unusedImports = []
+                # Create a set for get which joint in the scene doesn't have weights
                 noMatch = set([SkinCluster.removeNamespaceFromString(x) for x in cmds.ls(type='joint')])
 
                 for j in joints:
@@ -115,8 +142,9 @@ class SkinCluster(object):
                         del data['weights'][src]
 
                 # Create the skinCluster with post normalization so setting the weights does not
-                # normalize all weights
+                # normalize all weights 
                 joints = data['weights'].keys()
+
                 skinCluster = cmds.skinCluster(joints, shape, tsb=1, nw=2, n=data['name'])
                 skinCluster = SkinCluster(shape)
 
@@ -160,6 +188,7 @@ class SkinCluster(object):
 
         return result
 
+    # global variable extension
     kFileExtension = '.skin'
 
     def __init__(self, shape=None):
@@ -184,11 +213,15 @@ class SkinCluster(object):
         self.mobj = openmaya.MObject()
         selectionList.getDependNode(0, self.mobj)
         self.fn = openmayaanim.MFnSkinCluster(self.mobj)
-        self.data = {'weight': {},
+        self.data = {'weights': {},
                      'blendWeights': [],
                      'name': self.node}
 
     def gatherData(self):
+        """
+        get and store the skinningMeshod and normalizeWeights attributes in data dictionary
+        :return: None
+        """
         dagPath, components = self._getGeometryComponents()
         self.gatherInfluenceWeights(dagPath, components)
         self.gatherBlendWeights(dagPath, components)
@@ -197,7 +230,13 @@ class SkinCluster(object):
             self.data[attr] = cmds.getAttr('%s.%s' % (self.node, attr))
 
     def _getGeometryComponents(self):
+        """
+        get the dagPath of influence object(joint) and Geometry components(vertex)
+        :return: dagPath, componnets
+        """
         # get dagPath and member components of skined shape
+        # the deformerSet pretty controls which vertex is deformed by the skinCluster
+        # the deformerSet will allows us to pull out that components(vertex) mobject that we need
         fnSet = openmaya.MFnSet(self.fn.deformerSet())
         members = openmaya.MSelectionList()
         # the MSelectionList contains the vertex information in the deformerSet above
@@ -205,11 +244,20 @@ class SkinCluster(object):
 
         dagPath = openmaya.MDagPath()
         components = openmaya.MObject()
+
+        # dagPath: dagPath of influence objects(joint)
+        # components: mesh components(vertex)
         members.getDagPath(0, dagPath, components)
 
         return dagPath, components
 
     def gatherInfluenceWeights(self, dagPath, components):
+        """
+        get and store the weights of each influence object for same ordered components(vertex) in data['weights'] dictionary
+        :param dagPath:
+        :param components: mesh components(vertex)
+        :return: None
+        """
         # Gathers all the influence weights
         weights = self._getCurrentWeights(dagPath, components)
 
@@ -221,28 +269,40 @@ class SkinCluster(object):
 
         for ii in range(influencePaths.length()):
             influenceName = influencePaths[ii].partialPathName()
-
             # we want to store the weights by influence without the namespace so it is easier
             # to import if the namespace is different
             influenceNameWithoutNamespace = SkinCluster.removeNamespaceFromString(influenceName)
-            self.data['weight'][influenceNameWithoutNamespace] = [weights[jj * numInfluences + ii] for jj in
+            # store the weight of each influence object(joint) for same ordered components(vertex)
+            self.data['weights'][influenceNameWithoutNamespace] = [weights[jj * numInfluences + ii] for jj in
                                                                   range(numComponentsPerInfluence)]
 
     def gatherBlendWeights(self, dagPath, components):
-        """Gather the BlendWeights"""
+        """
+        Gather the BlendWeights
+        :param dagPath: dagPath of influence objects(joint)
+        :param components: mesh components(vertex)
+        :return: None
+        """
         weights = openmaya.MDoubleArray()
         self.fn.getBlendWeights(dagPath, components, weights)
-        self.data['blendWeights'] = [weights[i] for i in range(weights.lengh())]
+        self.data['blendWeights'] = [weights[i] for i in range(weights.length())]
 
     def _getCurrentWeights(self, dagPath, components):
-        """Get the current weight array"""
+        """
+        Get the current weights array. Be careful about the weight array, it is a giant single array.
+        The order of the weights array is dependent on the indices of the joint
+        :param dagPath: path to object deformed by the skinCluster
+        :param components: Components to return weight for, every single vertex in the mesh
+        :return: Weights
+        """
         weights = openmaya.MDoubleArray()
         util = openmaya.MScriptUtil()
 
         util.createFromInt(0)
 
         pUInt = util.asUintPtr()
-
+        # Gets the skinCluster weights for ALL influenceObjects(joints) for the specified components of the object whose dagPath is specified.
+        # More details see: https://download.autodesk.com/us/maya/2011help/API/class_m_fn_skin_cluster.html#82e83fc5ab653aa15c5431710b3ac86a
         self.fn.getWeights(dagPath, components, weights, pUInt)
         # weights is a giant single Double Array
         # size = number of components(vertex) * number of influenceObjects(joints)
@@ -273,8 +333,7 @@ class SkinCluster(object):
         pickle.dump(self.data, fh, pickle.HIGHEST_PROTOCOL)
 
         fh.close()
-        print "Exported skinCluster (%d influences, %d vertices) %s" % (
-        len(self.data['weight'].keys()), len(self.data['blendWeights']), filePath)
+        print "Exported skinCluster (%d influences, %d vertices) %s" % (len(self.data['weights'].keys()), len(self.data['blendWeights']), filePath)
 
     def setData(self, data):
         """
@@ -296,6 +355,7 @@ class SkinCluster(object):
         :param components:
         :return:
         """
+        # get the existing weights and fill in the new weights
         weights = self._getCurrentWeights(dagPath, components)
         influencePaths = openmaya.MDagPathArray()
         numInfluences = self.fn.influenceObjects(influencePaths)
@@ -306,7 +366,7 @@ class SkinCluster(object):
         # Keep track of which existing influences don't get anything imported
         noMatch = [influencePaths[ii].partialPathName() for ii in range(influencePaths.length())]
 
-        for importedInfluence, importedWeights in self.data['weight'].items():
+        for importedInfluence, importedWeights in self.data['weights'].items():
             for ii in range(influencePaths.length()):
                 # partialPathName used to return exclusive partial path name of the object
                 influenceName = influencePaths[ii].partialPathName()
@@ -321,6 +381,18 @@ class SkinCluster(object):
                     break
             else:
                 unusedImports.append(importedInfluence)
+
+        if unusedImports and noMatch:
+            mappingDialog = WeightRemapDialog(getMayaWindow())
+            mappingDialog.setInfluences(unusedImports, noMatch)
+            mappingDialog.exec_()
+
+            for src, dst in mappingDialog.mapping.items():
+                for ii in range(influencePaths.length()):
+                    if influencePaths[ii].partialPathName() == dst:
+                        for jj in range(numComponentsPerInfluence):
+                            weights.set(self.data['weights'][src][jj], jj * numInfluences + ii)
+                        break
 
         influenceIndics = openmaya.MIntArray()
         for ii in range(numInfluences):
@@ -339,3 +411,120 @@ class SkinCluster(object):
             blendWeights.set(w, i)
 
         self.fn.setBlendWeights(dagPath, components, blendWeights)
+
+
+class WeightRemapDialog(QtWidgets.QDialog):
+    def __init__(self, parent=None):
+        super(WeightRemapDialog, self).__init__(parent)
+
+        self.setWindowTitle('Remap Weights')
+        self.setObjectName('remapWeightUI')
+
+        self.setModal(True)
+        self.resize(600, 400)
+        self.mapping = {}
+
+        self.mainVbox = QtWidgets.QVBoxLayout()
+
+        self.setLayout(self.mainVbox)
+
+        label = QtWidgets.QLabel('The following influences have no corresponding influence from the import file. '
+                                 'You can either remap the influences or skip them')
+
+        label.setWordWrap(True)
+
+        self.mainVbox.addWidget(label)
+
+        self.HBox = QtWidgets.QHBoxLayout()
+        self.mainVbox.addLayout(self.HBox)
+
+
+        self.VBox = QtWidgets.QVBoxLayout()
+        self.HBox.addLayout(self.VBox)
+
+        self.VBox.addWidget(QtWidgets.QLabel('Unmapped influences'))
+
+        self.existingInfluences = QtWidgets.QListWidget()
+        self.VBox.addWidget(self.existingInfluences)
+
+        vbox = QtWidgets.QVBoxLayout()
+        self.HBox.addLayout(vbox)
+        vbox.addWidget(QtWidgets.QLabel('Available imported influence'))
+        self.scrollArea = QtWidgets.QScrollArea()
+        self.widget = QtWidgets.QScrollArea()
+        self.importedInfluenceLayout = QtWidgets.QVBoxLayout(self.widget)
+        vbox.addWidget(self.widget)
+
+        hbox = QtWidgets.QHBoxLayout()
+        self.mainVbox.addLayout(hbox)
+        hbox.addStretch()
+        self.btn = QtWidgets.QPushButton('OK')
+        self.btn.released.connect(self.accept)
+        hbox.addWidget(self.btn)
+
+    def setInfluences(self, importedInfluences, existingInfluences):
+        infs = list(existingInfluences)
+        infs.sort()
+        self.existingInfluences.addItem(infs)
+
+        width = 200
+        for inf in importedInfluences:
+            row = QtWidgets.QHBoxLayout()
+            self.importedInfluenceLayout.addLayout(row)
+
+            label = QtWidgets.QLabel(inf)
+            row.addWidget(label)
+
+            toggleBtn = QtWidgets.QPushButton('->')
+            toggleBtn.setMaximumWidth(30)
+            row.addWidget(toggleBtn)
+
+            label = QtWidgets.QLabel('')
+            label.setMaximumWidth(width)
+            label.setSizePolicy(QtWidgets.QSizePolicy.Fixed, QtWidgets.QSizePolicy.Fixed)
+            row.addWidget(label)
+
+            toggleBtn.released.connect(partial(self.setInfluencesMapping, src=inf, label=label))
+
+        self.importedInfluenceLayout.addStretch()
+
+
+    def setInfluencesMapping(self, src, label):
+        selectedInfluence = self.existingInfluences.selectedItems()
+
+        if not selectedInfluence:
+            return
+
+        dst = selectedInfluence[0].text()
+
+        label.setText(dst)
+
+        self.mapping[src] = dst
+
+        index = self.existingInfluences.indexFromItem(selectedInfluence[0])
+
+        item = self.existingInfluences.takeItem(index.row())
+
+        del item
+
+
+class SkinIODialog(QtWidgets.QDialog):
+
+    def __init__(self, parent=None):
+        super(SkinIODialog, self).__init__(parent)
+
+        self.setWindowTitle('Skin IO')
+        self.setObjectName('skinioWidget')
+        self.setModal(False)
+        self.setFixedSize(200, 80)
+
+        self.vbox = QtWidgets.QVBoxLayout()
+        self.setLayout(self.vbox)
+
+        self.exportBtn = QtWidgets.QPushButton("Export")
+        self.vbox.addWidget(self.exportBtn)
+        self.exportBtn.clicked.connect(SkinCluster.export)
+
+        self.importBtn = QtWidgets.QPushButton("Import")
+        self.vbox.addWidget(self.importBtn)
+        self.importBtn.clicked.connect(SkinCluster.createAndImport)

@@ -202,12 +202,13 @@ class SkinCluster(object):
                 raise RuntimeError('No shape selected')
 
         self.shape = getShape(shape)
-
         if not self.shape:
             raise RuntimeError('No shape connected to %s' % shape)
 
         # Get the skinCluster node attached to the shape
         self.node = SkinCluster.getSkinCluster(self.shape)
+        if not self.node:
+            raise ValueError('No skinCluster attached to %s' % self.shape)
 
         # Get the skinCluster MObject
         selectionList = openmaya.MSelectionList()
@@ -221,17 +222,17 @@ class SkinCluster(object):
 
     def gatherData(self):
         """
-        get and store the skinningMeshod and normalizeWeights attributes in data dictionary
+        get and store the skinningMethod and normalizeWeights attributes in data dictionary
         :return: None
         """
-        dagPath, components = self._getGeometryComponents()
+        dagPath, components = self.__getGeometryComponents()
         self.gatherInfluenceWeights(dagPath, components)
         self.gatherBlendWeights(dagPath, components)
 
         for attr in ['skinningMethod', 'normalizeWeights']:
             self.data[attr] = cmds.getAttr('%s.%s' % (self.node, attr))
 
-    def _getGeometryComponents(self):
+    def __getGeometryComponents(self):
         """
         get the dagPath of influence object(joint) and Geometry components(vertex)
         :return: dagPath, componnets
@@ -261,7 +262,7 @@ class SkinCluster(object):
         :return: None
         """
         # Gathers all the influence weights
-        weights = self._getCurrentWeights(dagPath, components)
+        weights = self.__getCurrentWeights(dagPath, components)
 
         influencePaths = openmaya.MDagPathArray()
         # influencePaths is the fullPath of the object(joint)
@@ -275,8 +276,7 @@ class SkinCluster(object):
             # to import if the namespace is different
             influenceNameWithoutNamespace = SkinCluster.removeNamespaceFromString(influenceName)
             # store the weight of each influence object(joint) for same ordered components(vertex)
-            self.data['weights'][influenceNameWithoutNamespace] = [weights[jj * numInfluences + ii] for jj in
-                                                                  range(numComponentsPerInfluence)]
+            self.data['weights'][influenceNameWithoutNamespace] = [weights[jj * numInfluences + ii] for jj in range(numComponentsPerInfluence)]
 
     def gatherBlendWeights(self, dagPath, components):
         """
@@ -289,7 +289,7 @@ class SkinCluster(object):
         self.fn.getBlendWeights(dagPath, components, weights)
         self.data['blendWeights'] = [weights[i] for i in range(weights.length())]
 
-    def _getCurrentWeights(self, dagPath, components):
+    def __getCurrentWeights(self, dagPath, components):
         """
         Get the current weights array. Be careful about the weight array, it is a giant single array.
         The order of the weights array is dependent on the indices of the joint
@@ -311,7 +311,7 @@ class SkinCluster(object):
         return weights
 
     def exportSkin(self, filePath=None):
-        """
+        self.return_ = """
         Export the skinCluster data to disk
         :param filePath: File Path
         :return:
@@ -343,7 +343,7 @@ class SkinCluster(object):
         :return:
         """
         self.data = data
-        dagPath, components = self._getGeometryComponents()
+        dagPath, components = self.__getGeometryComponents()
         self.setInfluenceWeights(dagPath, components)
         self.setBlendWeights(dagPath, components)
 
@@ -358,7 +358,7 @@ class SkinCluster(object):
         :return:
         """
         # get the existing weights and fill in the new weights
-        weights = self._getCurrentWeights(dagPath, components)
+        weights = self.__getCurrentWeights(dagPath, components)
         influencePaths = openmaya.MDagPathArray()
         numInfluences = self.fn.influenceObjects(influencePaths)
         numComponentsPerInfluence = weights.length() / numInfluences
@@ -366,18 +366,18 @@ class SkinCluster(object):
         # Keep track of which imported influences aren't used
         unusedImports = []
         # Keep track of which existing influences don't get anything imported
-        noMatch = [influencePaths[ii].partialPathName() for ii in range(influencePaths.length())]
+        noMatch = [influencePaths[ii].partialPathName() for ii in xrange(influencePaths.length())]
 
         for importedInfluence, importedWeights in self.data['weights'].items():
-            for ii in range(influencePaths.length()):
+            for inf_count in xrange(influencePaths.length()):
                 # partialPathName used to return exclusive partial path name of the object
-                influenceName = influencePaths[ii].partialPathName()
+                influenceName = influencePaths[inf_count].partialPathName()
                 influenceWithoutNamespace = SkinCluster.removeNamespaceFromString(influenceName)
 
                 if influenceWithoutNamespace == importedInfluence:
                     # Store the imported weights into the MDoubeArray
-                    for jj in range(numComponentsPerInfluence):
-                        weights.set(importedWeights[jj], jj * numInfluences + ii)
+                    for jj in xrange(numComponentsPerInfluence):
+                        weights.set(importedWeights[jj], jj * numInfluences + inf_count)
 
                     noMatch.remove(influenceName)
                     break
@@ -388,15 +388,14 @@ class SkinCluster(object):
             mappingDialog = WeightRemapDialog(getMayaWindow())
             mappingDialog.setInfluences(unusedImports, noMatch)
             mappingDialog.exec_()
-
             for src, dst in mappingDialog.mapping.items():
                 for ii in range(influencePaths.length()):
                     if influencePaths[ii].partialPathName() == dst:
                         for jj in range(numComponentsPerInfluence):
-                            weights.set(self.data['weights'][src][jj], jj * numInfluences + ii)
+                            weights.set(self.data['weights'][src][jj], jj*numInfluences+ii)
                         break
 
-        influenceIndics = openmaya.MIntArray()
+        influenceIndics = openmaya.MIntArray(numInfluences)
         for ii in range(numInfluences):
             influenceIndics.set(ii, ii)
         self.fn.setWeights(dagPath, components, influenceIndics, weights, False)

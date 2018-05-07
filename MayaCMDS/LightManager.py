@@ -251,7 +251,7 @@ class LightWidget(QtWidgets.QWidget):
         """
         lamba val: self.light.getTransform().visibility.set*(val)
         
-        The up is same as below function
+        The above line is same as below function
         
         def setLightVisibility(self, val):
             transform = self.light.getTransform()

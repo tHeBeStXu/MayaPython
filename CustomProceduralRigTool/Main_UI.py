@@ -2,7 +2,6 @@ from PySide2 import QtWidgets, QtCore, QtGui
 from functools import partial
 import maya.OpenMayaUI as omui
 import pymel.core as pm
-import Qt
 import json
 import time
 import os
@@ -149,15 +148,29 @@ class RiggingMainUI(QtWidgets.QWidget):
     def saveRig(self):
         properties = {}
 
-        # for rigWidget in self.findChildren(rigWidget):
-
+        ##################################################
+        # for rigWidget in self.findChildren(rigWidget): #
+        ##################################################
         rigLogDir = self.getDirectory()
-        rigLogFile = os.path.join(rigLogDir, 'rigLogFile')
+        rigLogFile = os.path.join(rigLogDir, 'rigLogFile_%s.json' % time.strftime('%m%d_%H:%M'))
+        with open(rigLogFile, 'w') as f:
+            json.dump(properties, f, indent=4)
 
-        print "save Rig log file"
+        logger.info('Saving rig file to %s' % rigLogFile)
 
 
-    def addRigPart(self):
+    def addRigPart(self, rigType=None, add=True):
+        if not rigType:
+            rigType = self.rigTypeCB.currentText()
+
+        func = self.rigTypes[rigType]
+
+        rig = func()
+
+        ######################
+        ######################
+        if add:
+            self.addRigPart()
         pass
 
     def getDirectory(self):

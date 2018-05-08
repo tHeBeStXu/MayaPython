@@ -51,6 +51,8 @@ def getDock(name='ProceduralRiggingTool'):
     return ptr
 
 
+
+
 class RiggingMainUI(QtWidgets.QWidget):
 
     rigTypes = {"head": partial(pm.polyCube, name='head'),
@@ -92,15 +94,18 @@ class RiggingMainUI(QtWidgets.QWidget):
         layout.addWidget(self.rigTypeCB, 0, 0, 1, 2)
 
         addBtn = QtWidgets.QPushButton('Add')
-        addBtn.clicked.connect(self.addRigPart)
+        addBtn.clicked.connect(self.addRigWidget)
         layout.addWidget(addBtn, 0, 2)
 
         # Rig File Name
         proNameLabel = QtWidgets.QLabel('Rig Name: ')
         proNameLabel.setAlignment(QtCore.Qt.AlignCenter)
-        proNameLineEdit = QtWidgets.QLineEdit('Procedural Rig')
+
+        self.proNameLineEdit = QtWidgets.QLineEdit('Procedural Rig')
+        self.proNameLineEdit.textChanged.connect(self.setLineEditText)
+
         layout.addWidget(proNameLabel, 1, 0)
-        layout.addWidget(proNameLineEdit, 1, 1, 1, 2)
+        layout.addWidget(self.proNameLineEdit, 1, 1, 1, 2)
 
         # Scroll Widget
         scrollWidget = QtWidgets.QWidget()
@@ -137,6 +142,8 @@ class RiggingMainUI(QtWidgets.QWidget):
         skinLayout.addWidget(skinExportBtn)
         skinLayout.addWidget(skinImportBtn)
 
+    def setLineEditText(self):
+        self.projectName = self.proNameLineEdit.text()
 
     def createRig(self):
         self.saveRig()
@@ -147,31 +154,29 @@ class RiggingMainUI(QtWidgets.QWidget):
 
     def saveRig(self):
         properties = {}
+        properties['Procedural Rig Name'] = str(self.projectName)
 
-        ##################################################
-        # for rigWidget in self.findChildren(rigWidget): #
-        ##################################################
+        rigs = self.findChildren(rigWidget)
+        print rigs
+        for rig in rigs:
+            print rig
+            rigType = rig.rigTypeName
+            properties[rigType][] = {'rigName': str(rig.rigPartName)}
+
         rigLogDir = self.getDirectory()
-        rigLogFile = os.path.join(rigLogDir, 'rigLogFile_%s.json' % time.strftime('%m%d_%H:%M'))
+        rigLogFile = os.path.join(rigLogDir, 'rigLogFile_%s.json' % time.strftime('%m%d_%H_%M'))
         with open(rigLogFile, 'w') as f:
             json.dump(properties, f, indent=4)
 
         logger.info('Saving rig file to %s' % rigLogFile)
 
-
-    def addRigPart(self, rigType=None, add=True):
+    def addRigWidget(self, rigType=None):
         if not rigType:
             rigType = self.rigTypeCB.currentText()
 
-        func = self.rigTypes[rigType]
-
-        rig = func()
-
-        ######################
-        ######################
-        if add:
-            self.addRigPart()
-        pass
+        widget = rigWidget(rigType)
+        self.scrollLayout.addWidget(widget)
+        print 'Add Rig Part'
 
     def getDirectory(self):
         rigLogDir = os.path.join(pm.internalVar(userAppDir=1), 'rigLogFiles')
@@ -180,13 +185,52 @@ class RiggingMainUI(QtWidgets.QWidget):
         return rigLogDir
 
 
-
 class rigWidget(QtWidgets.QWidget):
 
     def __init__(self, rigType):
-        super(rigWidget, super).__init__()
+        super(rigWidget, self).__init__()
 
+        self.property = {}
+
+        self.rigTypeName = rigType
+
+        self.rigPartName = None
+        self.rigPartLineEdit = None
+        self.editBtn = None
         self.buildUI()
 
     def buildUI(self):
-        pass
+        layout = QtWidgets.QGridLayout(self)
+        layout.setRowStretch(1, 1)
+        layout.setRowStretch(2, 1)
+        label = QtWidgets.QLabel('Rig part: ')
+        label.setAlignment(QtCore.Qt.AlignRight)
+
+        self.rigPartLineEdit = QtWidgets.QLineEdit(str(self.rigTypeName))
+        self.rigPartLineEdit.textChanged.connect(self.setRigPartName)
+
+        closeBtn = QtWidgets.QPushButton('X')
+        closeBtn.clicked.connect(self.deleteRigPart)
+        closeBtn.setMaximumWidth(20)
+
+
+        self.editBtn = QtWidgets.QPushButton('Edit...')
+        # self.editBtn.setMaximumWidth(80)
+        self.editBtn.clicked.connect(self.editRigPart)
+
+        layout.addWidget(closeBtn, 0, 0, 1, 1)
+        layout.addWidget(label, 1, 0, 1, 1)
+        layout.addWidget(self.rigPartLineEdit, 1, 1, 1, 2)
+        layout.addWidget(self.editBtn, 2, 0, 1, 3)
+
+    def deleteRigPart(self):
+        self.setParent(None)
+        self.setVisible(False)
+        self.deleteLater()
+
+    def editRigPart(self):
+        print "Edit Rig Part..."
+
+    def setRigPartName(self):
+        self.rigPartName = self.rigPartLineEdit.text()
+

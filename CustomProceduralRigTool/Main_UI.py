@@ -80,6 +80,8 @@ class RiggingMainUI(QtWidgets.QWidget):
 
         self.parent().layout().addWidget(self)
 
+        self.projectName = ''
+
         if not dock:
             parent.show()
 
@@ -102,7 +104,7 @@ class RiggingMainUI(QtWidgets.QWidget):
         proNameLabel.setAlignment(QtCore.Qt.AlignCenter)
 
         self.proNameLineEdit = QtWidgets.QLineEdit('Procedural Rig')
-        self.proNameLineEdit.textChanged.connect(self.setLineEditText)
+        self.proNameLineEdit.textEdited.connect(self.setLineEditText)
 
         layout.addWidget(proNameLabel, 1, 0)
         layout.addWidget(self.proNameLineEdit, 1, 1, 1, 2)
@@ -153,22 +155,31 @@ class RiggingMainUI(QtWidgets.QWidget):
         print "import RIG log file"
 
     def saveRig(self):
+        """
+        Save the rig file to the disk
+        :return: None
+        """
         properties = {}
         properties['Procedural Rig Name'] = str(self.projectName)
 
-        rigs = self.findChildren(rigWidget)
-        print rigs
-        for rig in rigs:
-            print rig
-            rigType = rig.rigTypeName
-            properties[rigType][] = {'rigName': str(rig.rigPartName)}
 
-        rigLogDir = self.getDirectory()
-        rigLogFile = os.path.join(rigLogDir, 'rigLogFile_%s.json' % time.strftime('%m%d_%H_%M'))
-        with open(rigLogFile, 'w') as f:
-            json.dump(properties, f, indent=4)
+        for rig in self.findChildren(rigWidget):
+            if str(rig.rigPartName) in properties.keys():
+                # raise RuntimeError("Rig file save failed, you have already same name rig part name!")
+                logger.info("Rig file save failed, you have already same name rig part name")
+                break
+            properties[str(rig.rigPartName)] = {}
+            properties[str(rig.rigPartName)]['rigType'] = rig.rigTypeName
 
-        logger.info('Saving rig file to %s' % rigLogFile)
+        if len(properties.keys()) == len(self.findChildren(rigWidget)) + 1:
+
+            rigLogDir = self.getDirectory()
+            rigLogFile = os.path.join(rigLogDir, 'rigLogFile_%s.json' % time.strftime('%m%d_%H_%M'))
+            with open(rigLogFile, 'w') as f:
+                json.dump(properties, f, indent=4)
+
+            logger.info('Saving rig file to %s' % rigLogFile)
+
 
     def addRigWidget(self, rigType=None):
         if not rigType:
@@ -207,7 +218,7 @@ class rigWidget(QtWidgets.QWidget):
         label.setAlignment(QtCore.Qt.AlignRight)
 
         self.rigPartLineEdit = QtWidgets.QLineEdit(str(self.rigTypeName))
-        self.rigPartLineEdit.textChanged.connect(self.setRigPartName)
+        self.rigPartLineEdit.textEdited.connect(self.setRigPartName)
 
         closeBtn = QtWidgets.QPushButton('X')
         closeBtn.clicked.connect(self.deleteRigPart)

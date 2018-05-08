@@ -166,7 +166,7 @@ class RiggingMainUI(QtWidgets.QWidget):
         for rig in self.findChildren(rigWidget):
             if str(rig.rigPartName) in properties.keys():
                 # raise RuntimeError("Rig file save failed, you have already same name rig part name!")
-                logger.info("Rig file save failed, you have already same name rig part name")
+                logger.info("Rig file save failed, you have already same name rig part!!!")
                 break
             properties[str(rig.rigPartName)] = {}
             properties[str(rig.rigPartName)]['rigType'] = rig.rigTypeName
@@ -198,12 +198,14 @@ class RiggingMainUI(QtWidgets.QWidget):
 
 class rigWidget(QtWidgets.QWidget):
 
-    def __init__(self, rigType):
+    def __init__(self, rigTypeName):
         super(rigWidget, self).__init__()
+
+        self.setMinimumWidth(250)
 
         self.property = {}
 
-        self.rigTypeName = rigType
+        self.rigTypeName = rigTypeName
 
         self.rigPartName = None
         self.rigPartLineEdit = None

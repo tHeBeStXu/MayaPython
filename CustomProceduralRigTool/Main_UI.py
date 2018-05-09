@@ -9,6 +9,9 @@ from shiboken2 import wrapInstance
 
 import logging
 
+import Edit_UI
+reload(Edit_UI)
+
 
 logging.basicConfig()
 logger = logging.getLogger('ProceduralRiggingTool')
@@ -170,6 +173,7 @@ class RiggingMainUI(QtWidgets.QWidget):
                 break
             properties[str(rig.rigPartName)] = {}
             properties[str(rig.rigPartName)]['rigType'] = rig.rigTypeName
+            properties[str(rig.rigPartName)]['rigArgs'] = rig.rigArgs
 
         if len(properties.keys()) == len(self.findChildren(rigWidget)) + 1:
 
@@ -203,7 +207,7 @@ class rigWidget(QtWidgets.QWidget):
 
         self.setMinimumWidth(250)
 
-        self.property = {}
+        self.rigArgs = {}
 
         self.rigTypeName = rigTypeName
 
@@ -242,6 +246,9 @@ class rigWidget(QtWidgets.QWidget):
         self.deleteLater()
 
     def editRigPart(self):
+        editWidget = Edit_UI.EditUI(self)
+
+
         print "Edit Rig Part..."
 
     def setRigPartName(self):

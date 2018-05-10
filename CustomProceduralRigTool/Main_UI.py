@@ -54,13 +54,11 @@ def getDock(name='ProceduralRiggingTool'):
     return ptr
 
 
-
-
 class RiggingMainUI(QtWidgets.QWidget):
 
-    rigTypes = {"head": partial(pm.polyCube, name='head'),
-                "leg": partial(pm.sphere, name='leg'),
-                "body": partial(pm.cylinder, name='body')}
+    rigTypes = {'IK_FK_Spine': partial(pm.polyCube, name='spine'),
+                'IK_FK_Arm': partial(pm.sphere, name='leg'),
+                'IK_Leg': partial(pm.cylinder, name='body')}
 
     def __init__(self, dock=1):
         if dock:
@@ -94,7 +92,7 @@ class RiggingMainUI(QtWidgets.QWidget):
 
         self.rigTypeCB = QtWidgets.QComboBox()
 
-        for rigType in sorted(self.rigTypes):
+        for rigType in sorted(self.rigTypes.keys()):
             self.rigTypeCB.addItem(rigType)
         layout.addWidget(self.rigTypeCB, 0, 0, 1, 2)
 
@@ -189,7 +187,7 @@ class RiggingMainUI(QtWidgets.QWidget):
         if not rigType:
             rigType = self.rigTypeCB.currentText()
 
-        widget = rigWidget(rigType)
+        widget = rigWidget(rigType,)
         self.scrollLayout.addWidget(widget)
         print 'Add Rig Part'
 
@@ -246,7 +244,15 @@ class rigWidget(QtWidgets.QWidget):
         self.deleteLater()
 
     def editRigPart(self):
-        editWidget = Edit_UI.EditUI(self)
+        if self.rigTypeName == 'IK_FK_Spine':
+            Edit_UI.IK_FK_Spine_EditUI(self, self.rigTypeName)
+        elif self.rigTypeName == 'IK_FK_Arm':
+            Edit_UI.IK_FK_Arm_EditUI(self, self.rigTypeName)
+        elif self.rigTypeName == 'IK_Leg':
+            Edit_UI.IK_LEG_EditUI(self, self.rigTypeName)
+        else:
+            logger.debug('Unknown rig type...')
+
 
 
         print "Edit Rig Part..."

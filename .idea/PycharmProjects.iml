@@ -4,5 +4,11 @@
     <content url="file://$MODULE_DIR$" />
     <orderEntry type="jdk" jdkName="Maya2018" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module" module-name="MayaAPI" />
+    <orderEntry type="module" module-name="Qt.py" />
+    <orderEntry type="module" module-name="SkinExporter" />
+  </component>
+  <component name="TestRunnerService">
+    <option name="PROJECT_TEST_RUNNER" value="Unittests" />
   </component>
 </module>

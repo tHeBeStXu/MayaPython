@@ -1,4 +1,4 @@
-from PySide2 import QtWidgets, QtCore, QtGui
+from PySide2 import QtWidgets, QtCore
 from functools import partial
 import maya.OpenMayaUI as omui
 import pymel.core as pm
@@ -56,11 +56,15 @@ def getDock(name='ProceduralRiggingTool'):
 
 class RiggingMainUI(QtWidgets.QWidget):
 
-    rigTypes = {'IK_FK_Spine': partial(pm.polyCube, name='spine'),
-                'IK_FK_Arm': partial(pm.sphere, name='leg'),
-                'IK_Leg': partial(pm.cylinder, name='body')}
+    rigTypes = {'IK_FK_Spine': '',
+                'IK_FK_Arm': '',
+                'IK_Leg': ''}
 
     def __init__(self, dock=1):
+        """
+        Initialize and show the main window.
+        :param dock: whether the main window is docked or not
+        """
         if dock:
             parent = getDock()
         else:
@@ -88,6 +92,10 @@ class RiggingMainUI(QtWidgets.QWidget):
 
 
     def buildUI(self):
+        """
+        Build the Main UI
+        :return: None
+        """
         layout = QtWidgets.QGridLayout(self)
 
         self.rigTypeCB = QtWidgets.QComboBox()
@@ -146,28 +154,58 @@ class RiggingMainUI(QtWidgets.QWidget):
         skinLayout.addWidget(skinImportBtn)
 
     def setLineEditText(self):
+        """
+        Set the Rig project name and store it in self.projectName
+        :return: None
+        """
         self.projectName = self.proNameLineEdit.text()
 
     def createRig(self):
+        # Before create the rig, every time save the rig first!
         self.saveRig()
         print "create Rig!"
 
     def importRig(self):
-        print "import RIG log file"
+        """
+        Get the rigLog file from the specified directory and set the rig
+        :return: None
+        """
+        directory = self.getDirectory()
+        fileName = QtWidgets.QFileDialog.getOpenFileName(self, 'Rig File Browser', directory)
+        with open(fileName[0], 'r') as f:
+            properties = json.load(f)
+
+            # check the properties is None or not
+            if not properties:
+                raise RuntimeError('Procedural Rig Name not found, please check the rig file')
+            else:
+                # Set the rig project name first
+                self.proNameLineEdit.setText(str(properties['Procedural Rig Name']))
+                # Delete the key and info to get the other info in a for loop
+                del properties['Procedural Rig Name']
+
+            # Set the info
+            for key in properties.keys():
+                self.addRigWidget(properties[key]['rigType'])
+                self.widget.rigArgs = properties[key]['rigArgs']
+                self.widget.rigPartLineEdit.setText(str(key))
+                # Be sure to set the rigPartName of each widget
+                self.widget.setRigPartName()
+
+        logger.info('import %s rig log file.' % fileName[0])
 
     def saveRig(self):
         """
-        Save the rig file to the disk
+        Save the rig info to a .json file at the specified directory
         :return: None
         """
         properties = {}
         properties['Procedural Rig Name'] = str(self.projectName)
 
-
         for rig in self.findChildren(rigWidget):
             if str(rig.rigPartName) in properties.keys():
                 # raise RuntimeError("Rig file save failed, you have already same name rig part name!")
-                logger.info("Rig file save failed, you have already same name rig part!!!")
+                logger.debug("Rig file save failed, you have already same name rig part!!!")
                 break
             properties[str(rig.rigPartName)] = {}
             properties[str(rig.rigPartName)]['rigType'] = rig.rigTypeName
@@ -184,14 +222,24 @@ class RiggingMainUI(QtWidgets.QWidget):
 
 
     def addRigWidget(self, rigType=None):
+        """
+        Add rig widget to the scroll Layout with specified rigType
+        :param rigType: rigType of the rig widget
+        :return: None
+        """
         if not rigType:
             rigType = self.rigTypeCB.currentText()
 
-        widget = rigWidget(rigType,)
-        self.scrollLayout.addWidget(widget)
-        print 'Add Rig Part'
+        self.widget = rigWidget(rigType)
+        self.scrollLayout.addWidget(self.widget)
+
+        logger.debug('Add a %s Rig Part' % rigType)
 
     def getDirectory(self):
+        """
+        set and get the rig Log directory
+        :return: rig log directory
+        """
         rigLogDir = os.path.join(pm.internalVar(userAppDir=1), 'rigLogFiles')
         if not os.path.exists(rigLogDir):
             os.mkdir(rigLogDir)
@@ -215,6 +263,10 @@ class rigWidget(QtWidgets.QWidget):
         self.buildUI()
 
     def buildUI(self):
+        """
+        build the UI layout
+        :return: None
+        """
         layout = QtWidgets.QGridLayout(self)
         layout.setRowStretch(1, 1)
         layout.setRowStretch(2, 1)
@@ -239,24 +291,34 @@ class rigWidget(QtWidgets.QWidget):
         layout.addWidget(self.editBtn, 2, 0, 1, 3)
 
     def deleteRigPart(self):
+        """
+        delete the rig part
+        :return: None
+        """
         self.setParent(None)
         self.setVisible(False)
         self.deleteLater()
 
     def editRigPart(self):
+        """
+        Set the rig part info
+        :return: None
+        """
         if self.rigTypeName == 'IK_FK_Spine':
             Edit_UI.IK_FK_Spine_EditUI(self, self.rigTypeName)
         elif self.rigTypeName == 'IK_FK_Arm':
             Edit_UI.IK_FK_Arm_EditUI(self, self.rigTypeName)
         elif self.rigTypeName == 'IK_Leg':
-            Edit_UI.IK_LEG_EditUI(self, self.rigTypeName)
+            Edit_UI.IK_Leg_EditUI(self, self.rigTypeName)
         else:
             logger.debug('Unknown rig type...')
 
-
-
-        print "Edit Rig Part..."
+        logger.info('Edit %s Rig Part...' % self.rigTypeName)
 
     def setRigPartName(self):
+        """
+        Set the rig part name of the widget
+        :return: None
+        """
         self.rigPartName = self.rigPartLineEdit.text()
 

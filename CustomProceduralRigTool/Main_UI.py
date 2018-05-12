@@ -267,28 +267,38 @@ class rigWidget(QtWidgets.QWidget):
         build the UI layout
         :return: None
         """
-        layout = QtWidgets.QGridLayout(self)
-        layout.setRowStretch(1, 1)
-        layout.setRowStretch(2, 1)
-        label = QtWidgets.QLabel('Rig part: ')
-        label.setAlignment(QtCore.Qt.AlignRight)
+        editWidgetLayout = QtWidgets.QVBoxLayout(self)
+        editWidgetLayout.setAlignment(QtCore.Qt.AlignTop)
+        editWidgetLayout.setSpacing(5)
 
-        self.rigPartLineEdit = QtWidgets.QLineEdit(str(self.rigTypeName))
-        self.rigPartLineEdit.textEdited.connect(self.setRigPartName)
+        closeBtnLayout = QtWidgets.QHBoxLayout()
+        editLineLayout = QtWidgets.QHBoxLayout()
+        editBtnLayout = QtWidgets.QHBoxLayout()
+
+        editWidgetLayout.addLayout(closeBtnLayout)
+        editWidgetLayout.addLayout(editLineLayout)
+        editWidgetLayout.addLayout(editBtnLayout)
 
         closeBtn = QtWidgets.QPushButton('X')
         closeBtn.clicked.connect(self.deleteRigPart)
         closeBtn.setMaximumWidth(20)
+        closeBtnLayout.addWidget(closeBtn)
+        closeBtnLayout.setAlignment(QtCore.Qt.AlignLeft)
+
+
+        label = QtWidgets.QLabel('Rig part: ')
+        label.setAlignment(QtCore.Qt.AlignRight)
+        self.rigPartLineEdit = QtWidgets.QLineEdit(str(self.rigTypeName))
+        self.rigPartLineEdit.textEdited.connect(self.setRigPartName)
+        editLineLayout.addWidget(label)
+        editLineLayout.addWidget(self.rigPartLineEdit)
 
 
         self.editBtn = QtWidgets.QPushButton('Edit...')
-        # self.editBtn.setMaximumWidth(80)
+        self.editBtn.setMaximumWidth(80)
         self.editBtn.clicked.connect(self.editRigPart)
+        editBtnLayout.addWidget(self.editBtn)
 
-        layout.addWidget(closeBtn, 0, 0, 1, 1)
-        layout.addWidget(label, 1, 0, 1, 1)
-        layout.addWidget(self.rigPartLineEdit, 1, 1, 1, 2)
-        layout.addWidget(self.editBtn, 2, 0, 1, 3)
 
     def deleteRigPart(self):
         """

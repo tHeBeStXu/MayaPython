@@ -112,11 +112,13 @@ class IK_FK_Spine_EditUI(EditUI):
         self.rowItem['fkSpineCrv'] = QtWidgets.QLineEdit()
         self.rowItem['prefix'] = QtWidgets.QLineEdit()
         self.rowItem['rigScale'] = QtWidgets.QLineEdit()
+        self.rowItem['baseRig'] = QtWidgets.QLineEdit()
 
         formLayout.addRow('spineJoints: ', self.rowItem['spineJoints'])
         formLayout.addRow('fkSpineCrv: ', self.rowItem['fkSpineCrv'])
         formLayout.addRow('prefix: ', self.rowItem['prefix'])
         formLayout.addRow('rigScale', self.rowItem['rigScale'])
+        formLayout.addRow('baseRig: ', self.rowItem['baseRig'])
 
         self.createGeneralButton(layout)
 
@@ -129,7 +131,7 @@ class IK_FK_Spine_EditUI(EditUI):
         self.specifiedInstance.rigArgs['fkSpineCrv'] = self.rowItem['fkSpineCrv'].text()
         self.specifiedInstance.rigArgs['prefix'] = self.rowItem['prefix'].text()
         self.specifiedInstance.rigArgs['rigScale'] = self.rowItem['rigScale'].text()
-
+        self.specifiedInstance.rigArgs['baseRig'] = self.rowItem['baseRig'].text()
 
 class IK_FK_Arm_EditUI(EditUI):
     def __init__(self, instance, UI_name):
@@ -152,19 +154,25 @@ class IK_FK_Arm_EditUI(EditUI):
 
         self.rowItem = {}
 
-        self.rowItem['TopJoint'] = QtWidgets.QLineEdit()
+        self.rowItem['topJoint'] = QtWidgets.QLineEdit()
         self.rowItem['startDupJnt'] = QtWidgets.QLineEdit()
         self.rowItem['endDupJnt'] = QtWidgets.QLineEdit()
         self.rowItem['prefix'] = QtWidgets.QLineEdit()
         self.rowItem['armPvLoc'] = QtWidgets.QLineEdit()
         self.rowItem['switchCtrlLoc'] = QtWidgets.QLineEdit()
+        self.rowItem['rigScale'] = QtWidgets.QLineEdit()
+        self.rowItem['fkPreParent'] = QtWidgets.QLineEdit()
+        self.rowItem['baseRig'] = QtWidgets.QLineEdit()
 
-        formLayout.addRow('TopJoint: ', self.rowItem['TopJoint'])
+        formLayout.addRow('topJoint: ', self.rowItem['topJoint'])
         formLayout.addRow('startDupJnt: ', self.rowItem['startDupJnt'])
         formLayout.addRow('endDupJnt: ', self.rowItem['endDupJnt'])
         formLayout.addRow('prefix: ', self.rowItem['prefix'])
         formLayout.addRow('armPvLoc: ', self.rowItem['armPvLoc'])
         formLayout.addRow('switchCtrlLoc', self.rowItem['switchCtrlLoc'])
+        formLayout.addRow('rigScale', self.rowItem['rigScale'])
+        formLayout.addRow('fkPreParent', self.rowItem['fkPreParent'])
+        formLayout.addRow('baseRig', self.rowItem['baseRig'])
 
         self.createGeneralButton(layout)
 
@@ -173,12 +181,15 @@ class IK_FK_Arm_EditUI(EditUI):
         Save the args info to the specified rig widget's rigArgs dictionary
         :return: None
         """
-        self.specifiedInstance.rigArgs['TopJoint'] = self.rowItem['TopJoint'].text()
+        self.specifiedInstance.rigArgs['topJoint'] = self.rowItem['topJoint'].text()
         self.specifiedInstance.rigArgs['startDupJnt'] = self.rowItem['startDupJnt'].text()
         self.specifiedInstance.rigArgs['endDupJnt'] = self.rowItem['endDupJnt'].text()
         self.specifiedInstance.rigArgs['prefix'] = self.rowItem['prefix'].text()
         self.specifiedInstance.rigArgs['armPvLoc'] = self.rowItem['armPvLoc'].text()
         self.specifiedInstance.rigArgs['switchCtrlLoc'] = self.rowItem['switchCtrlLoc'].text()
+        self.specifiedInstance.rigArgs['rigScale'] = self.rowItem['rigScale'].text()
+        self.specifiedInstance.rigArgs['fkPreParent'] = self.rowItem['fkPreParent'].text()
+        self.specifiedInstance.rigArgs['baseRig'] = self.rowItem['baseRig'].text()
 
 
 class IK_Leg_EditUI(EditUI):
@@ -209,6 +220,7 @@ class IK_Leg_EditUI(EditUI):
         self.rowItem['prefix'] = QtWidgets.QLineEdit()
         self.rowItem['rigScale'] = QtWidgets.QLineEdit()
         self.rowItem['rollCtrlLOC'] = QtWidgets.QLineEdit()
+        self.rowItem['baseRig'] = QtWidgets.QLineEdit()
 
         formLayout.addRow('topJoint:', self.rowItem['topJoint'])
         formLayout.addRow('pvLocator: ', self.rowItem['pvLocator'])
@@ -216,6 +228,7 @@ class IK_Leg_EditUI(EditUI):
         formLayout.addRow('prefix:', self.rowItem['prefix'])
         formLayout.addRow('rigScale:', self.rowItem['rigScale'])
         formLayout.addRow('rollCtrlLOC: ', self.rowItem['rollCtrlLOC'])
+        formLayout.addRow('baseRig: ', self.rowItem['baseRig'])
 
         self.createGeneralButton(layout)
 
@@ -230,4 +243,5 @@ class IK_Leg_EditUI(EditUI):
         self.specifiedInstance.rigArgs['prefix'] = self.rowItem['prefix'].text()
         self.specifiedInstance.rigArgs['rigScale'] = self.rowItem['rigScale'].text()
         self.specifiedInstance.rigArgs['rollCtrlLOC'] = self.rowItem['rollCtrlLOC'].text()
+        self.specifiedInstance.rigArgs['baseRig'] = self.rowItem['baseRig'].text()
 

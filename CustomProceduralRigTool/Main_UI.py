@@ -7,6 +7,8 @@ import time
 import os
 from shiboken2 import wrapInstance
 
+from rigLib.rig import *
+
 import logging
 
 import Edit_UI
@@ -168,17 +170,46 @@ class RiggingMainUI(QtWidgets.QWidget):
         # Before create the rig, save the rig first!
         self.saveRig()
 
+        # Spine parts
         for rig in self.findChildren(rigWidget):
-            if rig.rigPartName == 'IK_FK_Spine':
-                pass
-            elif rig.rigPartName == 'IK_FK_Arm':
-                pass
-            elif rig.rigPartName == 'IK_Leg':
-                pass
+            if rig.rigTypeName == 'IK_FK_Spine' and rig.rigArgs:
+                IK_FK_Spine.build(spineJoints=rig.rigArgs['spineJoints'],
+                                  prefix=rig.rigArgs['prefix'],
+                                  rigScale=rig.rigArgs['rigScale'],
+                                  fkSpineCrv=rig.rigArgs['fkSpineCrv'])
+                logger.debug('%s IK_FK_Spine finished!' % str(rig.rigPartName))
             else:
-                logger.debug('Unknown rig part, creation failed!')
+                logger.debug("Can't find Spine part, please check your joints.")
+                break
 
-        print "create Rig!"
+        # Other parts
+        for rig in self.findChildren(rigWidget):
+            if rig.rigTypeName == 'IK_FK_Arm' and rig.rigArgs:
+                IK_FK_Arm.build(prefix=rig.rigArgs['prefix'],
+                                topJoint=rig.rigArgs['topJoint'],
+                                startDupJnt=rig.rigArgs['starDupJnt'],
+                                endDupJnt=rig.rigArgs['endDupJnt'],
+                                armPvLoc=rig.rigArgs['armPvLoc'],
+                                switchCtrlLoc=rig.rigArgs['switchCtrlLoc'],
+                                rigScale=rig.rigArgs['rigScale'],
+                                fkPreParent=rig.rigArgs['fkPreParent'],
+                                baseRig=rig.rigArgs['baseRig'])
+                logger.info('%s IK_FK_Arm build complete!' % str(rig.rigPartName))
+
+            elif rig.rigTypeName == 'IK_Leg' and rig.rigArgs:
+                IK_Leg.build(topJoint=rig.rigArgs['topJoint'],
+                             pvLocator=rig.rigArgs['pvLocator'],
+                             revLocator=rig.rigArgs['revLocator'],
+                             prefix=rig.rigArgs['prefix'],
+                             rigScale=rig.rigArgs['rigScale'],
+                             rollCtrlLOC=rig.rigArgs['rollCtrlLOC'],
+                             baseRig=rig.rigArgs['baseRig'])
+                logger.info('%s IK_Leg build complete!' % str(rig.rigPartName))
+            else:
+                logger.debug("Can't find the specified part, please check your rig type.")
+                break
+
+        logger.info("Create rig complete!")
 
     def importRig(self):
         """
@@ -300,7 +331,6 @@ class rigWidget(QtWidgets.QWidget):
         closeBtnLayout.addWidget(closeBtn)
         closeBtnLayout.setAlignment(QtCore.Qt.AlignLeft)
 
-
         label = QtWidgets.QLabel('Rig part: ')
         label.setAlignment(QtCore.Qt.AlignRight)
         self.rigPartLineEdit = QtWidgets.QLineEdit(str(self.rigTypeName))
@@ -308,12 +338,10 @@ class rigWidget(QtWidgets.QWidget):
         editLineLayout.addWidget(label)
         editLineLayout.addWidget(self.rigPartLineEdit)
 
-
         self.editBtn = QtWidgets.QPushButton('Edit...')
         self.editBtn.setMaximumWidth(80)
         self.editBtn.clicked.connect(self.editRigPart)
         editBtnLayout.addWidget(self.editBtn)
-
 
     def deleteRigPart(self):
         """
@@ -346,4 +374,3 @@ class rigWidget(QtWidgets.QWidget):
         :return: None
         """
         self.rigPartName = self.rigPartLineEdit.text()
-

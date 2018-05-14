@@ -161,8 +161,23 @@ class RiggingMainUI(QtWidgets.QWidget):
         self.projectName = self.proNameLineEdit.text()
 
     def createRig(self):
-        # Before create the rig, every time save the rig first!
+        """
+        Use the info to create the Rig
+        :return:
+        """
+        # Before create the rig, save the rig first!
         self.saveRig()
+
+        for rig in self.findChildren(rigWidget):
+            if rig.rigPartName == 'IK_FK_Spine':
+                pass
+            elif rig.rigPartName == 'IK_FK_Arm':
+                pass
+            elif rig.rigPartName == 'IK_Leg':
+                pass
+            else:
+                logger.debug('Unknown rig part, creation failed!')
+
         print "create Rig!"
 
     def importRig(self):

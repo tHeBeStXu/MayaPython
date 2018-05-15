@@ -1,7 +1,6 @@
 import pprint
 
-from maya import cmds
-
+import maya.cmds as cmds
 import ControllerLibrary
 reload(ControllerLibrary)
 # import and refresh ControllerLibrary module

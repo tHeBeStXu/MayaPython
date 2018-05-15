@@ -8,6 +8,7 @@ import os
 from shiboken2 import wrapInstance
 
 from rigLib.rig import *
+from skinLib import skinLib
 
 import logging
 
@@ -150,10 +151,15 @@ class RiggingMainUI(QtWidgets.QWidget):
         skinLayout = QtWidgets.QHBoxLayout()
         skinWidget.setLayout(skinLayout)
         layout.addWidget(skinWidget, 4, 0, 1, 3)
+        # export skin weights btn
         skinExportBtn = QtWidgets.QPushButton('Export Weights')
-        skinImportBtn = QtWidgets.QPushButton('Import Weights')
         skinLayout.addWidget(skinExportBtn)
+        skinExportBtn.clicked.connect(skinLib.SkinCluster.export)
+
+        # import skin weights btn
+        skinImportBtn = QtWidgets.QPushButton('Import Weights')
         skinLayout.addWidget(skinImportBtn)
+        skinImportBtn.clicked.connect(skinLib.SkinCluster.createAndImport)
 
     def setLineEditText(self):
         """

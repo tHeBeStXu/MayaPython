@@ -223,28 +223,34 @@ class RiggingMainUI(QtWidgets.QWidget):
         :return: None
         """
         directory = self.getDirectory()
+        # fileName = ['','']
         fileName = QtWidgets.QFileDialog.getOpenFileName(self, 'Rig File Browser', directory)
-        with open(fileName[0], 'r') as f:
-            properties = json.load(f)
 
-            # check the properties is None or not
-            if not properties:
-                raise RuntimeError('Procedural Rig Name not found, please check the rig file')
-            else:
-                # Set the rig project name first
-                self.proNameLineEdit.setText(str(properties['Procedural Rig Name']))
-                # Delete the key and info to get the other info in a for loop
-                del properties['Procedural Rig Name']
+        if not fileName[0]:
+            logger.debug('You have selected a null file, please check and select again.')
+            return
+        else:
+            with open(fileName[0], 'r') as f:
+                properties = json.load(f)
 
-            # Set the info
-            for key in properties.keys():
-                self.addRigWidget(properties[key]['rigType'])
-                self.widget.rigArgs = properties[key]['rigArgs']
-                self.widget.rigPartLineEdit.setText(str(key))
-                # Be sure to set the rigPartName of each widget
-                self.widget.setRigPartName()
+                # check the properties is None or not
+                if not properties:
+                    raise RuntimeError('Procedural Rig Name not found, please check the rig file')
+                else:
+                    # Set the rig project name first
+                    self.proNameLineEdit.setText(str(properties['Procedural Rig Name']))
+                    # Delete the key and info to get the other info in a for loop
+                    del properties['Procedural Rig Name']
 
-        logger.info('import %s rig log file.' % fileName[0])
+                # Set the info
+                for key in properties.keys():
+                    self.addRigWidget(properties[key]['rigType'])
+                    self.widget.rigArgs = properties[key]['rigArgs']
+                    self.widget.rigPartLineEdit.setText(str(key))
+                    # Be sure to set the rigPartName of each widget
+                    self.widget.setRigPartName()
+
+            logger.info('import %s rig log file.' % fileName[0])
 
     def saveRig(self):
         """

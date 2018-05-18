@@ -99,17 +99,17 @@ class RiggingMainUI(QtWidgets.QWidget):
         Build the Main UI
         :return: None
         """
-        layout = QtWidgets.QGridLayout(self)
+        gridLayout = QtWidgets.QGridLayout(self)
 
         self.rigTypeCB = QtWidgets.QComboBox()
 
         for rigType in sorted(self.rigTypes.keys()):
             self.rigTypeCB.addItem(rigType)
-        layout.addWidget(self.rigTypeCB, 0, 0, 1, 2)
+        gridLayout.addWidget(self.rigTypeCB, 0, 0, 1, 2)
 
         addBtn = QtWidgets.QPushButton('Add')
         addBtn.clicked.connect(self.addRigWidget)
-        layout.addWidget(addBtn, 0, 2)
+        gridLayout.addWidget(addBtn, 0, 2)
 
         # Rig File Name
         proNameLabel = QtWidgets.QLabel('Rig Name: ')
@@ -118,39 +118,47 @@ class RiggingMainUI(QtWidgets.QWidget):
         self.proNameLineEdit = QtWidgets.QLineEdit('Procedural Rig')
         self.proNameLineEdit.textEdited.connect(self.setLineEditText)
 
-        layout.addWidget(proNameLabel, 1, 0)
-        layout.addWidget(self.proNameLineEdit, 1, 1, 1, 2)
+        gridLayout.addWidget(proNameLabel, 1, 0)
+        gridLayout.addWidget(self.proNameLineEdit, 1, 1, 1, 2)
 
         # Scroll Widget
         scrollWidget = QtWidgets.QWidget()
         scrollWidget.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
-        self.scrollLayout = QtWidgets.QVBoxLayout(scrollWidget)
+        self.scrollLayout = QtWidgets.QVBoxLayout()
+        scrollWidget.setLayout(self.scrollLayout)
 
         scrollArea = QtWidgets.QScrollArea()
         scrollArea.setWidgetResizable(True)
         scrollArea.setWidget(scrollWidget)
-        layout.addWidget(scrollArea, 2, 0, 1, 3)
+
+        gridLayout.addWidget(scrollArea, 2, 0, 1, 3)
 
         # Save Button
         saveBtn = QtWidgets.QPushButton('Save Rig')
         saveBtn.clicked.connect(self.saveRig)
-        layout.addWidget(saveBtn, 3, 0)
+        gridLayout.addWidget(saveBtn, 3, 0)
 
         # Import Button
         importBtn = QtWidgets.QPushButton('Import Rig')
         importBtn.clicked.connect(self.importRig)
-        layout.addWidget(importBtn, 3, 1)
+        gridLayout.addWidget(importBtn, 3, 1)
+
+        # Clear Button
+        clearBtn = QtWidgets.QPushButton('Clear Rig')
+        clearBtn.clicked.connect(self.clearRig)
+        gridLayout.addWidget(clearBtn, 3, 2)
 
         # Create Rig Button
         createBtn = QtWidgets.QPushButton('Create Rig!')
         createBtn.clicked.connect(self.createRig)
-        layout.addWidget(createBtn, 3, 2)
+        gridLayout.addWidget(createBtn, 4, 1, 1, 1)
 
         # Skin row
         skinWidget = QtWidgets.QWidget()
         skinLayout = QtWidgets.QHBoxLayout()
         skinWidget.setLayout(skinLayout)
-        layout.addWidget(skinWidget, 4, 0, 1, 3)
+        gridLayout.addWidget(skinWidget, 5, 0, 1, 3)
+
         # export skin weights btn
         skinExportBtn = QtWidgets.QPushButton('Export Weights')
         skinLayout.addWidget(skinExportBtn)
@@ -167,6 +175,10 @@ class RiggingMainUI(QtWidgets.QWidget):
         :return: None
         """
         self.projectName = self.proNameLineEdit.text()
+
+    def clearRig(self):
+        for rig in self.findChildren(rigWidget):
+            rig.deleteRigPart()
 
     def createRig(self):
         """
@@ -278,7 +290,6 @@ class RiggingMainUI(QtWidgets.QWidget):
 
             logger.info('Saving rig file to %s' % rigLogFile)
 
-
     def addRigWidget(self, rigType=None):
         """
         Add rig widget to the scroll Layout with specified rigType
@@ -322,10 +333,13 @@ class rigWidget(QtWidgets.QWidget):
 
     def buildUI(self):
         """
-        build the UI layout
+        build the Rig UI
         :return: None
         """
-        editWidgetLayout = QtWidgets.QVBoxLayout(self)
+
+        editWidgetLayout = QtWidgets.QVBoxLayout()
+        self.setLayout(editWidgetLayout)
+
         editWidgetLayout.setAlignment(QtCore.Qt.AlignTop)
         editWidgetLayout.setSpacing(5)
 

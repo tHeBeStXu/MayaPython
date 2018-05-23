@@ -118,3 +118,34 @@ def tagForGabage(node):
     if cmds.objExists(node) and not cmds.objExists(node + '.deleteMe'):
         cmds.addAttr(node, shortName='del', longName='deleteMe', at='bool')
         cmds.setAttr(node + '.deleteMe', 1)
+
+
+def unlockJointTransforms(root):
+    """
+    unlock all the joints' transform attr
+    :param root: string, root joint of the skeleton hierarchy
+    :return: None
+    """
+    hierarchy = cmds.listRelatives(root, ad=1, f=1)
+    hierarchy.append(root)
+
+    for cur in hierarchy:
+        for transform in 'trs':
+            for axis in 'xyz':
+                cmds.setAttr(cur + '.%s%s' % (transform, axis), lock=0)
+
+
+def connectAttrs(sourceNode, destNode, transform):
+    """
+    Purpose:        to connect given node to other given node via specified transform
+    Procedure:      call connectAttr
+    Presumption:    assume 2 nodes exist and transform type is valid
+    :param sourceNode: string, sourceNode for connection attr
+    :param destNode: stirng, destinationNode for connection attr
+    :param transform: translate, rotate and scale
+    :return: None
+    """
+    for axis in 'XYZ':
+        cmds.connectAttr(sourceNode + '.' + transform + axis, destNode + '.' + transform + axis)
+
+

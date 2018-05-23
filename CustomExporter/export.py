@@ -6,11 +6,12 @@ import string
 
 def returnFBXExportNodes(origin):
     """
-    Purpose:        return all export nodes connected to given origin
+    Purpose:        return all fbxExportNodeS connected to given origin
     Procedure:      if origin is valid and has the exportNode attribute,
                     return list of export nodes connected to it
     Presumptions:   only export nodes are connected to exportNode attribute
-    :return:
+    :param origin:  origin node
+    :return:        a list of all the nodes connected to the input origin node
     """
     exportNodeList = []
 
@@ -20,38 +21,36 @@ def returnFBXExportNodes(origin):
     return exportNodeList
 
 
-def connectFBXExportNodeToOrigin(exportNode, origin):
+def connectFBXExportNodeToOrigin(fbxExportNode, origin):
     """
     Purpose:        connect the fbx export node to the origin
     Procedure:      check if attribute exist and nodes are valid
                     if they are, connect attributes
     Presumptions:   None
-    :param exportNode:
-    :param origin:
-    :return:
+    :param fbxExportNode: fbxExportNode, empty group
+    :param origin:  origin node
+    :return:        None
     """
-    if not cmds.objExists(origin) and cmds.objExists(exportNode):
+    if not cmds.objExists(origin) and cmds.objExists(fbxExportNode):
         if not cmds.objExists(origin + '.exportNode'):
             base.tagForExportNode(origin)
 
-        if not cmds.objExists(exportNode + '.exportNode'):
-            addFBXNodeAttrs(exportNode)
+        if not cmds.objExists(fbxExportNode + '.exportNode'):
+            addFBXNodeAttrs(fbxExportNode)
 
-        cmds.connectAttr(origin + '.exportNode', exportNode + '.exportNode')
-
-
+        cmds.connectAttr(origin + '.exportNode', fbxExportNode + '.exportNode')
 
 
-def deleteFBXExportNode(exportNode):
+def deleteFBXExportNode(fbxExportNode):
     """
     Purpose:        delete given export node
     Procedure:      if object exists, delete
-    Presumptions:   node
-    :param exportNode:
-    :return:
+    Presumptions:   None
+    :param fbxExportNode: fbxExportNode, empty group
+    :return:        None
     """
-    if cmds.objExists(exportNode):
-        cmds.delete(exportNode)
+    if cmds.objExists(fbxExportNode):
+        cmds.delete(fbxExportNode)
 
 
 def addFBXNodeAttrs(fbxExportNode):
@@ -60,8 +59,8 @@ def addFBXNodeAttrs(fbxExportNode):
     Procedure:      for each attribute we want to add, check if it exists
                     if it doesn't exist, add it
     Presumption:    assume fbxExportNode is a valid object
-    :param fbxExportNode:
-    :return:
+    :param fbxExportNode: fbxExportNode, empty group
+    :return:        None
     """
     if not cmds.attributeQuery('export', node=fbxExportNode, exists=1):
         cmds.addAttr(fbxExportNode, longName='export', at='bool')
@@ -100,7 +99,7 @@ def createFBXExportNode(characterName):
     Procedure:      create an empty transform node
                     we will send it to addFBXNodeAttrs to add the needed attributes
     Presumption:    None
-    :param characterName:
+    :param characterName: string, nameSpace
     :return: fbxExportNode with attr '.export' set True
     """
     fbxExportNode = cmds.group(em=1, name=characterName + 'FBXExportNode#')

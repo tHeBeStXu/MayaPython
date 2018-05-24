@@ -3,8 +3,6 @@ from CustomExporter import base, fbxExport
 
 reload(base)
 reload(fbxExport)
-import maya.mel as mel
-import string
 
 
 def setAnimLayerSettings(fbxExportNode):

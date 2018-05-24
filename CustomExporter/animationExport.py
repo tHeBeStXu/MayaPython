@@ -1,6 +1,4 @@
 import maya.cmds as cmds
-import maya.mel as mel
-import string
 
 from CustomExporter import base
 reload(base)

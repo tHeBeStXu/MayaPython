@@ -34,7 +34,6 @@ def exportFBX(fbxExporNode):
         cmds.warning('No Valid Export Filename for Export Node' + fbxExporNode + '\n')
 
 
-
 def exportFBXAnimation(characterName, fbxExportNode):
     base.clearGarbage()
     characters = []

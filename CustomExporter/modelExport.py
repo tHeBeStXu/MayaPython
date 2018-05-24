@@ -1,7 +1,5 @@
 import maya.cmds as cmds
-import fbxExport
-import maya.mel as mel
-import string
+from CustomExporter import fbxExport
 
 from CustomExporter import base
 reload(base)
@@ -38,7 +36,7 @@ def disconnectFBXExportNodeToMeshes(fbxExportNode, meshes):
     :param meshes: string, meshes disconnect from fbxExportNode
     :return: None
     """
-    if cmds.objExists(fbxExportNode, meshes):
+    if cmds.objExists(fbxExportNode):
         for curMesh in meshes:
             if cmds.objExists(curMesh):
                 cmds.disconnectAttr(fbxExportNode + '.exportMeshes', curMesh + '.exportMeshes')

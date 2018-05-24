@@ -1,0 +1,31 @@
+global proc setFBXExportOptions_animation(int $start, int $end)
+{
+	FBXExportAnimationOnly -v 0;
+	FBXExportBakeComplexAnimation -v 1;
+	FBXExportBakeComplexStart -v $start;
+	FBXExportBakeComplexEnd -v $end;
+	FBXExportBakeResampleAnimation -v 1;
+	FBXExportConstraints -v 0;
+	FBXExportInputConnections -v 0;
+	FBXExportShapes -v 1;
+	FBXExportSmoothMesh -v 1;
+	FBXExportInAscii -v 1;
+}
+
+
+global proc setFBXExportOptions_model()
+{
+	FBXExportSkins -v 1;
+	FBXExportShapes -v 1;
+	FBXExportSmoothingGroups -v 1;
+	FBXExportSmoothMesh -v 1;
+	FBXExportAnimationOnly -v 0;
+	FBXExportConstraints -v 1;
+	FBXExportBakeComplexAnimation -v 0;
+	FBXExportBakeComplexStart -v 0;
+	FBXExportBakeComplexEnd -v 1;
+	FBXExportBakeResampleAnimation -v 1;
+	FBXExportConstraints -v 0;
+	FBXExportInputConnections -v 0;
+	FBXExportInAscii -v 1;
+}

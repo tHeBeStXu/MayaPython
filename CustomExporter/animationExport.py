@@ -90,6 +90,3 @@ def tranformToOriginPoint(origin, startFrame, endFrame, zeroOrigin):
     cmds.setAttr(origin + '.rotate', 0, 0, 0)
 
     cmds.setKeyframe(origin, al=newAnimLayer, t=startFrame)
-
-
-

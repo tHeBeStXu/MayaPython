@@ -23,7 +23,7 @@ def connectFBXExportNodeToMeshes(fbxExportNode, meshes):
 
         for curMesh in meshes:
             if cmds.objExists(curMesh):
-                if not cmds.objExists(fbxExportNode + '.exportMeshes'):
+                if not cmds.objExists(curMesh + '.exportMeshes'):
                     base.tagForMeshExport(curMesh)
 
                 cmds.connectAttr(fbxExportNode + '.exportMeshes', curMesh + '.exportMeshes', force=1)

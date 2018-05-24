@@ -1,9 +1,6 @@
 import maya.cmds as cmds
-import maya.mel as mel
 from CustomExporter import base
 reload(base)
-import string
-
 
 def returnFBXExportNodes(origin):
     """
@@ -32,7 +29,7 @@ def connectFBXExportNodeToOrigin(fbxExportNode, origin):
     :param origin:  origin node
     :return:        None
     """
-    if not cmds.objExists(origin) and cmds.objExists(fbxExportNode):
+    if cmds.objExists(origin) and cmds.objExists(fbxExportNode):
         if not cmds.objExists(origin + '.exportNode'):
             base.tagForExportNode(origin)
 

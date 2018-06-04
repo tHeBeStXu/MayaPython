@@ -3,7 +3,7 @@ from functools import partial
 import maya.cmds as cmds
 
 
-from CustomExporter import base, fbxExport
+from CustomExporter import base, fbxExport, modelExport, export
 
 
 class MainUI(object):
@@ -134,24 +134,28 @@ class MainUI(object):
                                                              allowMultiSelection=0, parent=self.modelFormLayout,
                                                              sc=self.populateModelExportPanel)
         self.modelExportNodesTextScrollList = cmds.textScrollList(width=175, height=220, numberOfRows=18,
-                                                                  allowMultiSelection=0, parent=self.modelFormLayout)
+                                                                  allowMultiSelection=0, parent=self.modelFormLayout,
+                                                                  sc=self.populateGeomPanel)
         self.modelGeomTextScrollList = cmds.textScrollList(width=175, height=220, numberOfRows=18, allowMultiSelection=1,
                                                            parent=self.modelFormLayout)
         self.modelTagAsOriginBtn = cmds.button(width=175, height=50, label='Tag as Origin', parent=self.modelFormLayout,
                                                command=self.modelTagAsOrigin)
         self.modelNewExportNodeBtn = cmds.button(width=175, height=50, label='New Export Node', parent=self.modelFormLayout,
                                                  command=self.modelCreateNewExportNode)
-        self.modelAddRemoveMeshesBtn = cmds.button(width=175, height=50, label='Add / Remove Meshes', parent=self.modelFormLayout)
+        self.modelAddRemoveMeshesBtn = cmds.button(width=175, height=50, label='Add / Remove Meshes', parent=self.modelFormLayout,
+                                                   command=self.modelAddRemoveMeshes)
         self.modelExportCheckBoxGrp = cmds.checkBoxGrp(numberOfCheckBoxes=1, label='Export', columnWidth2=[85, 70], enable=0,
-                                                       parent=self.modelFormLayout)
+                                                       parent=self.modelFormLayout, cc=self.modelUpdateExportNodeFromModelSetting)
         self.modelOriginText = cmds.text(label='Root Joints', parent=self.modelFormLayout)
         self.modelExportNodesText = cmds.text(label='Export', parent=self.modelFormLayout)
         self.modelMeshesText = cmds.text(label='Meshes', parent=self.modelFormLayout)
         self.modelExportFileNameTextFieldButtonGrp = cmds.textFieldButtonGrp(label='Export File Name',
                                                                              columnWidth3=[100, 300, 30], enable=0, text='',
                                                                              buttonLabel='Browse...', parent=self.modelFormLayout)
-        self.modelExportMeshBtn = cmds.button(width=175, height=50, label='Export Selected Character', parent=self.modelFormLayout)
-        self.modelExportAllMeshesBtn = cmds.button(width=175, height=50, label='Export All Characters', parent=self.modelFormLayout)
+        self.modelExportMeshBtn = cmds.button(width=175, height=50, label='Export Selected Character', parent=self.modelFormLayout,
+                                              command=self.modelExportSelectedCharacter)
+        self.modelExportAllMeshesBtn = cmds.button(width=175, height=50, label='Export All Characters', parent=self.modelFormLayout,
+                                                   command=self.modelExportAllCharacters)
 
 
         # set up model form layout
@@ -261,6 +265,64 @@ class MainUI(object):
                 fbxExport.connectFBXExportNodeToOrigin(exportNode, origin[0])
                 self.populateModelExportPanel()
 
+    def populateGeomPanel(self, *args):
+        cmds.textScrollList(self.modelGeomTextScrollList, edit=1, removeAll=1)
+        exportNode = cmds.textScrollList(self.modelExportNodesTextScrollList, q=1, selectItem=1)
+        meshes = modelExport.returnConnectedMeshes(exportNode[0])
+
+        if meshes:
+            for curMesh in meshes:
+                cmds.textScrollList(self.modelGeomTextScrollList, edit=1, append=curMesh)
+
+        self.modelUpdateExportSetting()
+
+    def modelAddRemoveMeshes(self, *args):
+        exportNode = cmds.textScrollList(self.modelExportNodesTextScrollList, q=1, selectItem=1)
+        meshes = cmds.textScrollList(self.modelGeomTextScrollList, q=1, selectItem=1)
+
+        if exportNode:
+            if meshes:
+                modelExport.disconnectFBXExportNodeToMeshes(exportNode[0], meshes)
+            else:
+                sel = cmds.ls(selection=1)
+                if sel:
+                    modelExport.connectFBXExportNodeToMeshes(exportNode[0], sel)
+
+        self.populateGeomPanel()
+
+    def modelUpdateExportSetting(self, *args):
+        exportNode = cmds.textScrollList(self.modelExportNodesTextScrollList, q=1, selectItem=1)
+
+        cmds.textFieldButtonGrp(self.modelExportFileNameTextFieldButtonGrp, edit=1, enable=1, text='')
+
+        fbxExport.addFBXNodeAttrs(exportNode[0])
+
+        if exportNode:
+            cmds.textFieldButtonGrp(self.modelExportFileNameTextFieldButtonGrp, edit=1, text=cmds.getAttr(exportNode[0] + '.exportName'))
+            cmds.checkBoxGrp(self.modelExportCheckBoxGrp, edit=1, enable=1, value1=cmds.getAttr(exportNode[0] + '.export'))
+
+    def modelUpdateExportNodeFromModelSetting(self, *args):
+        exportNode = cmds.textScrollList(self.modelExportNodesTextScrollList, q=1, selectItem=1)
+
+        if exportNode:
+            cmds.setAttr(exportNode[0] + '.exportName', cmds.textFieldButtonGrp(self.modelExportFileNameTextFieldButtonGrp,
+                                                                                q=1, text=1, type='string'))
+            cmds.setAttr(exportNode[0] + '.export', cmds.checkBoxGrp(self.modelExportCheckBoxGrp, q=1, value1=1))
+
+    def modelExportAllCharacters(self, *args):
+        origin = base.returnOrigin('')
+
+        exportNode = fbxExport.returnFBXExportNodes(origin)
+
+        for cur in exportNode:
+            if cmds.objExists(cur):
+                export.exportFBXCharacter(cur)
+
+
+    def modelExportSelectedCharacter(self, *args):
+
+        exportNode = cmds.textScrollList(self.modelExportNodesTextScrollList, q=1, selectItem=1)
+        export.exportFBXCharacter(exportNode[0])
 
 
     # anim ui proc
@@ -276,4 +338,3 @@ class MainUI(object):
 
                 if origin != 'Error':
                     cmds.textScrollList(self.animActorsTextScrollList, edit=1, append=ns)
-

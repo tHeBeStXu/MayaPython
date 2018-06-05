@@ -1,9 +1,14 @@
+import string
 from functools import partial
 
 import maya.cmds as cmds
 
 
 from CustomExporter import base, fbxExport, modelExport, export
+reload(base)
+reload(fbxExport)
+reload(modelExport)
+reload(export)
 
 
 class MainUI(object):
@@ -132,7 +137,7 @@ class MainUI(object):
         # create model UI elements
         self.modelOriginTextScrollList = cmds.textScrollList(width=175, height=220, numberOfRows=18,
                                                              allowMultiSelection=0, parent=self.modelFormLayout,
-                                                             sc=self.populateModelExportPanel)
+                                                             sc=self.populateModelExportNodePanel)
         self.modelExportNodesTextScrollList = cmds.textScrollList(width=175, height=220, numberOfRows=18,
                                                                   allowMultiSelection=0, parent=self.modelFormLayout,
                                                                   sc=self.populateGeomPanel)
@@ -151,7 +156,8 @@ class MainUI(object):
         self.modelMeshesText = cmds.text(label='Meshes', parent=self.modelFormLayout)
         self.modelExportFileNameTextFieldButtonGrp = cmds.textFieldButtonGrp(label='Export File Name',
                                                                              columnWidth3=[100, 300, 30], enable=0, text='',
-                                                                             buttonLabel='Browse...', parent=self.modelFormLayout)
+                                                                             buttonLabel='Browse...', parent=self.modelFormLayout,
+                                                                             bc=partial(self.browseExportFileName, 2))
         self.modelExportMeshBtn = cmds.button(width=175, height=50, label='Export Selected Character', parent=self.modelFormLayout,
                                               command=self.modelExportSelectedCharacter)
         self.modelExportAllMeshesBtn = cmds.button(width=175, height=50, label='Export All Characters', parent=self.modelFormLayout,
@@ -186,9 +192,12 @@ class MainUI(object):
 
         # Model Popup Menu
         self.modelExportNodesPopupMenu = cmds.popupMenu(button=3, parent=self.modelExportNodesTextScrollList)
-        self.modelSelectMenuItem = cmds.menuItem(label='Select', parent=self.modelExportNodesPopupMenu)
-        self.modelRenameMenuItem = cmds.menuItem(label='Rename', parent=self.modelExportNodesPopupMenu)
-        self.modelDeleteMenuItem = cmds.menuItem(label='Delete', parent=self.modelExportNodesPopupMenu)
+        self.modelSelectMenuItem = cmds.menuItem(label='Select', command=partial(self.selectExportNode, self.modelExportNodesTextScrollList),
+                                                 parent=self.modelExportNodesPopupMenu)
+        self.modelRenameMenuItem = cmds.menuItem(label='Rename', command=partial(self.renameExportNodeUI, self.modelExportNodesTextScrollList),
+                                                 parent=self.modelExportNodesPopupMenu)
+        self.modelDeleteMenuItem = cmds.menuItem(label='Delete', command=partial(self.deleteExportNode, self.modelExportNodesTextScrollList),
+                                   parent=self.modelExportNodesPopupMenu)
 
         # set up tab
         cmds.tabLayout(self.tabLayout, edit=1, tabLabel=((self.animationFrameLayout, 'Animation'),
@@ -225,7 +234,57 @@ class MainUI(object):
         cmds.scrollField(editable=0, wordWrap=1, text="Model Export: \nModel exporter assumes one skeleton for export. Referencing for model export is not supported\n\nRoot Joints: \nPanel will list all the joints tagged with the \"origin\" attribute. If no joint is tagged with the attribute, it will list all joints in the scene and turn red. Select the root joint and click the Tag as Origin button.\n\nExport Nodes:\nThe Export Nodes panel will fill in with export nodes connected to the origin of the selected actor from the Actor's field. Clicking on the New Export Node will create a new node. Each export node represents a seperate character export (for example, seperate LOD's).\n\nMeshes:\nThe Meshes panel shows all the geometry associated with the selected export node. This can be used if you have mesh variations skinned to the same rig or LOD's.\n\nExport File Name:\nClick on the Browse button to browse to where you want the file to go. The path will be project relative.\n\nExport Selected Character:\nClick this button to export the character selected in Export Nodes\n\nExport All Characters:\nClick this button to export all character definitions for the skeleton. All selections will be ignored")
         cmds.showWindow(self.modelHelpWindowUI)
 
-    # model ui proc
+    def selectExportNode(self, uiElement, *args):
+        exportNode = cmds.textScrollList(uiElement, q=1, selectItem=1)
+
+        if cmds.objExists(exportNode[0]):
+            cmds.select(cl=1)
+            cmds.select(exportNode)
+
+    def deleteExportNode(self, uiElement, *args):
+        exportNode = cmds.textScrollList(uiElement, q=1, selectItem=1)
+
+        fbxExport.deleteFBXExportNode(exportNode[0])
+
+        self.populateModelExportNodePanel()
+
+    def renameExportNodeUI(self, uiElement, *args):
+        exportNode = cmds.textScrollList(uiElement, q=1, selectItem=1)
+
+        if cmds.window('renameExportNodeWindow', exists=1):
+            cmds.deleteUI('renameExportNodeWindow')
+
+        self.renameExportNodeWindow = cmds.window('renameExportNodeWindow', s=0, width=225, height=100, menuBar=1,
+                                                  title='Rename Export Node')
+
+        self.renameFrameLayout = cmds.frameLayout(collapsable=0, label='', borderVisible=0)
+        self.renameFormLayout = cmds.formLayout(numberOfDivisions=100, parent=self.renameFrameLayout)
+
+        self.renameTextFieldGrp = cmds.textFieldGrp(label='New name: ', columnWidth2=[75, 175], parent=self.renameFormLayout)
+
+        self.renameBtn = cmds.button(label='Rename', width=75, parent=self.renameFormLayout, command=partial(self.renameExportNode, exportNode[0]))
+        self.cancelBtn = cmds.button(label='Cancel', width=75, parent=self.renameFormLayout, command=self.renameCloseWindow)
+
+        cmds.formLayout(self.renameFormLayout, edit=1, attachForm=[(self.renameTextFieldGrp, 'top', 5),
+                                                                   (self.renameTextFieldGrp, 'left', 5),
+                                                                   (self.renameBtn, 'left', 50)])
+        cmds.formLayout(self.renameFormLayout, edit=1, attachControl=[(self.renameBtn, 'top', 10, self.renameTextFieldGrp),
+                                                                      (self.cancelBtn, 'top', 10, self.renameTextFieldGrp),
+                                                                      (self.cancelBtn, 'left', 50, self.renameBtn)])
+
+        cmds.showWindow(self.renameExportNodeWindow)
+
+    def renameExportNode(self, exportNode, *args):
+        newName = cmds.textFieldGrp(self.renameTextFieldGrp, q=1, text=1)
+        cmds.rename(exportNode, newName)
+
+        self.populateModelExportNodePanel()
+
+        self.renameCloseWindow()
+
+    def renameCloseWindow(self, *args):
+        cmds.deleteUI(self.renameExportNodeWindow)
+    # model ui Proc
     def populateModelRootJointsPanel(self):
         cmds.textScrollList(self.modelOriginTextScrollList, edit=1, removeAll=1)
 
@@ -243,7 +302,7 @@ class MainUI(object):
         base.tagForOrigin(joints[0])
         self.populateModelRootJointsPanel()
 
-    def populateModelExportPanel(self, *args):
+    def populateModelExportNodePanel(self, *args):
         origin = cmds.textScrollList(self.modelOriginTextScrollList, q=1, selectItem=1)
         cmds.textScrollList(self.modelExportNodesTextScrollList, edit=1, removeAll=1)
 
@@ -263,7 +322,7 @@ class MainUI(object):
 
             if exportNode:
                 fbxExport.connectFBXExportNodeToOrigin(exportNode, origin[0])
-                self.populateModelExportPanel()
+                self.populateModelExportNodePanel()
 
     def populateGeomPanel(self, *args):
         cmds.textScrollList(self.modelGeomTextScrollList, edit=1, removeAll=1)
@@ -306,7 +365,7 @@ class MainUI(object):
 
         if exportNode:
             cmds.setAttr(exportNode[0] + '.exportName', cmds.textFieldButtonGrp(self.modelExportFileNameTextFieldButtonGrp,
-                                                                                q=1, text=1, type='string'))
+                                                                                q=1, text=1), type='string')
             cmds.setAttr(exportNode[0] + '.export', cmds.checkBoxGrp(self.modelExportCheckBoxGrp, q=1, value1=1))
 
     def modelExportAllCharacters(self, *args):
@@ -317,7 +376,6 @@ class MainUI(object):
         for cur in exportNode:
             if cmds.objExists(cur):
                 export.exportFBXCharacter(cur)
-
 
     def modelExportSelectedCharacter(self, *args):
 
@@ -338,3 +396,43 @@ class MainUI(object):
 
                 if origin != 'Error':
                     cmds.textScrollList(self.animActorsTextScrollList, edit=1, append=ns)
+
+    # General UI Proc
+    def browseExportFileName(self, flag, *args):
+        """
+        browse export file name for different tab
+        :param flag: flag of 1 = animation tab, flag of 2 = model tab.
+        :param args: used for callback function for maya
+        :return: None
+        """
+        temp = ''
+
+        if flag == 1:
+            temp = cmds.textFieldButtonGrp(self.animExportFileNameTextFieldButtonGrp, q=1, text=1)
+        elif flag == 2:
+            temp = cmds.textFieldButtonGrp(self.modelExportFileNameTextFieldButtonGrp, q=1, text=1)
+        else:
+            cmds.error('Unknown tab flag!')
+
+        project = cmds.workspace(q=1, rd=1)
+        dirmask = project + '/' + temp
+
+        newFileList = cmds.fileDialog2(fm=0, startingDirectory=dirmask, fileFilter='FBX export (*.fbx)')
+
+        newFile = ''
+
+        if newFileList:
+            newFile = newFileList[0]
+            newFile = string.replace(newFile, project, '')
+        else:
+            newFile = temp
+
+        # update text field button grp
+        if flag == 1:
+            cmds.textFieldButtonGrp(self.animExportFileNameTextFieldButtonGrp, edit=1, text=newFile)
+
+        elif flag == 2:
+            cmds.textFieldButtonGrp(self.modelExportFileNameTextFieldButtonGrp, edit=1, text=newFile)
+            self.modelUpdateExportNodeFromModelSetting()
+        else:
+            cmds.error('Unknown tab flag!')

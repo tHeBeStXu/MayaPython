@@ -22,13 +22,13 @@ mel.eval('source ' + '"' + melFileDir + '/' + 'FBXAnimationExport_FBXOptions.mel
 
 
 def exportFBX(fbxExporNode):
-    curWorkspace = cmds.workspace(q=1, rd=1)
+    # curWorkspace = cmds.workspace(q=1, rd=1)
 
     fileName = cmds.getAttr(fbxExporNode + '.exportName')
 
     if fileName:
-        newFBX = curWorkspace + fileName
-        cmds.file(newFBX, force=1, type='FBX export', pr=1, es=1)
+        # newFBX = curWorkspace + fileName
+        cmds.file(fileName, force=1, type='FBX export', pr=1, es=1)
 
     else:
         cmds.warning('No Valid Export Filename for Export Node' + fbxExporNode + '\n')

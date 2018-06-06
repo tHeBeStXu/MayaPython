@@ -428,7 +428,7 @@ class MainUI(object):
                 if exportNode:
                     for cur in exportNode:
                         testForMeshes = modelExport.returnConnectedMeshes(cur)
-                        if testForMeshes:
+                        if not testForMeshes:
                             cmds.textScrollList(self.animExportNodeTextScrollList, edit=1, append=cur)
 
     def animCreateNewExportNode(self, *args):

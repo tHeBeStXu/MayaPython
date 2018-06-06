@@ -419,7 +419,6 @@ class MainUI(object):
     def animPopulateExportNodePanel(self, *args):
         cmds.textScrollList(self.animExportNodeTextScrollList, edit=1, removeAll=1)
         ns = cmds.textScrollList(self.animActorsTextScrollList, q=1, selectItem=1)
-
         if ns:
             origin = base.returnOrigin(ns[0])
 
@@ -429,7 +428,7 @@ class MainUI(object):
                 if exportNode:
                     for cur in exportNode:
                         testForMeshes = modelExport.returnConnectedMeshes(cur)
-                        if not testForMeshes:
+                        if testForMeshes:
                             cmds.textScrollList(self.animExportNodeTextScrollList, edit=1, append=cur)
 
     def animCreateNewExportNode(self, *args):

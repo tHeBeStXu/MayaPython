@@ -60,7 +60,9 @@ def exportFBXAnimation(characterName, fbxExportNode):
             fbxExportNodes = fbxExport.returnFBXExportNodes(origin)
 
         for curFBXExportNode in fbxExportNodes:
-            if cmds.getAttr(curFBXExportNode + '.export') and not origin == "Error":
+            testMeshes = modelExport.returnConnectedMeshes(curFBXExportNode)
+
+            if cmds.getAttr(curFBXExportNode + '.export') and not origin == "Error" and not testMeshes:
                 fbxExportRig = animationExport.copyAndConnectSkeleton(origin)
 
 

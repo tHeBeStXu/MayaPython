@@ -53,7 +53,7 @@ class MainUI(object):
                                                             sc=self.animPopulateExportNodePanel)
         self.animExportNodeTextScrollList = cmds.textScrollList(width=250, height=325, numberOfRows=18,
                                                                 allowMultiSelection=0, parent=self.animationFormLayout,
-                                                                sc=self.animUpdateExportSettings)
+                                                                sc=self.animUpdateExportNodeSettings)
         self.animNewNodeBtn = cmds.button(width=250, height=50, label='New Export Node', parent=self.animationFormLayout,
                                           command=self.animCreateNewExportNode)
         self.animExportCheckBoxGrp = cmds.checkBoxGrp(numberOfCheckBoxes=1, label='Export', columnWidth2=[85, 70],
@@ -61,9 +61,9 @@ class MainUI(object):
                                                       cc=self.animUpdateExportNodeFromAnimSetting)
 
         self.animZeroOriginCheckBoxGrp = cmds.checkBoxGrp(numberOfCheckBoxes=1, label='Move to Origin',
-                                                          columnWidth2=[85, 80], enable=0,
+                                                          columnWidth2=[85, 70], enable=0,
                                                           parent=self.animationFormLayout,
-                                                          cc=self.animUpdateExportNodeFromAnimSetting)
+                                                          cc=self.animSubRangeUpdateSetting)
         self.animZeroOriginMotionCheckBoxGrp = cmds.checkBoxGrp(numberOfCheckBoxes=1, label='Zero Motion on Origin',
                                                                 columnWidth2=[120, 70], enable=0,
                                                                 parent=self.animationFormLayout,
@@ -147,9 +147,12 @@ class MainUI(object):
                                                                          (self.animExportAllAnimationBtn, 'left', 100, self.animExportNodeTextScrollList)])
         # Animation Popup Menu
         self.animExportNodesPopupMenu = cmds.popupMenu(button=3, parent=self.animExportNodeTextScrollList)
-        self.animSelectNodeMenuItem = cmds.menuItem(label='Select', parent=self.animExportNodesPopupMenu)
-        self.animRenameNodeMenuItem = cmds.menuItem(label='Rename', parent=self.animExportNodesPopupMenu)
-        self.animDeleteNodeMenuItem = cmds.menuItem(label='Delete', parent=self.animExportNodesPopupMenu)
+        self.animSelectNodeMenuItem = cmds.menuItem(label='Select', parent=self.animExportNodesPopupMenu,
+                                                    command=partial(self.selectExportNode, self.animExportNodeTextScrollList))
+        self.animRenameNodeMenuItem = cmds.menuItem(label='Rename', parent=self.animExportNodesPopupMenu,
+                                                    command=partial(self.renameExportNodeUI, self.animExportNodeTextScrollList))
+        self.animDeleteNodeMenuItem = cmds.menuItem(label='Delete', parent=self.animExportNodesPopupMenu,
+                                                    command=partial(self.deleteExportNode, self.animExportNodeTextScrollList))
 
 
         # create model UI elements
@@ -255,14 +258,16 @@ class MainUI(object):
     def selectExportNode(self, uiElement, *args):
         exportNode = cmds.textScrollList(uiElement, q=1, selectItem=1)
 
-        if cmds.objExists(exportNode[0]):
+        if exportNode and cmds.objExists(exportNode[0]):
             cmds.select(cl=1)
             cmds.select(exportNode)
 
     def deleteExportNode(self, uiElement, *args):
         exportNode = cmds.textScrollList(uiElement, q=1, selectItem=1)
 
-        fbxExport.deleteFBXExportNode(exportNode[0])
+        if exportNode and cmds.objExists(exportNode[0]):
+
+            fbxExport.deleteFBXExportNode(exportNode[0])
 
         self.animPopulateExportNodePanel()
         self.modelPopulateExportNodePanel()
@@ -445,18 +450,20 @@ class MainUI(object):
 
                     self.animPopulateExportNodePanel()
 
-    def animUpdateExportSettings(self, *args):
+    def animUpdateExportNodeSettings(self, *args):
         exportNode = cmds.textScrollList(self.animExportNodeTextScrollList, q=1, selectItem=1)
 
         if exportNode:
             fbxExport.addFBXNodeAttrs(exportNode[0])
 
-            cmds.checkBoxGrp(self.animExportCheckBoxGrp, edit=1, value1=cmds.getAttr(exportNode[0] + '.export'), enable=1)
+            cmds.checkBoxGrp(self.animExportCheckBoxGrp, edit=1, value1=cmds.getAttr(exportNode[0] + '.export'),
+                             enable=1)
             cmds.checkBoxGrp(self.animZeroOriginCheckBoxGrp, edit=1, value1=cmds.getAttr(exportNode[0] + '.moveToOrigin'),
                              enable=1)
             cmds.checkBoxGrp(self.animSubRangeCheckBoxGrp, edit=1, value1=cmds.getAttr(exportNode[0] + '.useSubRange'),
                              enable=1)
 
+            # use subRange
             if cmds.getAttr(exportNode[0] + '.useSubRange'):
                 cmds.floatFieldGrp(self.animStartFrameFloatFieldGrp, edit=1, enable=1,
                                    value1=cmds.getAttr(exportNode[0] + '.startFrame'))
@@ -467,18 +474,25 @@ class MainUI(object):
                 cmds.floatFieldGrp(self.animStartFrameFloatFieldGrp, edit=1, enable=0)
                 cmds.floatFieldGrp(self.animEndFrameFloatFieldGrp, edit=1, enable=0)
 
+            # move to origin
             if cmds.getAttr(exportNode[0] + '.moveToOrigin'):
-                cmds.checkBoxGrp(self.animZeroOriginMotionCheckBoxGrp, edit=1,
-                                 value1=cmds.getAttr(exportNode[0] + '.zeroOrigin'), enable=1)
+                print 'ok'
+                cmds.checkBoxGrp(self.animZeroOriginMotionCheckBoxGrp, edit=1, enable=True,
+                                 value1=cmds.getAttr(exportNode[0] + '.zeroOrigin'))
             else:
+                print 'no'
                 cmds.checkBoxGrp(self.animZeroOriginMotionCheckBoxGrp, edit=1, enable=0)
 
+            # anim layer
             text = cmds.getAttr(exportNode[0] + '.animLayers')
 
             if text:
                 cmds.button(self.animRecordAnimLayersBtn, edit=1, enable=1, label='Re-Record', bgc=[0.25, 0.25, 1.0])
             else:
                 cmds.button(self.animRecordAnimLayersBtn, edit=1, enable=1, label='Record', bgc=[1.0, 0.25, 0.25])
+
+            cmds.button(self.animPreviewAnimLayersBtn, edit=1, enable=1)
+            cmds.button(self.animClearAnimLayersBtn, edit=1, enable=1)
 
             cmds.textFieldButtonGrp(self.animExportFileNameTextFieldButtonGrp, edit=1, enable=1,
                                     text=cmds.getAttr(exportNode[0] + '.exportName'))
@@ -489,21 +503,22 @@ class MainUI(object):
         if exportNode and cmds.objExists(exportNode[0]):
             fbxExport.addFBXNodeAttrs(exportNode[0])
 
-            cmds.setAttr(exportNode[0] + '.export', cmds.checkBoxGrp(self.animExportCheckBoxGrp, q=1, value1=1))
-            cmds.setAttr(exportNode[0] + '.useSubRange', cmds.checkBoxGrp(self.animSubRangeCheckBoxGrp, q=1, value1=1))
-            cmds.setAttr(exportNode[0] + '.zeroOrigin', cmds.checkBoxGrp(self.animZeroOriginCheckBoxGrp, q=1, value1=1))
-            cmds.setAttr(exportNode[0] + '.moveToOrigin', cmds.checkBoxGrp(self.animZeroOriginMotionCheckBoxGrp, q=1, value1=1))
+            cmds.setAttr(exportNode[0] + '.export', cmds.checkBoxGrp(self.animExportCheckBoxGrp, query=1, value1=1))
+            cmds.setAttr(exportNode[0] + '.moveToOrigin', cmds.checkBoxGrp(self.animZeroOriginCheckBoxGrp, query=1, value1=1))
+            cmds.setAttr(exportNode[0] + '.zeroOrigin', cmds.checkBoxGrp(self.animZeroOriginMotionCheckBoxGrp, query=1, value1=1))
+            cmds.setAttr(exportNode[0] + '.useSubRange', cmds.checkBoxGrp(self.animSubRangeCheckBoxGrp, query=1, value1=1))
+
 
             if cmds.getAttr(exportNode[0] + '.useSubRange'):
                 cmds.setAttr(exportNode[0] + '.startFrame', cmds.floatFieldGrp(self.animStartFrameFloatFieldGrp, q=1, value1=1))
                 cmds.setAttr(exportNode[0] + '.endFrame', cmds.floatFieldGrp(self.animEndFrameFloatFieldGrp, q=1, value1=1))
 
             cmds.setAttr(exportNode[0] + '.exportName',
-                         cmds.textFieldButtonGrp(self.animExportFileNameTextFieldButtonGrp, q=1, text=1), type='string')
+                         cmds.textFieldButtonGrp(self.animExportFileNameTextFieldButtonGrp, q=1, text=1), type="string")
 
     def animSubRangeUpdateSetting(self, *args):
         self.animUpdateExportNodeFromAnimSetting()
-        self.animUpdateExportSettings()
+        self.animUpdateExportNodeSettings()
 
     def animRecordAnimLayer(self, *args):
         exportNode = cmds.textScrollList(self.animExportNodeTextScrollList, q=1, selectItem=1)
@@ -540,7 +555,13 @@ class MainUI(object):
         export.exportFBXAnimation(ns[0], '')
 
     def animExportAllAnimation(self, *args):
-        export.exportFBXAnimation('', '')
+        ns = cmds.textScrollList(self.animActorsTextScrollList, q=1, allItems=1)
+
+        for cur in ns:
+            origin = base.returnOrigin(cur)
+
+            if origin != 'Error':
+                export.exportFBXAnimation(cur, '')
 
     # General UI Proc
     def browseExportFileName(self, flag, *args):

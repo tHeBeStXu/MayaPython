@@ -310,7 +310,7 @@ class SkinCluster(object):
         return weights
 
     def exportSkin(self, filePath=None):
-        self.return_ = """
+        """
         Export the skinCluster data to disk
         :param filePath: File Path
         :return:

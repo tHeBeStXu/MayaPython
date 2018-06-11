@@ -29,6 +29,18 @@ print mFnDependNode.name()
 mPlugArray = openmaya.MPlugArray()
 mFnMesh.getConnections(mPlugArray)
 
+mPlugArray_Dst = openmaya.MPlugArray()
+mPlugArray_Src = openmaya.MPlugArray()
+
+# get all Src mPlugs and Dst mPlugs
+for i in xrange(mPlugArray.length()):
+    mPlugArray_Temp = openmaya.MPlugArray()
+    if mPlugArray[i].connectedTo(mPlugArray_Temp, True, False):
+        mPlugArray_Dst.append(mPlugArray_Temp[0])
+    elif mPlugArray[i].connectedTo(mPlugArray_Temp, False, True):
+        mPlugArray_Src.append(mPlugArray_Temp[0])
+
+"""
 mPlugArray.length()  # Return the length of the mPlugArray
 print mPlugArray[0].name()  # Get the name of the index 0 element of the mPlugArray
 print mPlugArray[1].name()  # Get the name of the index 1 element of the mPlugArray
@@ -37,13 +49,14 @@ print mPlugArray[1].name()  # Get the name of the index 1 element of the mPlugAr
 mPlugArray_Connections = openmaya.MPlugArray()
 # from Dst mPlug to find Source mPlug             asDst asSrc
 mPlugArray[1].connectedTo(mPlugArray_Connections, True, False)
+"""
 
-mPlugArray_Connections.length()  # Return the length of the mPlugArray
+mPlugArray_Dst.length()  # Return the length of the mPlugArray
 
-print mPlugArray_Connections[0].name()  # Get the name of the 0 index element of the mPlugArray
+print mPlugArray_Dst[0].name()  # Get the name of the 0 index element of the mPlugArray
 
 # From mPlug to Node -> First, from mPlug to mObj
-mObj2 = mPlugArray_Connections[0].node()  # return a MObject type data
+mObj2 = mPlugArray_Dst[0].node()  # return a MObject type data
 
 # From mPlug to Node -> Second, from mObj to Node, store the data in a MFnDependencyNode instance
 mFnDependNode2 = openmaya.MFnDependencyNode(mObj2)

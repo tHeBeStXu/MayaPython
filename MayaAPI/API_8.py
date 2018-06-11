@@ -70,7 +70,7 @@ class CVG(openmayampx.MPxNode):
 
     def __init__(self):
         openmayampx.MPxNode.__init__(self)
-        # super(wheelNode, self).__init__()
+        # super(CVG, self).__init__()
 
         #Event Callback
         self.idCallBack.append(openmaya.MEventMessage.addEventCallback('SelectionChanged', self.callBackFunc))
@@ -182,15 +182,142 @@ class CVG(openmayampx.MPxNode):
                         mPlugArray_Handle = openmaya.MPlugArray()
                         mFnDependencyNode.getConnections(mPlugArray_Handle)
                         for i in xrange(mPlugArray_Handle.length()):
-                            mPlug_handle = mPlugArray_Handle[i]
+                            mPlug_Handle = mPlugArray_Handle[i]
                             mplugArray2 = openmaya.MPlugArray()
-                            mPlug_handle.connectedTo(mplugArray2, True, True)
+                            mPlug_Handle.connectedTo(mplugArray2, True, True)
                             mPlug2 = mplugArray2[0]
 
                             if mPlug2.node().apiTypeStr() == 'kTransform':
                                 self.activePoleVectorCtrl = mPlug2.node()
                                 break
 
+                        """
+                        IF IK-PoleVector is found then:
+                            -find IK-PoleVector Control Curve
+                        """
+                        if self.activePoleVector.apiTypeStr() == 'kPoleVectorConstraint':
+                            #6. find curve controlling Pole Vector
+                            mFnDependencyNode.setObject(self.activePoleVector)
+                            mPlugArray_Handle = openmaya.MPlugArray()
+                            mFnDependencyNode.getConnections(mPlugArray_Handle)
+
+                            for i in xrange(mPlugArray_Handle.length()):
+                                mPlug_Handle = mPlugArray_Handle[i]
+                                mPlugArray2 = openmaya.MPlugArray()
+                                mPlug_Handle.connectedTo(mPlugArray2, True, True)
+                                mPlug2 = mPlugArray2[0]
+                                if mPlug2.node().apiTypeStr() == 'kTransform':
+                                    self.activePoleVectorControl = mPlug2.node()
+                                    break
+
+                            """
+                            If IK-PoleVector Control Curve is found then:
+                                -find middle joint of joint change, to which this control be attached
+                            """
+                            if self.activePoleVectorControl.apiTypeStr() == 'kTransform':
+                                #7. Find joint2 of the chains
+                                #7. a : find joint connected to IK-Effector - call it : joint3
+                                #7. b : find joint connected to IK-Handle - call it : joint1
+                                #7. c : find joint connected to joint1 and joint3 - call it joint2
+
+                                # 7. a : find joint connected to IK-Effector - call it : joint3
+                                mFnDependencyNode.setObject(self.activeEffector)
+                                mPlugArray_effector = openmaya.MPlugArray()
+                                mFnDependencyNode.getConnections(mPlugArray_effector)
+                                for i in xrange(mPlugArray_effector.length()):
+                                    mPlug_effector = mPlugArray_effector[i]
+                                    mPlugArray2 = openmaya.MPlugArray()
+                                    mPlug_effector.connectedTo(mPlugArray2, True, True)
+                                    mPlug2 = mPlugArray2[0]
+                                    if mPlug2.node().apiTypeStr() == 'kJoint':
+                                        self.joint3 = mPlug2.node()
+                                        break
+                                # 7. b : find joint connected to IK-Handle - call it : joint1
+                                mFnDependencyNode.setObject(self.activeHandle)
+                                mPlugArray_Handle = openmaya.MPlugArray()
+                                mFnDependencyNode.getConnections(mPlugArray_Handle)
+                                for i in xrange(mPlugArray_Handle.length()):
+                                    mPlug_Handle = mPlugArray_Handle[i]
+                                    mPlugArray2 = openmaya.MPlugArray()
+                                    mPlug_Handle.connectedTo(mplugArray2, True, True)
+                                    mPlug2 = mPlugArray2[0]
+                                    if mPlug2.node().apiTypeStr() == 'kJoint':
+                                        self.joint1 = mPlug2.node()
+                                        break
+
+                                # 7. c : find joint connected to joint1 and joint3 - call it joint2
+                                """
+                                Find joints connected to joint1, and if any joint which is connected to joint1 is also 
+                                connected to joint3
+                                then it is joint2
+                                """
+                                mObj_joint1Connections = openmaya.MObjectArray()
+                                mObj_joint3Connections = openmaya.MObjectArray()
+
+                                # Collect child Joints connected to joint1
+                                mFnDependencyNode.setObject(self.joint1)
+                                mPlugArray_joint1 = openmaya.MPlugArray()
+                                mPlug_joint1Scale = mFnDependencyNode.findPlug('scale')
+                                mPlug_joint1Scale.connectedTo(mPlugArray_joint1, True, True)
+                                for i in xrange(mPlugArray_joint1.length()):
+                                    if mPlugArray_joint1[i].node().apiTypeStr() == 'kJoint':
+                                        mObj_joint1Connections.append(mPlugArray_joint1[i].node())
+
+                                # Collect parent Joints connected to Joint3
+                                mFnDependencyNode.setObject(self.joint3)
+                                mPlugArray_joint3 = openmaya.MPlugArray()
+                                mPlug_joint3Scale = mFnDependencyNode.findPlug('inverseScale')
+                                mPlug_joint3Scale.connectedTo(mPlugArray_joint3, True, True)
+                                for i in xrange(mPlugArray_joint3.length()):
+                                    if mPlugArray_joint3[i].node().apiTypeStr() == 'kJoint':
+                                        mObj_joint3Connections.append(mPlugArray_joint3[i].node())
+
+                                mFnDependencyNode_temp1 = openmaya.MFnDependencyNode()
+                                mFnDependencyNode_Temp3 = openmaya.MFnDependencyNode()
+
+                                for i in xrange(mObj_joint1Connections.length()):
+                                    for j in xrange(mObj_joint3Connections.length()):
+                                        mFnDependencyNode_temp1.setObject(mObj_joint1Connections[i])
+                                        mFnDependencyNode_Temp3.setObject(mObj_joint3Connections[j])
+                                        if mFnDependencyNode_temp1.name() == mFnDependencyNode_Temp3.name():
+                                            self.joint2 = mObj_joint3Connections[j]
+                                            break
+
+            #Perform operations based on the mode we are at
+            if self.activeEffector.apiTypeStr() == 'kIkEffector':
+                #Control Curve visibility plug
+                if self.activePoleVectorControl.apiTypeStr() != 'kInvalid':
+                    mPlug_controlCurveVisibility = openmaya.MFnTransform(self.activePoleVectorControl).findPlug('visibility')
+
+                if mode == 'fk':
+                    # Because fk is the default mode, even if IK-handle does not exist it will try to set the plug
+                    try:
+                        mPlug_blendAttr.setInt(0)
+                        mPlug_controlCurveVisibility.setBool(False)
+                    except:
+                        pass
+
+                else:
+                    if self.joint2.apiTypeStr() == 'kJoint':
+                        mFnTransform_poleControl = openmaya.MFnTransform(self.activePoleVectorControl)
+                        mFnTransform_joint2 = openmaya.MFnTransform(self.join2)
+
+                        # Reading MDagPath from MObject.
+                        mDagPath_joint2 = openmaya.MDagPath()
+                        mFnTransform_joint2.getPath(mDagPath_joint2)
+                        mFnTransform_joint2.setObject(mDagPath_joint2)
+
+                        mDagPath_poleControl = openmaya.MDagPath()
+                        mFnTransform_poleControl.getPath(mDagPath_poleControl)
+                        mFnTransform_poleControl.setObject(mDagPath_poleControl)
+
+                        mFnTransform_poleControl.setTranslation(mFnTransform_joint2.getTranslation((openmaya.MSpace.kWorld), openmaya.MSpace.kWorld))
+
+                        try:
+                            mPlug_controlCurveVisibility.setBool(True)
+                        except:
+                            pass
+                    mPlug_blendAttr.setInt(1)
 
     def remove(self, *args):
         print 'remove'
@@ -215,12 +342,6 @@ class CVG(openmayampx.MPxNode):
 
                 except:
                     pass
-
-
-
-
-
-
 
     # be careful about the name of the method, it must be "compute"
     def compute(self, plug, dataBlock):

@@ -36,9 +36,9 @@ mPlugArray_Src = openmaya.MPlugArray()
 for i in xrange(mPlugArray.length()):
     mPlugArray_Temp = openmaya.MPlugArray()
     if mPlugArray[i].connectedTo(mPlugArray_Temp, True, False):
-        mPlugArray_Dst.append(mPlugArray_Temp[0])
-    elif mPlugArray[i].connectedTo(mPlugArray_Temp, False, True):
-        mPlugArray_Src.append(mPlugArray_Temp[0])
+        mPlugArray_Dst.append(mPlugArray[i])
+    else:
+        mPlugArray_Src.append(mPlugArray[i])
 
 """
 mPlugArray.length()  # Return the length of the mPlugArray

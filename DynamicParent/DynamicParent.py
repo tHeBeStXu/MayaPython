@@ -79,4 +79,35 @@ def PL_DynamicParenting():
 
     print exprSuf
 
+    cmds.scriptJob(constrainedObj + '.Parent', DynParentSpaceSwitch(DPsetGroup=DPsetGroup, constrainedObj=constrainedObj), killWithScene=1, ac=1)
+    # cmds.scriptNode(beforeScript=?1?, n='dynparExpr' + exprSuf)
 
+    cmds.setAttr('dynparExpr' + exprSuf + '.scriptType', 1)
+    cmds.scriptNode(executeBefore='dynparExpr' + exprSuf)
+    cmds.setAttr(constrainedObj + '.' + sel[0], 1)
+    cmds.select(constrainedObj)
+
+
+def DynParentSpaceSwitch(DPsetGroup, constrainedObj):
+    selection = ''
+    constraintRelatives = cmds.listRelatives(DPsetGroup, c=1, type='constraint')
+    cnsRelAttr = cmds.attributeInfo(constraintRelatives, i=0)
+    cnsRelSize = len(cnsRelAttr)
+    parentVal = cmds.getAttr(constrainedObj + '.Parent')
+    posDP = cmds.xform(constrainedObj, q=1, ws=1, rp=1)
+    rotDP = cmds.xform(constrainedObj, q=1, ws=1, ro=1)
+
+    attributeSize = len(cnsRelAttr)
+    selectionSize = len(selection)
+
+    discardedAttributes = attributeSize - selectionSize
+
+    cnsAttrUsed = cnsRelSize - discardedAttributes
+
+    i = 0
+    while i < cnsAttrUsed:
+        cmds.setAttr(constrainedObj + '.' + selection[i], 0)
+        i += 1
+    cmds.setAttr(constrainedObj + '.' + selection[parentVal], 1)
+    cmds.move(posDP[0], posDP[1], posDP[2], constrainedObj, rpr=1)
+    cmds.rotate(rotDP[0], rotDP[1], rotDP[2], constrainedObj, a=1, ws=1)

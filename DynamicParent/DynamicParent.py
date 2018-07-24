@@ -1,4 +1,5 @@
 import maya.cmds as cmds
+from functools import partial
 
 
 def PL_DynamicParenting():
@@ -23,15 +24,15 @@ def PL_DynamicParenting():
     cmds.delete(pc1)
     cmds.delete(pc2)
 
-    # parent
+    # parenting
+    # DPgroup -> DPsetGroup -> constrainedObj
     cmds.parent(constrainedObj, DPsetGroup)
     cmds.parent(DPsetGroup, DPgroup)
 
-    #
+    # remove constrainedObj from sel list
     sel = sel[0:-1]
-    print sel
+    # inset DPgroup to the sel list at 0 index
     sel.insert(0, DPgroup)
-    print sel
 
     # parentconstraint all objects to lasts parent group
 
@@ -43,6 +44,7 @@ def PL_DynamicParenting():
     cmds.setAttr(constrainedObj + '.DynParent', lock=1, e=1, keyable=1)
 
     # create a string with all available dynparent object and seperate them with ':'
+    # enumString = "DPgroup:Parent_1:Parent_2:...:Parent_#"
     enumString = ':'.join(sel)
 
     cmds.addAttr(constrainedObj, ln='Parent', at='enum', en=enumString)
@@ -52,10 +54,6 @@ def PL_DynamicParenting():
         cmds.addAttr(constrainedObj, ln=i, at='long', min=0, max=1, dv=0)
         cmds.setAttr(constrainedObj + '.' + i, e=1, keyable=1)
 
-    print constrainedObj
-    print DPsetGroup
-    print DPgroup
-
     #cmds.connectAttr('pCone1' + '.' + 'pCone1_DynPGroup', 'pCone1_DynPCnsGroup' + '_parentConstraint1.' + 'pCone1_DynPGroup' + 'W0')
 
     cmds.connectAttr(constrainedObj + '.' + sel[0], DPsetGroup + '_parentConstraint1.' + DPgroup + 'W0')
@@ -64,29 +62,48 @@ def PL_DynamicParenting():
         cmds.connectAttr(constrainedObj + '.' + sel[i], DPsetGroup + '_parentConstraint1.' + sel[i] + 'W' + str(i))
         i += 1
 
-
+    ##########################################################################################################
+    # sforExprString = "DPgroup','
     sforExprString = '\',\''.join(sel)
-    print sforExprString
+    # print sforExprString
 
     exprSuf = '_0'
 
+    # scriptNode name dynparExpr + exprSuf
     if cmds.objExists('dynparExpr' + exprSuf):
-        j=1
+        j = 1
         while cmds.objExists('dynparExpr_' + str(j)):
-            j+=1
+            j += 1
 
         exprSuf = '_' + str(j)
 
-    print exprSuf
+    print 'exprSuf = ' + exprSuf
 
-    cmds.scriptJob(constrainedObj + '.Parent', DynParentSpaceSwitch(DPsetGroup=DPsetGroup, constrainedObj=constrainedObj), killWithScene=1, ac=1)
-    # cmds.scriptNode(beforeScript=?1?, n='dynparExpr' + exprSuf)
+    cmds.select(DPsetGroup)
+    DPsetGroup_FP = cmds.ls(sl=1, l=1)
+    cmds.select(cl=1)
+    cmds.select(constrainedObj)
+    constrainedObj_FP = cmds.ls(sl=1, l=1)
+    cmds.select(cl=1)
+
+    print DPsetGroup_FP
+    print constrainedObj_FP
+
+    cmds.scriptNode(beforeScript='customScriptJob(DPsetGroup = ' + str(DPsetGroup_FP) + ', constrainedObj=' + str(constrainedObj_FP) + ')',
+                    n='dynparExpr' + exprSuf, stp='python')
 
     cmds.setAttr('dynparExpr' + exprSuf + '.scriptType', 1)
-    cmds.scriptNode(executeBefore='dynparExpr' + exprSuf)
+    # execute scriptNode
+    cmds.scriptNode('dynparExpr' + exprSuf, executeBefore=1)
     cmds.setAttr(constrainedObj + '.' + sel[0], 1)
     cmds.select(constrainedObj)
 
+
+def customScriptJob(DPsetGroup, constrainedObj):
+    cmds.select(constrainedObj)
+    cmds.scriptJob(attributeChange=[[constrainedObj + '.Parent'],
+                   partial(DynParentSpaceSwitch, DPsetGroup, constrainedObj)],
+                   killWithScene=1)
 
 def DynParentSpaceSwitch(DPsetGroup, constrainedObj):
     selection = ''
@@ -108,6 +125,8 @@ def DynParentSpaceSwitch(DPsetGroup, constrainedObj):
     while i < cnsAttrUsed:
         cmds.setAttr(constrainedObj + '.' + selection[i], 0)
         i += 1
+
     cmds.setAttr(constrainedObj + '.' + selection[parentVal], 1)
     cmds.move(posDP[0], posDP[1], posDP[2], constrainedObj, rpr=1)
     cmds.rotate(rotDP[0], rotDP[1], rotDP[2], constrainedObj, a=1, ws=1)
+

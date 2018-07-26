@@ -17,6 +17,7 @@ def createShape(prefix='',
 
     cmds.parent(Ctrl, CtrlBox)
     cmds.setAttr(CtrlBox + '.s', scale, scale, scale)
+    cmds.makeIdentity(CtrlBox, apply=1, t=1, r=1, s=1, n=0)
     cmds.select(cl=1)
 
     return CtrlBox

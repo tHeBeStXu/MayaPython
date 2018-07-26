@@ -90,7 +90,7 @@ class Control():
             ctrlObject = controlShape.SpikeCrossControl.createShape(prefix=prefix, scale=scale)
 
         elif shape == 'sliderControl':
-            ctrlObject = controlShape.SliderControl.createShape(prefix=prefix, scale=scale)
+            ctrlObject = controlShape.unitSliderControl.createShape(prefix=prefix, scale=scale)
 
 
 

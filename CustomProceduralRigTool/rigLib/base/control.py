@@ -99,7 +99,7 @@ class Control():
             ctrlObject = cmds.circle(n=prefix + '_ctl', ch=0,
                                      normal=circleNormal, radius=scale)[0]
 
-        ctrlOffset = cmds.group(n=prefix + 'Offset_grp', em=1)
+        ctrlOffset = cmds.group(n=prefix + 'CtrlGrp', em=1)
         cmds.parent(ctrlObject, ctrlOffset)
 
         
@@ -109,10 +109,10 @@ class Control():
 
         [cmds.setAttr(s + '.ove', 1) for s in ctrlShapes]
 
-        if prefix.startswith('l_'):
+        if prefix.startswith('L_'):
             [cmds.setAttr(s + '.ovc', 6) for s in ctrlShapes]
 
-        elif prefix.startswith('r_'):
+        elif prefix.startswith('R_'):
             [cmds.setAttr(s + '.ovc', 13) for s in ctrlShapes]
 
         else:

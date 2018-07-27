@@ -1,5 +1,6 @@
 import maya.cmds as cmds
 
+
 def createShape(prefix='',
                 scale=1.0):
     """

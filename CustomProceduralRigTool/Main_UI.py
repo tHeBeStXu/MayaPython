@@ -215,13 +215,13 @@ class RiggingMainUI(QtWidgets.QWidget):
                 logger.info('%s IK_FK_Arm build complete!' % str(rig.rigPartName))
 
             elif rig.rigTypeName == 'IK_Leg' and rig.rigArgs:
-                IK_Leg.build(topJoint=rig.rigArgs['topJoint'],
-                             pvLocator=rig.rigArgs['pvLocator'],
-                             revLocator=rig.rigArgs['revLocator'],
-                             prefix=rig.rigArgs['prefix'],
-                             rigScale=rig.rigArgs['rigScale'],
-                             rollCtrlLOC=rig.rigArgs['rollCtrlLOC'],
-                             baseRig=rig.rigArgs['baseRig'])
+                IK_HumanLeg.build(topJoint=rig.rigArgs['topJoint'],
+                                  pvLocator=rig.rigArgs['pvLocator'],
+                                  revLocator=rig.rigArgs['revLocator'],
+                                  prefix=rig.rigArgs['prefix'],
+                                  rigScale=rig.rigArgs['rigScale'],
+                                  rollCtrlLOC=rig.rigArgs['rollCtrlLOC'],
+                                  baseRig=rig.rigArgs['baseRig'])
                 logger.info('%s IK_Leg build complete!' % str(rig.rigPartName))
             else:
                 logger.debug("Can't find the specified part, please check your rig type.")

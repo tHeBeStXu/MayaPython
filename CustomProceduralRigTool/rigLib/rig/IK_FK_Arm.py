@@ -233,7 +233,7 @@ def build(prefix,
     # clean and parent
     cmds.parent(wristGrp, rigmodule.controlGrp)
     cmds.parent(switchCtrlLoc, armPvLoc, rigmodule.partsGrp)
-    cmds.parent(claLoc_World, rigmodule.partsNoTransGrp)
+    cmds.parent(claLoc_World, rigmodule.dontTouchGrp)
 
     # clear selection before return
     cmds.select(cl=1)

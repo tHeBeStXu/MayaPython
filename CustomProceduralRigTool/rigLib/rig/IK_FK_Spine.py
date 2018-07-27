@@ -26,6 +26,7 @@ def build(spineJoints,
     """
 
     rigmodule = module.Module(prefix=prefix,
+                              rigPartName='Spine',
                               baseObject=baseRig)
 
     # create spineRoot Ctrl
@@ -34,7 +35,7 @@ def build(spineJoints,
                                     rotateTo=spineJoints[0],
                                     scale=rigScale*10,
                                     shape='circleX',
-                                    parent=rigmodule.controlGrp)
+                                    parent=rigmodule.topGrp)
 
     ###########
     # FK Part #
@@ -144,7 +145,7 @@ def build(spineJoints,
 
     cmds.parent(spineJoints[0], rigmodule.jointsGrp)
 
-    cmds.parent(spineCrv, spineIK, rigmodule.partsNoTransGrp)
+    cmds.parent(spineCrv, spineIK, rigmodule.dontTouchGrp)
 
     # clear selection before return
     cmds.select(cl=1)

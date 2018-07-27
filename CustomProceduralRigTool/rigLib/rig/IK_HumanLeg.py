@@ -22,7 +22,7 @@ def build(topJoint,
     :param topJoint: str, top joint of leg
     :param pvLocator: str, reference locator for position of pole Vector
     :param revLocator: list(str), CBank - EBank - heel - pivot 
-    :param prefix: str, prefix to name new objects
+    :param prefix: str, prefix to name new objects, 'L_','R_'and'C_'
     :param rigScale: float, scale factor for size controls
     :param baseRig: instance of base.module.Base class
     :return: 
@@ -44,6 +44,7 @@ def build(topJoint,
     # create footCtrl
     footCtrl = control.Control(prefix=prefix + 'foot',
                                translateTo=legJoints[-1],
+                               rotateTo=legJoints[-1],
                                scale=rigScale,
                                parent=rigmodule.controlGrp,
                                shape='footControl')

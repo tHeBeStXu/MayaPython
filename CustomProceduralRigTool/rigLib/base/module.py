@@ -151,7 +151,7 @@ class Module():
         self.partsGrp = cmds.group(n=prefix + rigPartName + 'Parts_grp',
                                    em=1, p=self.topGrp)
         """
-        self.dontTouchGrp = cmds.group(n=prefix + 'Dont_Touch_Grp',
+        self.dontTouchGrp = cmds.group(n=prefix + rigPartName + 'Dont_Touch_Grp',
                                        em=1, p=self.topGrp)
 
 

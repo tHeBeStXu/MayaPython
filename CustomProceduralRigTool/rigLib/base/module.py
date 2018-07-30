@@ -164,4 +164,4 @@ class Module():
 
         if baseObject:
 
-            cmds.parent(self.topGrp, baseObject.Move_Ctrl)
+            cmds.parent(self.topGrp, baseObject.Master_Ctrl)

@@ -3,7 +3,8 @@ This IK_FK_Spine build module is used for spine joint chain which is placed in t
 if you want to use it at anywhere
 """
 import maya.cmds as cmds
-#from ..base import module
+from ..base import module
+from ..base import control
 
 
 def build(spineJoints,
@@ -19,9 +20,9 @@ def build(spineJoints,
     :param baseRig:
     :return:
     """
-    #rigModule = module.Module(prefix=prefix,
-    #                          rigPartName='Spine',
-    #                          baseObject=baseRig)
+    rigModule = module.Module(prefix=prefix,
+                              rigPartName='Spine',
+                              baseObject=baseRig)
 
     # fk skeleton chain
     # create FK crv
@@ -59,7 +60,10 @@ def build(spineJoints,
     cmds.delete(FK_Crv)
 
     # aimConstraint all the fk_joints, the last joints must be same direction as the last joints of original joints list
-    fkJntList_rev = fkJntList
+    fkJntList_rev = []
+
+    for i in fkJntList:
+        fkJntList_rev.append(i)
     fkJntList_rev.reverse()
 
     for i in xrange(len(fkJntList_rev)-1):
@@ -76,7 +80,96 @@ def build(spineJoints,
         cmds.parent(fkJntList_rev[i], fkJntList_rev[i+1])
 
     # freeze transformation
-    cmds.makeIdentity(fkJntList[-1], apply=1)
+    cmds.makeIdentity(fkJntList[0], apply=1)
+
+    ##########
+    # FK rig #
+    ##########
+
+    preParent = fkJntList[0]
+    FK_Ctrl_List = []
+
+    for i in xrange(len(fkJntList)-2):
+
+        FK_C_Spine_Ctrl = control.Control(prefix='FK_' + prefix,
+                                          rigPartName='Spine',
+                                          scale=rigScale,
+                                          translateTo=fkJntList[i+1],
+                                          rotateTo=fkJntList[i+1],
+                                          parent=preParent,
+                                          shape='circleX')
+
+        cmds.orientConstraint(FK_C_Spine_Ctrl.C, fkJntList[i+1], mo=0)
+
+        preParent = FK_C_Spine_Ctrl.C
+
+        FK_Ctrl_List.append(FK_C_Spine_Ctrl.Off)
+
+        cmds.select(cl=1)
+
+    #############
+    # Body Ctrl #
+    #############
+
+    # create a square control shape for body ctrl
+
+    body_Ctrl = control.Control(prefix=prefix,
+                                rigPartName='Body',
+                                scale=rigScale,
+                                translateTo=spineJoints[0],
+                                rotateTo=spineJoints[0],
+                                parent=rigModule.topGrp
+                                )
+
+
+    C_Pelvis_Ctrl = control.Control(prefix=prefix,
+                                    rigPartName='Pelvis',
+                                    scale=rigScale,
+                                    translateTo=spineJoints[0],
+                                    rotateTo=spineJoints[0],
+                                    parent=body_Ctrl.C,
+                                    shape='moveControl')
+    # rotate Cpelvis_Ctrl
+
+    C_Chest_Ctrl = control.Control(prefix=prefix,
+                                   rigPartName='Chest',
+                                   scale=rigScale,
+                                   translateTo=spineJoints[-1],
+                                   rotateTo=spineJoints[-1],
+                                   parent=fkJntList[-1],
+                                   shape='moveControl')
+    # rotate C_Chest_Ctrl
+
+    # create 2 joints for controlling ikHandle curve
+    pelvis_Jnt = cmds.joint(n=prefix + 'Pelvis')
+    cmds.select(cl=1)
+    chest_Jnt = cmds.joint(n=prefix + 'Chest')
+    cmds.select(cl=1)
+
+    pc1 = cmds.parentConstraint(spineJoints[0], pelvis_Jnt, mo=0)
+    cmds.delete(pc1)
+    cmds.parent(pelvis_Jnt, C_Pelvis_Ctrl.C)
+
+    pc2 = cmds.parentConstraint(spineJoints[-1], chest_Jnt, mo=0)
+    cmds.delete(pc2)
+    cmds.parent(chest_Jnt, C_Chest_Ctrl.C)
+
+    ##########
+    # IK rig #
+    ##########
+
+    IK_Part_List = cmds.ikHandle(n=prefix + 'Spine_IK',
+                                 sj=spineJoints[0],
+                                 ee=spineJoints[-1],
+                                 parentCurve=0,
+                                 sol='ikSplineSolver')
+
+
+
+
+
+
+
 
 
 

@@ -4,6 +4,8 @@ module for making top rig structure and rig module
 
 import maya.cmds as cmds
 import control
+reload(control)
+
 sceneObjectType = 'rig'
 
 class Base():

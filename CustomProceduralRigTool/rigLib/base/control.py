@@ -4,7 +4,7 @@ module for making rig control
 
 import maya.cmds as cmds
 import controlShape
-
+reload(controlShape)
 
 
 class Control():
@@ -21,6 +21,7 @@ class Control():
                  rotateTo='',
                  parent='',
                  shape='circle',
+                 axis='x',
                  lockChannels=['s', 'v']):
         """
         create rig control and rig offset group
@@ -91,19 +92,24 @@ class Control():
         elif shape == 'spikeCrossControl':
             ctrlObject = controlShape.SpikeCrossControl.createShape(prefix=prefix + rigPartName + '_Ctrl', scale=scale)
 
-        elif shape == 'sliderControl':
+        elif shape == 'unitSliderControl':
             ctrlObject = controlShape.unitSliderControl.createShape(prefix=prefix + rigPartName, scale=scale)
+
+        elif shape == 'squareControl':
+            ctrlObject = controlShape.squareControl.createShape(prefix=prefix + rigPartName, scale=scale)
 
         if not ctrlObject:
             ctrlObject = cmds.circle(n=prefix + rigPartName + '_Ctrl', ch=0,
                                      normal=circleNormal, radius=scale)[0]
+
+        # rotate the ctrlObject
+        self.rotate_Ctrl(ctrlObject=ctrlObject, shape=shape, axis=axis)
 
         # ctrl offset group
         ctrlOffset = cmds.group(n=prefix + rigPartName + '_CtrlGrp', em=1)
         cmds.parent(ctrlObject, ctrlOffset)
 
         # color control
-
         ctrlShapes = cmds.listRelatives(ctrlObject, s=1)
 
         [cmds.setAttr(s + '.ove', 1) for s in ctrlShapes]
@@ -120,12 +126,12 @@ class Control():
         # translate control
 
         if cmds.objExists(translateTo):
-            cmds.delete(cmds.pointConstraint(translateTo, ctrlOffset))
+            cmds.delete(cmds.pointConstraint(translateTo, ctrlOffset, mo=0))
 
         # rotate control
 
         if cmds.objExists(rotateTo):
-            cmds.delete(cmds.orientConstraint(rotateTo, ctrlOffset))
+            cmds.delete(cmds.orientConstraint(rotateTo, ctrlOffset, mo=0))
 
         # parent control
 
@@ -154,3 +160,41 @@ class Control():
 
         self.C = ctrlObject
         self.Off = ctrlOffset
+
+    def rotate_Ctrl(self, ctrlObject, shape, axis='x'):
+        """
+        not support for sliderControl and unitSliderControl
+        :param ctrlObject: INSTANCE.C
+        :param shape: control shape
+        :param axis: forward axis
+        :return: None
+        """
+        ctrlShape = cmds.listRelatives(ctrlObject, s=1, type='nurbsCurve')
+
+        cls = cmds.cluster(ctrlShape)[1]
+
+        if axis == 'x' and shape in ['arrowCurve', 'crossControl', 'crownCurve', 'cubeOnBase', 'fistCurve',
+                                     'footControl', 'moveControl', 'spikeCrossControl']:
+            cmds.setAttr(cls + '.rz', 90)
+
+        elif axis == 'x' and shape in ['rotationControl', 'singleRotateControl']:
+            cmds.setAttr(cls + '.ry', 90)
+
+        elif axis == 'z' and shape in ['arrowCurve', 'crossControl', 'crownCurve', 'cubeOnBase', 'fistCurve',
+                                       'footControl', 'moveControl', 'spikeCrossControl']:
+            cmds.setAttr(cls + '.rx', 90)
+
+        elif axis == 'y' and shape in ['rotationControl', 'singleRotateControl']:
+            cmds.setAttr(cls + '.rx', 90)
+
+        elif axis == 'y' and shape in ['squareControl']:
+            cmds.setAttr(cls + '.rz', 90)
+
+        elif axis == 'z' and shape in ['squareControl']:
+            cmds.setAttr(cls + '.ry', 90)
+
+        else:
+            pass
+
+        # delete the cluster
+        cmds.delete(ctrlShape, ch=1)

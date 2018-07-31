@@ -5,6 +5,8 @@ if you want to use it at anywhere
 import maya.cmds as cmds
 from ..base import module
 from ..base import control
+reload(module)
+reload(control)
 
 
 def build(spineJoints,
@@ -27,7 +29,7 @@ def build(spineJoints,
     # fk skeleton chain
     # create FK crv
     ik_part_list = []
-    ik_part_list = cmds.ikHandle(sj=spineJoints[0], ee=spineJoints[-1], parentCurve=0, sol='ikSplineSolver')
+    ik_part_list = cmds.ikHandle(sj=spineJoints[0], ee=spineJoints[-1], parentCurve=0, sol='ikSplineSolver', numSpans=3)
 
     cmds.delete(ik_part_list[0])
 
@@ -56,8 +58,13 @@ def build(spineJoints,
 
         fkJntList.append(fkJnt)
 
+
     # delete the motionPath
     cmds.delete(FK_Crv)
+
+    # move the last fk joint to the end of the spineJoints
+    pc3 = cmds.pointConstraint(spineJoints[-1], fkJntList[-1], mo=0)
+    cmds.delete(pc3)
 
     # aimConstraint all the fk_joints, the last joints must be same direction as the last joints of original joints list
     fkJntList_rev = []
@@ -65,7 +72,7 @@ def build(spineJoints,
     for i in fkJntList:
         fkJntList_rev.append(i)
     fkJntList_rev.reverse()
-
+    
     for i in xrange(len(fkJntList_rev)-1):
         ac = cmds.aimConstraint(fkJntList_rev[i], fkJntList_rev[i+1], mo=0, weight=1, aimVector=(1, 0, 0),
                                 upVector=(0, 1, 0), worldUpType='vector', worldUpVector=(0, 1, 0))
@@ -82,30 +89,33 @@ def build(spineJoints,
     # freeze transformation
     cmds.makeIdentity(fkJntList[0], apply=1)
 
+
     ##########
     # FK rig #
     ##########
 
-    preParent = fkJntList[0]
+    preParent = fkJntList[1]
+    FK_CtrlGrp_List = []
     FK_Ctrl_List = []
 
     for i in xrange(len(fkJntList)-2):
-
         FK_C_Spine_Ctrl = control.Control(prefix='FK_' + prefix,
-                                          rigPartName='Spine',
+                                          rigPartName='Spine_' + str(i),
                                           scale=rigScale,
                                           translateTo=fkJntList[i+1],
                                           rotateTo=fkJntList[i+1],
                                           parent=preParent,
-                                          shape='circleX')
+                                          shape='circle')
 
-        cmds.orientConstraint(FK_C_Spine_Ctrl.C, fkJntList[i+1], mo=0)
+        #cmds.orientConstraint(FK_C_Spine_Ctrl.C, fkJntList[i+1], mo=0)
 
         preParent = FK_C_Spine_Ctrl.C
 
-        FK_Ctrl_List.append(FK_C_Spine_Ctrl.Off)
+        FK_CtrlGrp_List.append(FK_C_Spine_Ctrl.Off)
+        FK_Ctrl_List.append(FK_C_Spine_Ctrl.C)
 
         cmds.select(cl=1)
+    """
 
     #############
     # Body Ctrl #
@@ -115,30 +125,27 @@ def build(spineJoints,
 
     body_Ctrl = control.Control(prefix=prefix,
                                 rigPartName='Body',
-                                scale=rigScale,
+                                scale=rigScale * 15,
+                                shape='squareControl',
                                 translateTo=spineJoints[0],
                                 rotateTo=spineJoints[0],
-                                parent=rigModule.topGrp
-                                )
-
+                                axis='x')
 
     C_Pelvis_Ctrl = control.Control(prefix=prefix,
                                     rigPartName='Pelvis',
                                     scale=rigScale,
                                     translateTo=spineJoints[0],
                                     rotateTo=spineJoints[0],
-                                    parent=body_Ctrl.C,
+                                    axis='x',
                                     shape='moveControl')
-    # rotate Cpelvis_Ctrl
 
     C_Chest_Ctrl = control.Control(prefix=prefix,
                                    rigPartName='Chest',
                                    scale=rigScale,
                                    translateTo=spineJoints[-1],
                                    rotateTo=spineJoints[-1],
-                                   parent=fkJntList[-1],
+                                   axis='x',
                                    shape='moveControl')
-    # rotate C_Chest_Ctrl
 
     # create 2 joints for controlling ikHandle curve
     pelvis_Jnt = cmds.joint(n=prefix + 'Pelvis')
@@ -146,13 +153,13 @@ def build(spineJoints,
     chest_Jnt = cmds.joint(n=prefix + 'Chest')
     cmds.select(cl=1)
 
-    pc1 = cmds.parentConstraint(spineJoints[0], pelvis_Jnt, mo=0)
+    pc1 = cmds.parentConstraint(fkJntList[0], pelvis_Jnt, mo=0)
     cmds.delete(pc1)
-    cmds.parent(pelvis_Jnt, C_Pelvis_Ctrl.C)
+    # cmds.makeIdentity(pelvis_Jnt, apply=1)
 
-    pc2 = cmds.parentConstraint(spineJoints[-1], chest_Jnt, mo=0)
+    pc2 = cmds.parentConstraint(fkJntList[-1], chest_Jnt, mo=0)
     cmds.delete(pc2)
-    cmds.parent(chest_Jnt, C_Chest_Ctrl.C)
+    # cmds.makeIdentity(chest_Jnt, apply=1)
 
     ##########
     # IK rig #
@@ -162,12 +169,43 @@ def build(spineJoints,
                                  sj=spineJoints[0],
                                  ee=spineJoints[-1],
                                  parentCurve=0,
+                                 numSpans=4,
                                  sol='ikSplineSolver')
 
+    # bind ik curve with 2 joints
+    cmds.select(cl=1)
+    cmds.select(IK_Part_List[-1])
+    cmds.select(chest_Jnt, add=1)
+    cmds.select(pelvis_Jnt, add=1)
+    cmds.skinCluster(chest_Jnt, pelvis_Jnt, IK_Part_List[-1], tsb=1)
 
+    # setup IK Twist
+    cmds.setAttr(IK_Part_List[0] + '.dTwistControlEnable', 1)
+    cmds.setAttr(IK_Part_List[0] + '.dWorldUpType', 4)
+    cmds.connectAttr(C_Pelvis_Ctrl.C + '.worldMatrix[0]', IK_Part_List[0] + '.dWorldUpMatrix')
+    cmds.connectAttr(C_Chest_Ctrl.C + '.worldMatrix[0]', IK_Part_List[0] + '.dWorldUpMatrixEnd')
 
+    # clean up the hierarchy
+    cmds.parent(pelvis_Jnt, C_Pelvis_Ctrl.C)
+    cmds.parent(chest_Jnt, C_Chest_Ctrl.C)
 
+    # parent fk_jnt to body_Ctrl
+    cmds.parent(fkJntList[0], body_Ctrl.C)
 
+    # parent pelvis_CtrlGrp to body_Ctrl
+    cmds.parent(C_Pelvis_Ctrl.Off, body_Ctrl.C)
+
+    # parent chest_CtrlGrp to fkJntList[-1]
+    cmds.parent(C_Chest_Ctrl.Off, fkJntList[-1])
+
+    cmds.parent(IK_Part_List[-1], IK_Part_List[0], rigModule.dontTouchGrp)
+
+    cmds.select(cl=1)
+
+    # return
+    return {'module': rigModule, 'chest_Ctrl': C_Chest_Ctrl.C, 'pelvis_Ctrl': C_Pelvis_Ctrl.C}
+
+"""
 
 
 

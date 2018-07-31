@@ -93,8 +93,6 @@ def build(spineJoints,
     ##########
     # FK rig #
     ##########
-
-    preParent = fkJntList[1]
     FK_CtrlGrp_List = []
     FK_Ctrl_List = []
 
@@ -104,10 +102,9 @@ def build(spineJoints,
                                           scale=rigScale,
                                           translateTo=fkJntList[i+1],
                                           rotateTo=fkJntList[i+1],
-                                          parent=preParent,
                                           shape='circle')
 
-        #cmds.orientConstraint(FK_C_Spine_Ctrl.C, fkJntList[i+1], mo=0)
+        cmds.orientConstraint(FK_C_Spine_Ctrl.C, fkJntList[i+1], mo=0)
 
         preParent = FK_C_Spine_Ctrl.C
 
@@ -115,6 +112,13 @@ def build(spineJoints,
         FK_Ctrl_List.append(FK_C_Spine_Ctrl.C)
 
         cmds.select(cl=1)
+
+    # parent the CtrlGrps to the proper places
+    for i in xrange(len(FK_Ctrl_List)-1):
+        cmds.parent(FK_CtrlGrp_List[i+1], FK_Ctrl_List[i])
+
+    cmds.parent(FK_CtrlGrp_List[0], fkJntList[0])
+
     """
 
     #############

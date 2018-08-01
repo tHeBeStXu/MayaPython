@@ -173,7 +173,7 @@ class Control():
 
         cls = cmds.cluster(ctrlShape)[1]
 
-        if axis == 'x' and shape in ['arrowCurve', 'crossControl', 'crownCurve', 'cubeOnBase', 'fistCurve',
+        if axis == 'x' and shape in ['crossControl', 'crownCurve', 'fistCurve',
                                      'footControl', 'moveControl', 'spikeCrossControl']:
             cmds.setAttr(cls + '.rz', 90)
 
@@ -193,6 +193,13 @@ class Control():
         elif axis == 'z' and shape in ['squareControl']:
             cmds.setAttr(cls + '.ry', 90)
 
+        elif axis == 'x' and shape in ['cubeOnBase']:
+            cmds.move(0, 0, 0, [cls + '.scalePivot', cls + '.rotatePivot'], rpr=1)
+            cmds.setAttr(cls + '.rz', -90)
+        elif axis == 'x' and shape in ['arrowCurve']:
+            cmds.move(0, 0, 0, [cls + '.scalePivot', cls + '.rotatePivot'], rpr=1)
+            cmds.setAttr(cls + '.ry', -90)
+            cmds.setAttr(cls + '.rx', -90)
         else:
             pass
 

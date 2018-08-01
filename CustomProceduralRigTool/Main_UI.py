@@ -194,7 +194,8 @@ class RiggingMainUI(QtWidgets.QWidget):
                 IK_FK_Spine.build(spineJoints=rig.rigArgs['spineJoints'],
                                   prefix=rig.rigArgs['prefix'],
                                   rigScale=rig.rigArgs['rigScale'],
-                                  fkSpineCrv=rig.rigArgs['fkSpineCrv'])
+                                  numFK_Jnt=rig.rigArgs['numFK_Jnt'],
+                                  baseRig=rig.rigArgs['baseRig'])
                 logger.debug('%s IK_FK_Spine finished!' % str(rig.rigPartName))
             else:
                 logger.debug("Can't find Spine part, please check your joints.")

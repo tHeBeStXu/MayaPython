@@ -13,3 +13,4 @@ import SliderControl
 import SpikeCrossControl
 import SliderControl
 import unitSliderControl
+import squareControl

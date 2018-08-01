@@ -109,13 +109,13 @@ class IK_FK_Spine_EditUI(EditUI):
         self.rowItem = {}
 
         self.rowItem['spineJoints'] = QtWidgets.QLineEdit()
-        self.rowItem['fkSpineCrv'] = QtWidgets.QLineEdit()
+        self.rowItem['numFK_Jnt'] = QtWidgets.QLineEdit()
         self.rowItem['prefix'] = QtWidgets.QLineEdit()
         self.rowItem['rigScale'] = QtWidgets.QLineEdit()
         self.rowItem['baseRig'] = QtWidgets.QLineEdit()
 
         formLayout.addRow('spineJoints: ', self.rowItem['spineJoints'])
-        formLayout.addRow('fkSpineCrv: ', self.rowItem['fkSpineCrv'])
+        formLayout.addRow('numFK_Jnt: ', self.rowItem['numFK_Jnt'])
         formLayout.addRow('prefix: ', self.rowItem['prefix'])
         formLayout.addRow('rigScale', self.rowItem['rigScale'])
         formLayout.addRow('baseRig: ', self.rowItem['baseRig'])
@@ -128,7 +128,7 @@ class IK_FK_Spine_EditUI(EditUI):
         :return: None
         """
         self.specifiedInstance.rigArgs['spineJoints'] = self.rowItem['spineJoints'].text()
-        self.specifiedInstance.rigArgs['fkSpineCrv'] = self.rowItem['fkSpineCrv'].text()
+        self.specifiedInstance.rigArgs['numFK_Jnt'] = self.rowItem['numFK_Jnt'].text()
         self.specifiedInstance.rigArgs['prefix'] = self.rowItem['prefix'].text()
         self.specifiedInstance.rigArgs['rigScale'] = self.rowItem['rigScale'].text()
         self.specifiedInstance.rigArgs['baseRig'] = self.rowItem['baseRig'].text()

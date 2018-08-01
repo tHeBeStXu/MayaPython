@@ -87,6 +87,11 @@ def build(spineJoints,
     for i in xrange(len(fkJntList_rev)-1):
         cmds.parent(fkJntList_rev[i], fkJntList_rev[i+1])
 
+    # set fk joints drawStyle to None and display to template
+
+    for i in fkJntList:
+        cmds.setAttr(i + '.drawStyle', 2)
+
     # freeze transformation
     cmds.makeIdentity(fkJntList[0], apply=1)
 
@@ -107,8 +112,6 @@ def build(spineJoints,
                                           lockChannels=['t', 's', 'v'])
 
         cmds.orientConstraint(FK_C_Spine_Ctrl.C, fkJntList[i+1], mo=0)
-
-        preParent = FK_C_Spine_Ctrl.C
 
         FK_CtrlGrp_List.append(FK_C_Spine_Ctrl.Off)
         FK_Ctrl_List.append(FK_C_Spine_Ctrl.C)
@@ -202,6 +205,9 @@ def build(spineJoints,
     cmds.parent(C_Chest_Ctrl.Off, fkJntList[-1])
 
     cmds.parent(IK_Part_List[-1], IK_Part_List[0], rigModule.dontTouchGrp)
+
+    # parent body_CtrlGrp to rigmodule.topGrp
+    cmds.parent(body_Ctrl.Off, rigModule.topGrp)
 
     cmds.select(cl=1)
 

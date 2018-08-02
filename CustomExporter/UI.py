@@ -16,8 +16,6 @@ reload(animationExport)
 
 class MainUI(object):
 
-
-
     def __init__(self):
         self.buildUI()
 
@@ -507,7 +505,6 @@ class MainUI(object):
             cmds.setAttr(exportNode[0] + '.moveToOrigin', cmds.checkBoxGrp(self.animZeroOriginCheckBoxGrp, query=1, value1=1))
             cmds.setAttr(exportNode[0] + '.zeroOrigin', cmds.checkBoxGrp(self.animZeroOriginMotionCheckBoxGrp, query=1, value1=1))
             cmds.setAttr(exportNode[0] + '.useSubRange', cmds.checkBoxGrp(self.animSubRangeCheckBoxGrp, query=1, value1=1))
-
 
             if cmds.getAttr(exportNode[0] + '.useSubRange'):
                 cmds.setAttr(exportNode[0] + '.startFrame', cmds.floatFieldGrp(self.animStartFrameFloatFieldGrp, q=1, value1=1))

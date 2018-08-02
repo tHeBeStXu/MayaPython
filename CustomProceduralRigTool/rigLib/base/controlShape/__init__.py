@@ -11,6 +11,5 @@ import RotationControl
 import singleRotateControl
 import SliderControl
 import SpikeCrossControl
-import SliderControl
 import unitSliderControl
 import squareControl

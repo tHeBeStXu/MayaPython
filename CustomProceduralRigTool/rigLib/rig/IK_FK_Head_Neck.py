@@ -7,12 +7,23 @@ reload(control)
 
 def build(neckJoints,
           rigScale,
-          Master_Ctrl,
           Neck_Parent='',
           prefix='C_',
           blendCtrl_Pos='',
           baseRig=None
           ):
+    """
+    IK_FK_Neck_rig module
+    :param neckJoints: list(str), neck joints and head joint list, [neck_0, neck_1, ... neck_#, head]
+    :param rigScale: float, rig scale of the control
+    :param Neck_Parent: str, the last valid spine joint, Spine_#
+    :param prefix: str, 'C_', 'L_' or 'R_'
+    :param blendCtrl_Pos: str, space locator
+    :param baseRig: str, base atttach of the rig, Base Class instance is used.
+    :return: current None
+    """
+    cmds.select(cl=1)
+
     rigmodule = module.Module(prefix=prefix + 'Head_',
                               baseObject=baseRig)
 
@@ -135,22 +146,23 @@ def build(neckJoints,
                                    shape='moveControl',
                                    axis='x')
 
-    # orientConstraint the ik head joint
-    cmds.orientConstraint(IK_Head_Ctrl.C, ik_Joints_List[-1], mo=0)
-
     IK_Start_Jnt = cmds.joint(n='IK_' + prefix + 'Head_StartJnt')
     cmds.select(cl=1)
     IK_End_Jnt = cmds.joint(n='IK_' + prefix + 'Head_EndJnt')
     cmds.select(cl=1)
+    print ik_Joints_List
+    cmds.delete(cmds.parentConstraint(neckJoints[0], IK_Start_Jnt, mo=0))
+    cmds.delete(cmds.parentConstraint(neckJoints[-1], IK_End_Jnt, mo=0))
 
+    cmds.makeIdentity(IK_Start_Jnt, apply=1, t=1, r=1, s=1, n=0, pn=1)
+    cmds.makeIdentity(IK_End_Jnt, apply=1, t=1, r=1, s=1, n=0, pn=1)
+
+    cmds.select(cl=1)
     cmds.parent(IK_End_Jnt, IK_Head_Ctrl.C)
+    cmds.parent(IK_Start_Jnt, Neck_Parent)
 
-
-    cmds.delete(cmds.parentConstraint(ik_Joints_List[0], IK_Start_Jnt, mo=0))
-    cmds.delete(cmds.parentConstraint(ik_Joints_List[0], IK_End_Jnt, mo=0))
-
-    cmds.makeIdentity(IK_Start_Jnt, apply=1)
-    cmds.makeIdentity(IK_End_Jnt, apply=1)
+    # orientConstraint the ik head joint
+    # cmds.orientConstraint(IK_Head_Ctrl.C, ik_Joints_List[-1], mo=0)
 
     # ik handle
     IK_Part_List = cmds.ikHandle(n=prefix + 'Head_IK',
@@ -165,12 +177,14 @@ def build(neckJoints,
     cmds.select(IK_Start_Jnt, add=1)
     cmds.select(IK_End_Jnt, add=1)
     cmds.skinCluster(IK_Start_Jnt, IK_End_Jnt, IK_Part_List[-1], tsb=1)
+    cmds.select(cl=1)
 
     # setup IK Twist
     cmds.setAttr(IK_Part_List[0] + '.dTwistControlEnable', 1)
     cmds.setAttr(IK_Part_List[0] + '.dWorldUpType', 4)
     cmds.connectAttr(IK_Start_Jnt + '.worldMatrix[0]', IK_Part_List[0] + '.dWorldUpMatrix')
     cmds.connectAttr(IK_End_Jnt + '.worldMatrix[0]', IK_Part_List[0] + '.dWorldUpMatrixEnd')
+
 
     # create ik_head_local and ik_head_world
     ik_headLocal = cmds.spaceLocator(n='IK_' + prefix + 'HeadLocal')
@@ -215,12 +229,12 @@ def build(neckJoints,
 
     # IK FK BLEND
     IK_FK_BlendCtrl = control.Control(prefix=prefix,
-                                rigPartName='Head_Blend',
-                                scale=rigScale,
-                                translateTo=blendCtrl_Pos,
-                                rotateTo=blendCtrl_Pos,
-                                shape='unitSliderControl',
-                                lockChannels=['ty', 'tz', 'r', 's', 'v'])
+                                      rigPartName='Head_Blend',
+                                      scale=rigScale*5,
+                                      translateTo=blendCtrl_Pos,
+                                      rotateTo=blendCtrl_Pos,
+                                      shape='unitSliderControl',
+                                      lockChannels=['tx', 'tz', 'r', 's', 'v'])
 
     for i in range(len(fk_Joints_List)):
         # blend node
@@ -232,28 +246,26 @@ def build(neckJoints,
         # output to origin neckJoints
         cmds.connectAttr(blend + '.output', neckJoints[i] + '.r', f=1)
         # IK_FK_BlendCtrl
-        cmds.connectAttr(IK_FK_BlendCtrl.C + '.tx', blend + '.blender')
+        cmds.connectAttr(IK_FK_BlendCtrl.C + '.ty', blend + '.blender')
 
     # visibility blend
+    cmds.setAttr(IK_FK_BlendCtrl.C + '.ty', 0)
     cmds.setAttr(FK_Neck_CtrlGrp_List[0] + '.v', 1)
     cmds.setAttr(FK_Head_Ctrl.Off + '.v', 1)
     cmds.setAttr(IK_Head_Ctrl.Off + '.v', 0)
 
-    cmds.setDrivenKeyframe(FK_Neck_CtrlGrp_List[0] + '.v', cd=IK_FK_BlendCtrl.C + '.tx')
-    cmds.setDrivenKeyframe(FK_Head_Ctrl.Off + '.v', cd=IK_FK_BlendCtrl.C + '.tx')
-    cmds.setDrivenKeyframe(IK_Head_Ctrl.Off + '.v', cd=IK_FK_BlendCtrl.C + '.tx')
+    cmds.setDrivenKeyframe(FK_Neck_CtrlGrp_List[0] + '.v', cd=IK_FK_BlendCtrl.C + '.ty')
+    cmds.setDrivenKeyframe(FK_Head_Ctrl.Off + '.v', cd=IK_FK_BlendCtrl.C + '.ty')
+    cmds.setDrivenKeyframe(IK_Head_Ctrl.Off + '.v', cd=IK_FK_BlendCtrl.C + '.ty')
 
+    cmds.setAttr(IK_FK_BlendCtrl.C + '.ty', 1)
     cmds.setAttr(FK_Neck_CtrlGrp_List[0] + '.v', 0)
     cmds.setAttr(FK_Head_Ctrl.Off + '.v', 0)
     cmds.setAttr(IK_Head_Ctrl.Off + '.v', 1)
 
-    cmds.setDrivenKeyframe(FK_Neck_CtrlGrp_List[0] + '.v', cd=IK_FK_BlendCtrl.C + '.tx')
-    cmds.setDrivenKeyframe(FK_Head_Ctrl.Off + '.v', cd=IK_FK_BlendCtrl.C + '.tx')
-    cmds.setDrivenKeyframe(IK_Head_Ctrl.Off + '.v', cd=IK_FK_BlendCtrl.C + '.tx')
-
-
-    # parenting
-    cmds.parent(IK_Start_Jnt, Neck_Parent)
+    cmds.setDrivenKeyframe(FK_Neck_CtrlGrp_List[0] + '.v', cd=IK_FK_BlendCtrl.C + '.ty')
+    cmds.setDrivenKeyframe(FK_Head_Ctrl.Off + '.v', cd=IK_FK_BlendCtrl.C + '.ty')
+    cmds.setDrivenKeyframe(IK_Head_Ctrl.Off + '.v', cd=IK_FK_BlendCtrl.C + '.ty')
 
     neckLoc = cmds.spaceLocator(n=prefix + 'Neck_Loc')
     cmds.parentConstraint(Neck_Parent, neckLoc, mo=0)
@@ -262,9 +274,35 @@ def build(neckJoints,
 
     # fk_headLocal and fk_headWorld
     cmds.parent(fk_headLocal, FK_Neck_Ctrl_List[-1])
-    cmds.parent(fk_headWorld, Master_Ctrl)
+    cmds.parent(fk_headWorld, baseRig.Master_Ctrl.C)
     # ik_headLocal and ik_headWorld
     cmds.parent(ik_headLocal, neckLoc)
-    cmds.parent(ik_headWorld, Master_Ctrl)
+    cmds.parent(ik_headWorld, baseRig.Master_Ctrl.C)
 
+    # ik parts
+    cmds.parent(IK_Part_List[0], rigmodule.dontTouchGrp)
+    cmds.parent(IK_Part_List[-1], rigmodule.dontTouchGrp)
 
+    # blend ctrl
+    cmds.pointConstraint(blendCtrl_Pos, IK_FK_BlendCtrl.Off, mo=0)
+    blendCtrl_Pos_Shape = cmds.listRelatives(blendCtrl_Pos, s=1)
+    cmds.setAttr(blendCtrl_Pos_Shape[0] + '.localScaleX', 0)
+    cmds.setAttr(blendCtrl_Pos_Shape[0] + '.localScaleY', 0)
+    cmds.setAttr(blendCtrl_Pos_Shape[0] + '.localScaleZ', 0)
+    cmds.setAttr(blendCtrl_Pos_Shape[0] + '.template', 1)
+    headBlendLoc = cmds.spaceLocator(n=prefix + 'HeadBlend_Loc')
+    headBlendLoc_Shape = cmds.listRelatives(headBlendLoc, s=1)
+    cmds.setAttr(headBlendLoc_Shape[0] + '.localScaleX', 0)
+    cmds.setAttr(headBlendLoc_Shape[0] + '.localScaleY', 0)
+    cmds.setAttr(headBlendLoc_Shape[0] + '.localScaleZ', 0)
+    cmds.setAttr(headBlendLoc_Shape[0] + '.template', 1)
+    cmds.pointConstraint(neckJoints[-1], headBlendLoc, mo=0)
+    cmds.parent(blendCtrl_Pos, headBlendLoc)
+    cmds.parent(IK_FK_BlendCtrl.Off, rigmodule.topGrp)
+    cmds.parent(headBlendLoc, rigmodule.topGrp)
+
+    # clean rigModule
+    cmds.parent(FK_Head_Ctrl.Off, rigmodule.topGrp)
+    cmds.parent(neckLoc, rigmodule.topGrp)
+
+    cmds.select(cl=1)

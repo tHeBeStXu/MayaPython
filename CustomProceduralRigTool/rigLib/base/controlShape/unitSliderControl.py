@@ -9,10 +9,10 @@ def createShape(prefix='',
     :param scale: float, scale of the control
     :return: str, ctrlBox of the unitSliderControl
     """
-    Ctrl = cmds.circle(radius=0.2, nr=(1, 0, 0), n=prefix + '_BlendCtrl')[0]
+    Ctrl = cmds.circle(radius=0.2, nr=(1, 0, 0), n=prefix + '_Ctrl')[0]
     cmds.transformLimits(Ctrl, tx=(0, 0), ty=(0, 1), tz=(0, 0), etx=(1, 1), ety=(1, 1), etz=(1, 1))
 
-    CtrlBox = cmds.curve(d=1, p=[(0, 0, 0), (0, 1, 0)], k=[0, 1], n=prefix + '_BlendCtrlBox')
+    CtrlBox = cmds.curve(d=1, p=[(0, 0, 0), (0, 1, 0)], k=[0, 1], n=prefix + '_CtrlBox')
     parentCrvShape = cmds.listRelatives(CtrlBox, s=1)
     cmds.setAttr(parentCrvShape[0] + '.template', 1)
 

@@ -47,6 +47,7 @@ class Base():
                                            shape='crownCurve',
                                            scale=scale * 10.0,
                                            parent=self.topGrp,
+                                           axis='z',
                                            lockChannels=['v'])
 
         self.Move_Ctrl = control.Control(prefix='C_',
@@ -54,10 +55,11 @@ class Base():
                                          shape='moveControl',
                                          scale=scale * 15.0,
                                          parent=self.Master_Ctrl.C,
+                                         axis='z',
                                          lockChannels=['s', 'v'])
         # Z axis up rotate set
-        self._flattenGlobalCtrlShape(self.Master_Ctrl.C)
-        self._flattenGlobalCtrlShape(self.Move_Ctrl.C)
+        # self._flattenGlobalCtrlShape(self.Master_Ctrl.C)
+        # self._flattenGlobalCtrlShape(self.Move_Ctrl.C)
 
         for axis in ['y', 'z']:
 
@@ -166,4 +168,4 @@ class Module():
 
         if baseObject:
 
-            cmds.parent(self.topGrp, baseObject.Master_Ctrl)
+            cmds.parent(self.topGrp, baseObject.Master_Ctrl.C)

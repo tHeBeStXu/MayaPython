@@ -11,15 +11,16 @@ reload(control)
 def build(spineJoints,
           prefix,
           rigScale,
-          numFK_Jnt=2,
+          numFK_Jnt=3,
           baseRig=None):
     """
 
-    :param spineJoints: list[str], original spine joints, from the C_Spine_0 to C_Spine_x, you need to make true that
+    :param spineJoints: list(str), original spine joints, from the C_Spine_0 to C_Spine_x, you need to make true that
                         the spine joints are at same directions, i.e. x-axis is main axis, and z-axis is point to the
                         -x axis of world space.
     :param prefix: str, prefix of the spine, usually, 'C_' is used.
     :param rigScale: float, rig scale of the whole rigging project.
+    :param numFK_Jnt: int, number of FK spine joints, greater than 3.
     :param baseRig: str, base atttach of the rig. Master_Ctrl_.C is used.
     :return: dictionary, rigModule, chest_ctrl (used for upper body parts rig)and pelvis_ctrl (used for tail rig)
     """

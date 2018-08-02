@@ -57,57 +57,67 @@ class Control():
             cmds.delete(addShape)
 
         elif shape == 'crossControl':
-            ctrlObject = controlShape.CrossControl.createShape(prefix=prefix + rigPartName + '_Ctrl', scale=scale)
+            ctrlObject = controlShape.CrossControl.createShape(prefix=prefix + rigPartName + '_Ctrl')
 
         elif shape == 'arrowCurve':
-            ctrlObject = controlShape.ArrowCurve.createShape(prefix=prefix + rigPartName + '_Ctrl', scale=scale)
+            ctrlObject = controlShape.ArrowCurve.createShape(prefix=prefix + rigPartName + '_Ctrl')
 
         elif shape == 'crownCurve':
-            ctrlObject = controlShape.CrownCurve.createShape(prefix=prefix + rigPartName + '_Ctrl', scale=scale)
+            ctrlObject = controlShape.CrownCurve.createShape(prefix=prefix + rigPartName + '_Ctrl')
 
         elif shape == 'cubeCurve':
-            ctrlObject = controlShape.CubeCurve.createShape(prefix=prefix + rigPartName + '_Ctrl', scale=scale)
+            ctrlObject = controlShape.CubeCurve.createShape(prefix=prefix + rigPartName + '_Ctrl')
 
         elif shape == 'cubeOnBase':
-            ctrlObject = controlShape.cubeOnBase.createShape(prefix=prefix + rigPartName + '_Ctrl', scale=scale)
+            ctrlObject = controlShape.cubeOnBase.createShape(prefix=prefix + rigPartName + '_Ctrl')
 
         elif shape == 'diamond':
-            ctrlObject = controlShape.Diamond.createShape(prefix=prefix + rigPartName + '_Ctrl', scale=scale)
+            ctrlObject = controlShape.Diamond.createShape(prefix=prefix + rigPartName + '_Ctrl')
 
         elif shape == 'fistCurve':
-            ctrlObject = controlShape.FistCurve.createShape(prefix=prefix + rigPartName + '_Ctrl', scale=scale)
+            ctrlObject = controlShape.FistCurve.createShape(prefix=prefix + rigPartName + '_Ctrl')
 
         elif shape == 'footControl':
-            ctrlObject = controlShape.FootControl.createShape(prefix=prefix + rigPartName + '_Ctrl', scale=scale)
+            ctrlObject = controlShape.FootControl.createShape(prefix=prefix + rigPartName + '_Ctrl')
 
         elif shape == 'moveControl':
-            ctrlObject = controlShape.MoveControl.createShape(prefix=prefix + rigPartName + '_Ctrl', scale=scale)
+            ctrlObject = controlShape.MoveControl.createShape(prefix=prefix + rigPartName + '_Ctrl')
 
         elif shape == 'rotationControl':
-            ctrlObject = controlShape.RotationControl.createShape(prefix=prefix + rigPartName + '_Ctrl', scale=scale)
+            ctrlObject = controlShape.RotationControl.createShape(prefix=prefix + rigPartName + '_Ctrl')
 
         elif shape == 'singleRotateControl':
-            ctrlObject = controlShape.singleRotateControl.createShape(prefix=prefix + rigPartName + '_Ctrl', scale=scale)
+            ctrlObject = controlShape.singleRotateControl.createShape(prefix=prefix + rigPartName + '_Ctrl')
 
         elif shape == 'spikeCrossControl':
-            ctrlObject = controlShape.SpikeCrossControl.createShape(prefix=prefix + rigPartName + '_Ctrl', scale=scale)
+            ctrlObject = controlShape.SpikeCrossControl.createShape(prefix=prefix + rigPartName + '_Ctrl')
 
         elif shape == 'unitSliderControl':
-            ctrlObject = controlShape.unitSliderControl.createShape(prefix=prefix + rigPartName, scale=scale)
+            ctrlBox = controlShape.unitSliderControl.createShape(prefix=prefix + rigPartName)
+            print ctrlBox
+            ctrlObject = cmds.listRelatives(ctrlBox, children=1, parent=0, s=0)
+            print ctrlObject
+            ctrlObject = ctrlObject[1]
 
         elif shape == 'squareControl':
-            ctrlObject = controlShape.squareControl.createShape(prefix=prefix + rigPartName, scale=scale)
+            ctrlObject = controlShape.squareControl.createShape(prefix=prefix + rigPartName)
 
         if not ctrlObject:
             ctrlObject = cmds.circle(n=prefix + rigPartName + '_Ctrl', ch=0,
-                                     normal=circleNormal, radius=scale)[0]
+                                     normal=circleNormal, radius=1.0)[0]
 
         # rotate the ctrlObject
         self.rotate_Ctrl(ctrlObject=ctrlObject, shape=shape, axis=axis)
 
         # ctrl offset group
         ctrlOffset = cmds.group(n=prefix + rigPartName + '_CtrlGrp', em=1)
-        cmds.parent(ctrlObject, ctrlOffset)
+        if shape in ['unitSliderControl']:
+            cmds.parent(ctrlBox, ctrlOffset)
+        else:
+            cmds.parent(ctrlObject, ctrlOffset)
+
+        # scale the control grp
+        cmds.setAttr(ctrlOffset + '.s', scale, scale, scale)
 
         # color control
         ctrlShapes = cmds.listRelatives(ctrlObject, s=1)

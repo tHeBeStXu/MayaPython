@@ -6,236 +6,288 @@ import maya.cmds as cmds
 from ..base import module
 from ..base import control
 
-from ..utils import joint
-from ..utils import name
+from .. utils import name
+
+reload(module)
+reload(control)
+reload(name)
 
 
-def build(prefix,
-          topJoint,
-          startDupJnt,
-          endDupJnt,
-          armPvLoc,
-          switchCtrlLoc,
-          rigScale,
-          fkPreParent,
+def build(armJoints,
+          prefix='L_',
+          rigScale=1.0,
+          FK_Parent='',
+          switchCtrlPos='',
           baseRig=None):
 
     rigmodule = module.Module(prefix=prefix,
+                              rigPartName='Arm',
                               baseObject=baseRig)
 
-    # make attach groups
-    bodyAttachGrp = cmds.group(n=prefix + 'bodyAttach_grp',
-                               em=1, p=rigmodule.partsGrp)
-    baseAttachGrp = cmds.group(n=prefix + 'baseAttach_grp',
-                               em=1, p=rigmodule.partsGrp)
-    cmds.select(cl=1)
-    # duplicate the specified joints
-    # Create fkJoints
-    fkArmJnts = joint.dupSpecifiedJnts(startDupJnt=startDupJnt,
-                                       endDupJnt=endDupJnt,
-                                       suffix='_FK')
+    # create FK joints chain
+    fk_preParent = armJoints[0]
+    fk_Joint_List = []
+    for i in xrange(len(armJoints)-1):
+        newJnt = cmds.joint(n='FK_' + armJoints[i+1])
+        cmds.delete(cmds.parentConstraint(armJoints[i+1], newJnt, mo=0))
+        cmds.makeIdentity(newJnt, apply=1, t=1, r=1, s=1)
+        cmds.parent(newJnt, fk_preParent)
+        fk_Joint_List.append(newJnt)
+        fk_preParent = newJnt
+        cmds.select(cl=1)
+    cmds.setAttr(fk_Joint_List[0] + '.v', 0)
 
-    cmds.select(cl=1)
-
-    # create ikJoints
-    ikArmJnts = joint.dupSpecifiedJnts(startDupJnt=startDupJnt,
-                                       endDupJnt=endDupJnt,
-                                       suffix='_IK')
-    cmds.select(cl=1)
-
-    # create the IK wrist Ctrl
-    ikWristCtrl = control.Control(prefix=prefix + 'Wrist_IK',
-                                  translateTo=ikArmJnts[-1],
-                                  rotateTo=ikArmJnts[-1],
-                                  scale=rigScale*6,
-                                  shape='circleX',
-                                  parent=rigmodule.controlGrp)
-
-    # create the switch Ctrl
-    switchCtrl = control.Control(prefix=prefix + 'Switch',
-                                 translateTo=switchCtrlLoc,
-                                 scale=rigScale*4,
-                                 shape='circleX',
-                                 parent=ikWristCtrl.C,
-                                 lockChannels=['t', 'r', 's', 'v'])
-
-    # add Attr to switchCtrl
-    cmds.addAttr(switchCtrl.C, ln='FK_2_IK', at='float', min=0, max=1, k=1)
-
-
-
-    skinArmJnts = ['l_shouder', 'l_elbow', 'l_wrist']
-    switchCtrlList = [switchCtrl.C, switchCtrl.C, switchCtrl.C]
-
-    ###############
-    # IK FK Blend #
-    ###############
-
-    # create connections
-    for ikJnt, fkJnt, jnt, switch in zip(ikArmJnts, fkArmJnts, skinArmJnts, switchCtrlList):
-        # create blendNode
-        blendNode = cmds.createNode('blendColors')
-        # connect IK.r to blendNode.color1
-        cmds.connectAttr(ikJnt + '.r', blendNode + '.color1', f=1)
-        # connect FK.r to blendNode.color2
-        cmds.connectAttr(fkJnt + '.r', blendNode + '.color2', f=1)
-        # connect blendNode.output to skinJnt.r
-        cmds.connectAttr(blendNode + '.output', jnt + '.r', f=1)
-        # connect switchCtrl.IK2FK to blendNode.blend
-        cmds.connectAttr(switch + '.FK_2_IK', blendNode + '.blender', f=1)
-
-############
-# IK PARTS #
-############
-
-    # create IK Arm PvCtrl
-    IKArmPvCtrl = control.Control(prefix=prefix + 'Pv',
-                                  translateTo=armPvLoc,
-                                  shape='diamond',
-                                  scale=rigScale*5,
-                                  lockChannels=['r', 's', 'v'])
-
-    # create IK Handle
-    IKHandle = cmds.ikHandle(n=ikArmJnts[-1] + '_ikh',
-                             sol='ikRPsolver',
-                             sj=ikArmJnts[0],
-                             ee=ikArmJnts[-1])[0]
-    cmds.hide(IKHandle)
-
-    # poleConstraint IKHandle to PvCtrl
-    cmds.poleVectorConstraint(IKArmPvCtrl.C, IKHandle)
-
-    # parent ikHandle to ikWristCtrl
-    cmds.parent(IKHandle, ikWristCtrl.C)
-
-    # orient constraint ik wrist to ikCtrl
-    cmds.orientConstraint(ikWristCtrl.C, ikArmJnts[-1])
-
-    # attach IKArmPvCtrl to bodyAttachGrp
-    cmds.parentConstraint(bodyAttachGrp, IKArmPvCtrl.Off, mo=1)
-    cmds.parentConstraint(bodyAttachGrp, ikWristCtrl.Off, mo=1)
-
-    # clean and parent
-    cmds.parent(IKArmPvCtrl.Off, rigmodule.controlGrp)
-
-############
-# FK PARTS #
-############
-
-    # FK Arms
-    cmds.select(cl=1)
-    fkArmPreParent = fkPreParent
-    fkArmCtrlList = []
-    for jnt in fkArmJnts:
-        jntCtrl = control.Control(prefix=jnt,
-                                  translateTo=jnt,
-                                  rotateTo=jnt,
-                                  shape='sphere',
-                                  scale=rigScale*4,
-                                  lockChannels=['t', 's', 'v'])
-
-        cmds.pointConstraint(jntCtrl.C, jnt, mo=0)
-        cmds.orientConstraint(jntCtrl.C, jnt, mo=0)
-
-        if fkArmPreParent != None:
-            cmds.parent(jntCtrl.Off, fkArmPreParent)
-
-        fkArmPreParent = jntCtrl.C
-
-        fkArmCtrlList.append(jntCtrl)
-
-
-    # FK Clavicle
-    fkClavicleCtrl = control.Control(prefix=topJoint + '_FK',
-                                     translateTo=topJoint,
-                                     rotateTo=topJoint,
-                                     shape='rotationControl',
-                                     lockChannels=['t', 's', 'v'],
-                                     scale=rigScale*4)
-
-    cmds.orientConstraint(fkClavicleCtrl.C, topJoint)
-
-    claLoc_Local = cmds.spaceLocator(n=topJoint + '_Local')
-    cmds.delete(cmds.parentConstraint(fkArmCtrlList[0].C, claLoc_Local))
-    claLoc_World = cmds.spaceLocator(n=topJoint + '_World')
-    cmds.delete(cmds.parentConstraint(fkArmCtrlList[0].C, claLoc_World))
-
-    cmds.hide(claLoc_Local, claLoc_World)
-
-    cmds.addAttr(fkClavicleCtrl.C, ln='Fk_Local_2_World', at='float', min=0, max=1, k=1)
-
-    cmds.pointConstraint(claLoc_Local, fkArmCtrlList[0].Off, mo=0)
-    orientCont = cmds.orientConstraint(claLoc_Local, claLoc_World, fkArmCtrlList[0].Off, mo=0)
-
-    cmds.parent(claLoc_Local, topJoint)
-
-    # set attr
-    fkLocal2WorldAttr = fkClavicleCtrl.C + '.Fk_Local_2_World'
-    cmds.setAttr(fkLocal2WorldAttr, 0)
-    orientContAttrLocal = orientCont[0] + '.' + claLoc_Local[0] + 'W0'
-    orientContAttrWorld = orientCont[0] + '.' + claLoc_World[0] + 'W1'
-    cmds.setAttr(orientContAttrLocal, 1)
-    cmds.setAttr(orientContAttrWorld, 0)
-
-    # set driven key
-    cmds.setDrivenKeyframe(orientContAttrLocal, cd=fkLocal2WorldAttr)
-    cmds.setDrivenKeyframe(orientContAttrWorld, cd=fkLocal2WorldAttr)
-
-    # set attr
-    cmds.setAttr(fkLocal2WorldAttr, 1)
-    cmds.setAttr(orientContAttrLocal, 0)
-    cmds.setAttr(orientContAttrWorld, 1)
-    # set driven key
-    cmds.setDrivenKeyframe(orientContAttrLocal, cd=fkLocal2WorldAttr)
-    cmds.setDrivenKeyframe(orientContAttrWorld, cd=fkLocal2WorldAttr)
-
-    # clean and parent
-
-    cmds.parent(fkClavicleCtrl.Off, rigmodule.controlGrp)
-    cmds.parent(fkArmCtrlList[0].Off, rigmodule.controlGrp)
-
-    # attach clavicleCtrl to baseAttachGrp
-    cmds.parentConstraint(baseAttachGrp, fkClavicleCtrl.Off, mo=1)
-
-    ##############
-    # FK Fingers #
-    ##############
-    # create and place the grp to desired place
-    wristGrp = cmds.group(n=endDupJnt + '_FKOffset_grp', em=1)
-    cmds.parentConstraint(endDupJnt, wristGrp, mo=0)
-
-    '''May be a reuseful function...'''
-    topFingerList = cmds.listRelatives(endDupJnt, type='joint')
-    # create fk finger ctrls
-    for topFin in topFingerList:
-
-        fingerJnts = joint.listHierarchy(topFin, withEndJoints=True)
-
+    # create IK joints chain
+    ik_preParent = armJoints[0]
+    ik_Joint_List = []
+    for i in xrange(len(armJoints)-1):
+        newJnt = cmds.joint(n='IK_' + armJoints[i+1])
+        cmds.delete(cmds.parentConstraint(armJoints[i+1], newJnt, mo=0))
+        cmds.makeIdentity(newJnt, apply=1, t=1, r=1, s=1)
+        cmds.parent(newJnt, ik_preParent)
+        ik_Joint_List.append(newJnt)
+        ik_preParent = newJnt
         cmds.select(cl=1)
 
-        fkFinPreParent = wristGrp
-        for jnt in fingerJnts:
-            jntCtrl = control.Control(prefix=jnt + '_FK',
-                                      translateTo=jnt,
-                                      rotateTo=jnt,
-                                      shape='circleY',
-                                      scale=rigScale*3,
-                                      lockChannels=['t', 's', 'v'])
+    cmds.setAttr(ik_Joint_List[0] + '.v', 0)
 
-            cmds.pointConstraint(jntCtrl.C, jnt, mo=0)
-            cmds.orientConstraint(jntCtrl.C, jnt, mo=0)
-
-            if fkFinPreParent != None:
-                cmds.parent(jntCtrl.Off, fkFinPreParent)
-
-            fkFinPreParent = jntCtrl.C
-
-    # clean and parent
-    cmds.parent(wristGrp, rigmodule.controlGrp)
-    cmds.parent(switchCtrlLoc, armPvLoc, rigmodule.partsGrp)
-    cmds.parent(claLoc_World, rigmodule.dontTouchGrp)
-
-    # clear selection before return
     cmds.select(cl=1)
 
-    return {'module': rigmodule, 'baseAttachGrp': baseAttachGrp, 'bodyAttachGrp': bodyAttachGrp}
+    ##############
+    # Arm FK Rig #
+    ##############
+    FK_Arm_Ctrl_List = []
+    FK_Arm_CtrlGrp_List = []
+    for i in xrange(len(fk_Joint_List)):
+        FK_Arm_Ctrl = control.Control(prefix=prefix + 'FK_',
+                                      rigPartName=name.removePrefix(armJoints[i+1]),
+                                      scale=rigScale*3.0,
+                                      translateTo=fk_Joint_List[i],
+                                      rotateTo=fk_Joint_List[i],
+                                      shape='cubeOnBase',
+                                      axis='x',
+                                      lockChannels=['t', 's', 'v'])
+        cmds.pointConstraint(FK_Arm_Ctrl.C, fk_Joint_List[i], mo=0)
+        cmds.orientConstraint(FK_Arm_Ctrl.C, fk_Joint_List[i], mo=0)
+
+        FK_Arm_Ctrl_List.append(FK_Arm_Ctrl.C)
+        FK_Arm_CtrlGrp_List.append(FK_Arm_Ctrl.Off)
+        cmds.select(cl=1)
+
+    # lock the .rx and ry attribute of elbowCtrl
+    cmds.setAttr(FK_Arm_Ctrl_List[1] + '.rx', l=1, k=0)
+    cmds.setAttr(FK_Arm_Ctrl_List[1] + '.ry', l=1, k=0)
+
+    # parent the CtrlGrps to the proper places
+    for i in xrange(len(FK_Arm_Ctrl_List)-1):
+        cmds.parent(FK_Arm_CtrlGrp_List[i+1], FK_Arm_Ctrl_List[i])
+
+    # clavical Rig
+    clavical_Ctrl = control.Control(prefix=prefix,
+                                    rigPartName=name.removePrefix(armJoints[0]),
+                                    scale=rigScale*3.0,
+                                    translateTo=armJoints[0],
+                                    rotateTo=armJoints[0],
+                                    shape='rotationControl',
+                                    axis='x',
+                                    lockChannels=['t', 's', 'v'])
+
+    cmds.orientConstraint(clavical_Ctrl.C, armJoints[0], mo=0)
+
+    # Clavical local2World
+    cmds.addAttr(clavical_Ctrl.C, ln='Local2World', at="float", min=0, max=1, dv=0, k=1)
+
+    clavical_Local = cmds.spaceLocator(n=armJoints[0] + '_Local')
+    clavical_Local_Shape = cmds.listRelatives(clavical_Local, s=1)
+    cmds.setAttr(clavical_Local_Shape[0] + '.localScaleX', 0)
+    cmds.setAttr(clavical_Local_Shape[0] + '.localScaleY', 0)
+    cmds.setAttr(clavical_Local_Shape[0] + '.localScaleZ', 0)
+    cmds.setAttr(clavical_Local_Shape[0] + '.template', 1)
+
+    clavical_World = cmds.spaceLocator(n=armJoints[0] + '_World')
+    clavical_World_Shape = cmds.listRelatives(clavical_World, s=1)
+    cmds.setAttr(clavical_World_Shape[0] + '.localScaleX', 0)
+    cmds.setAttr(clavical_World_Shape[0] + '.localScaleY', 0)
+    cmds.setAttr(clavical_World_Shape[0] + '.localScaleZ', 0)
+    cmds.setAttr(clavical_World_Shape[0] + '.template', 1)
+
+    cmds.delete(cmds.parentConstraint(FK_Arm_Ctrl_List[0], clavical_Local, mo=0))
+    cmds.delete(cmds.parentConstraint(FK_Arm_Ctrl_List[0], clavical_World, mo=0))
+
+    cmds.pointConstraint(clavical_Local, FK_Arm_CtrlGrp_List[0], mo=0)
+    clavical_OrientConstraint = cmds.orientConstraint(clavical_Local, clavical_World, FK_Arm_CtrlGrp_List[0], mo=0)
+
+    cmds.setAttr(clavical_Ctrl.C + '.Local2World', 0)
+    cmds.setAttr(clavical_OrientConstraint[0] + '.' + clavical_Local[0] + 'W0', 1)
+    cmds.setAttr(clavical_OrientConstraint[0] + '.' + clavical_World[0] + 'W1', 0)
+
+    cmds.setDrivenKeyframe(clavical_OrientConstraint[0] + '.' + clavical_Local[0] + 'W0',
+                           cd=clavical_Ctrl.C + '.Local2World')
+    cmds.setDrivenKeyframe(clavical_OrientConstraint[0] + '.' + clavical_World[0] + 'W1',
+                           cd=clavical_Ctrl.C + '.Local2World')
+
+    cmds.setAttr(clavical_Ctrl.C + '.Local2World', 1)
+    cmds.setAttr(clavical_OrientConstraint[0] + '.' + clavical_Local[0] + 'W0', 0)
+    cmds.setAttr(clavical_OrientConstraint[0] + '.' + clavical_World[0] + 'W1', 1)
+
+    cmds.setDrivenKeyframe(clavical_OrientConstraint[0] + '.' + clavical_Local[0] + 'W0',
+                           cd=clavical_Ctrl.C + '.Local2World')
+    cmds.setDrivenKeyframe(clavical_OrientConstraint[0] + '.' + clavical_World[0] + 'W1',
+                           cd=clavical_Ctrl.C + '.Local2World')
+
+    cmds.parent(clavical_Local, armJoints[0])
+    cmds.parent(clavical_World, baseRig.Master_Ctrl.C)
+
+    ##############
+    # Arm IK Rig #
+    ##############
+    IK_Arm_Ctrl = control.Control(prefix=prefix + 'IK_',
+                                  rigPartName='Arm_',
+                                  scale=rigScale*3,
+                                  translateTo=ik_Joint_List[-1],
+                                  rotateTo=ik_Joint_List[-1],
+                                  shape='circle')
+
+    cmds.orientConstraint(IK_Arm_Ctrl.C, ik_Joint_List[-1], mo=0)
+
+    IK_Arm_PV_Ctrl = control.Control(prefix=prefix + 'IK_',
+                                     rigPartName='Arm_PV',
+                                     scale=rigScale*3,
+                                     translateTo=ik_Joint_List[1],
+                                     shape='diamond',
+                                     lockChannels=['r', 's', 'v'])
+
+    ik_Part_List = cmds.ikHandle(n=prefix + 'Arm_IK', sj=ik_Joint_List[0], ee=ik_Joint_List[-1], sol='ikRPsolver')
+
+    cmds.parent(ik_Part_List[0], IK_Arm_Ctrl.C)
+    cmds.setAttr(ik_Part_List[0] + '.v', 0)
+    cmds.poleVectorConstraint(IK_Arm_PV_Ctrl.C, ik_Part_List[0])
+
+    ###############
+    # FK Hand Rig #
+    ###############
+
+    # get finger joint list
+    finger_Start_Joints_List = cmds.listRelatives(armJoints[-1], p=0, children=1, s=0, type='joint')
+
+    finger_Joints_Dic = {}
+    clean_Finger_Joints_Dic = {}
+    for i in xrange(len(finger_Start_Joints_List)):
+        finger_Joints_Dic[('Finger_' + str(i))] = cmds.listRelatives(finger_Start_Joints_List[i],
+                                                                     p=0, allDescendents=1, s=0, type='joint')
+        finger_Joints_Dic[('Finger_' + str(i))].append(finger_Start_Joints_List[i])
+        # remove the end joint
+        finger_Joints_Dic[('Finger_' + str(i))].reverse()
+        clean_Finger_Joints_Dic[('Finger_' + str(i))] = finger_Joints_Dic[('Finger_' + str(i))][:-1]
+
+    # create FK Ctrl
+    finger_FK_Ctrl_Dic = {}
+    finger_FK_CtrlGrp_Dic = {}
+    for key in clean_Finger_Joints_Dic:
+        finger_FK_Ctrl_Dic[key] = []
+        finger_FK_CtrlGrp_Dic[key] = []
+        for i in xrange(len(clean_Finger_Joints_Dic[key])):
+            cleanRigPartName = name.removePrefix(name.removeSuffix(clean_Finger_Joints_Dic[key][i]))
+            FK_Finger_Ctrl = control.Control(prefix=prefix + 'FK_',
+                                             rigPartName=(cleanRigPartName + '_' + str(i)),
+                                             scale=rigScale,
+                                             translateTo=clean_Finger_Joints_Dic[key][i],
+                                             rotateTo=clean_Finger_Joints_Dic[key][i],
+                                             shape='circleZ',
+                                             lockChannels=['t', 's', 'v']
+                                             )
+            cmds.pointConstraint(FK_Finger_Ctrl.C, clean_Finger_Joints_Dic[key][i], mo=0)
+            cmds.orientConstraint(FK_Finger_Ctrl.C, clean_Finger_Joints_Dic[key][i], mo=0)
+
+            finger_FK_Ctrl_Dic[key].append(FK_Finger_Ctrl.C)
+            finger_FK_CtrlGrp_Dic[key].append(FK_Finger_Ctrl.Off)
+
+    # clean the hierarchy
+    for key in finger_FK_CtrlGrp_Dic:
+        for i in xrange(len(finger_FK_CtrlGrp_Dic[key])-1):
+            cmds.parent(finger_FK_CtrlGrp_Dic[key][i+1], finger_FK_Ctrl_Dic[key][i])
+
+    # use locator as grp to control the handCtrl
+    hand_Loc = cmds.spaceLocator(n=prefix + 'Wrist_Grp_Loc')
+    hand_Loc_Shape = cmds.listRelatives(hand_Loc, s=1)
+    cmds.setAttr(hand_Loc_Shape[0] + '.localScaleX', 0)
+    cmds.setAttr(hand_Loc_Shape[0] + '.localScaleY', 0)
+    cmds.setAttr(hand_Loc_Shape[0] + '.localScaleZ', 0)
+
+    cmds.parentConstraint(armJoints[-1], hand_Loc, mo=0)
+
+    for key in finger_FK_CtrlGrp_Dic:
+        cmds.parent(finger_FK_CtrlGrp_Dic[key][0], hand_Loc)
+
+    cmds.parent(hand_Loc, rigmodule.topGrp)
+
+    ###############
+    # FK IK Blend #
+    ###############
+
+    IK_FK_Blend_Ctrl = control.Control(prefix=prefix,
+                                       rigPartName='Arm_Blend',
+                                       scale=rigScale*3,
+                                       translateTo=switchCtrlPos,
+                                       shape='unitSliderControl',
+                                       lockChannels=['tx', 'tz', 'r', 's', 'v'])
+
+    cmds.rotate(0, 0, -90, IK_FK_Blend_Ctrl.Off, relative=1, objectSpace=1)
+
+    for i in xrange(len(fk_Joint_List)):
+        # create blendColors node
+        blendNode = cmds.createNode('blendColors')
+        # IK
+        cmds.connectAttr(ik_Joint_List[i] + '.r', blendNode + '.color1', f=1)
+        # FK
+        cmds.connectAttr(fk_Joint_List[i] + '.r', blendNode + '.color2', f=1)
+        # Skin
+        cmds.connectAttr(blendNode + '.output', armJoints[i+1] + '.r', f=1)
+        # blendNode
+        cmds.connectAttr(IK_FK_Blend_Ctrl.C + '.ty', blendNode + '.blender')
+
+    # visibility blend
+    cmds.setAttr(IK_FK_Blend_Ctrl.C + '.ty', 0)
+    cmds.setAttr(FK_Arm_CtrlGrp_List[0] + '.v', 1)
+    cmds.setAttr(IK_Arm_Ctrl.Off + '.v', 0)
+    cmds.setAttr(IK_Arm_PV_Ctrl.Off + '.v', 0)
+
+    cmds.setDrivenKeyframe(FK_Arm_CtrlGrp_List[0] + '.v', cd=IK_FK_Blend_Ctrl.C + '.ty')
+    cmds.setDrivenKeyframe(IK_Arm_Ctrl.Off + '.v', cd=IK_FK_Blend_Ctrl.C + '.ty')
+    cmds.setDrivenKeyframe(IK_Arm_PV_Ctrl.Off + '.v', cd=IK_FK_Blend_Ctrl.C + '.ty')
+
+    cmds.setAttr(IK_FK_Blend_Ctrl.C + '.ty', 1)
+    cmds.setAttr(FK_Arm_CtrlGrp_List[0] + '.v', 0)
+    cmds.setAttr(IK_Arm_Ctrl.Off + '.v', 1)
+    cmds.setAttr(IK_Arm_PV_Ctrl.Off + '.v', 1)
+
+    cmds.setDrivenKeyframe(FK_Arm_CtrlGrp_List[0] + '.v', cd=IK_FK_Blend_Ctrl.C + '.ty')
+    cmds.setDrivenKeyframe(IK_Arm_Ctrl.Off + '.v', cd=IK_FK_Blend_Ctrl.C + '.ty')
+    cmds.setDrivenKeyframe(IK_Arm_PV_Ctrl.Off + '.v', cd=IK_FK_Blend_Ctrl.C + '.ty')
+
+    cmds.pointConstraint(switchCtrlPos, IK_FK_Blend_Ctrl.Off, mo=0)
+    switchCtrlPos_Shape = cmds.listRelatives(switchCtrlPos, s=1)
+    cmds.setAttr(switchCtrlPos_Shape[0] + '.localScaleX', 0)
+    cmds.setAttr(switchCtrlPos_Shape[0] + '.localScaleY', 0)
+    cmds.setAttr(switchCtrlPos_Shape[0] + '.localScaleZ', 0)
+    cmds.setAttr(switchCtrlPos_Shape[0] + '.template', 1)
+    switchCtrlLoc = cmds.spaceLocator(n=prefix + 'BlendCtrl_Loc')
+    switchCtrlLoc_Shape = cmds.listRelatives(switchCtrlLoc, s=1)
+    cmds.setAttr(switchCtrlLoc_Shape[0] + '.localScaleX', 0)
+    cmds.setAttr(switchCtrlLoc_Shape[0] + '.localScaleY', 0)
+    cmds.setAttr(switchCtrlLoc_Shape[0] + '.localScaleZ', 0)
+    cmds.setAttr(switchCtrlLoc_Shape[0] + '.template', 1)
+
+    cmds.pointConstraint(armJoints[-1], switchCtrlLoc, mo=0)
+    cmds.parent(switchCtrlPos, switchCtrlLoc)
+
+    # final cleaning
+    cmds.parent(FK_Arm_CtrlGrp_List[0], clavical_Ctrl.C)
+    cmds.parent(clavical_Ctrl.Off, FK_Parent)
+
+    cmds.parent(IK_Arm_PV_Ctrl.Off, rigmodule.topGrp)
+    cmds.parent(IK_Arm_Ctrl.Off, rigmodule.topGrp)
+    cmds.parent(switchCtrlLoc, rigmodule.topGrp)
+    cmds.parent(IK_FK_Blend_Ctrl.Off, rigmodule.topGrp)
+
+    cmds.select(cl=1)

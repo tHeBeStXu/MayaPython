@@ -157,8 +157,10 @@ def build(spineJoints,
     # create 2 joints for controlling ikHandle curve
     pelvis_Jnt = cmds.joint(n=prefix + 'Pelvis')
     cmds.select(cl=1)
+    cmds.setAttr(pelvis_Jnt + '.v', 0)
     chest_Jnt = cmds.joint(n=prefix + 'Chest')
     cmds.select(cl=1)
+    cmds.setAttr(chest_Jnt + '.v', 0)
 
     pc1 = cmds.parentConstraint(fkJntList[0], pelvis_Jnt, mo=0)
     cmds.delete(pc1)

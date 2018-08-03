@@ -39,6 +39,8 @@ def build(neckJoints,
     for i in range(len(fkHeadJnts_Dirty_Children)):
         rename_Jnt = cmds.rename(fkHeadJnts_Dirty_Children[i], 'FK_' + neckJoints[i+1])
         fk_Joints_List.append(rename_Jnt)
+
+    cmds.setAttr(fk_Joints_List[0] + '.v', 0)
     cmds.select(cl=1)
 
     # create ik joints list
@@ -50,6 +52,8 @@ def build(neckJoints,
     for i in range(len(ikHeadJnts_Dirty_Children)):
         rename_Jnt = cmds.rename(ikHeadJnts_Dirty_Children[i], 'IK_' + neckJoints[i+1])
         ik_Joints_List.append(rename_Jnt)
+
+    cmds.setAttr(ik_Joints_List[0] + '.v', 0)
     cmds.select(cl=1)
 
     ##########
@@ -83,8 +87,8 @@ def build(neckJoints,
     FK_Head_Ctrl = control.Control(prefix='FK_C_',
                                    rigPartName='Head',
                                    scale=rigScale,
-                                   translateTo=fk_Joints_List[-1],
-                                   rotateTo=fk_Joints_List[-1],
+                                   translateTo=fk_Joints_List[-2],
+                                   rotateTo=fk_Joints_List[-2],
                                    shape='cubeOnBase',
                                    axis='x',
                                    lockChannels=['t', 's', 'v'])
@@ -105,8 +109,8 @@ def build(neckJoints,
     cmds.setAttr(fk_headWorld_Shape[0] + '.localScaleZ', 0)
     cmds.setAttr(fk_headWorld_Shape[0] + '.template', 1)
 
-    cmds.delete(cmds.parentConstraint(fk_Joints_List[-1], fk_headLocal, mo=0))
-    cmds.delete(cmds.parentConstraint(fk_Joints_List[-1], fk_headWorld, mo=0))
+    cmds.delete(cmds.parentConstraint(fk_Joints_List[-2], fk_headLocal, mo=0))
+    cmds.delete(cmds.parentConstraint(fk_Joints_List[-2], fk_headWorld, mo=0))
 
     FK_Head_OrientConstraint = cmds.orientConstraint(fk_headLocal, fk_headWorld, FK_Head_Ctrl.Off, mo=0)
     cmds.pointConstraint(fk_headLocal, FK_Head_Ctrl.Off, mo=0)
@@ -132,8 +136,8 @@ def build(neckJoints,
                            cd=FK_Head_Ctrl.C + '.Local2World')
 
     # point and orient constriant the fk head joint
-    cmds.pointConstraint(FK_Head_Ctrl.C, fk_Joints_List[-1], mo=0)
-    cmds.orientConstraint(FK_Head_Ctrl.C, fk_Joints_List[-1], mo=1)
+    cmds.pointConstraint(FK_Head_Ctrl.C, fk_Joints_List[-2], mo=0)
+    cmds.orientConstraint(FK_Head_Ctrl.C, fk_Joints_List[-2], mo=1)
 
     ##########
     # IK Rig #
@@ -141,8 +145,8 @@ def build(neckJoints,
     IK_Head_Ctrl = control.Control(prefix='IK_' + prefix,
                                    rigPartName='Head',
                                    scale=rigScale,
-                                   translateTo=ik_Joints_List[-1],
-                                   rotateTo=ik_Joints_List[-1],
+                                   translateTo=ik_Joints_List[-2],
+                                   rotateTo=ik_Joints_List[-2],
                                    shape='moveControl',
                                    axis='x')
 
@@ -150,9 +154,8 @@ def build(neckJoints,
     cmds.select(cl=1)
     IK_End_Jnt = cmds.joint(n='IK_' + prefix + 'Head_EndJnt')
     cmds.select(cl=1)
-    print ik_Joints_List
     cmds.delete(cmds.parentConstraint(neckJoints[0], IK_Start_Jnt, mo=0))
-    cmds.delete(cmds.parentConstraint(neckJoints[-1], IK_End_Jnt, mo=0))
+    cmds.delete(cmds.parentConstraint(neckJoints[-2], IK_End_Jnt, mo=0))
 
     cmds.makeIdentity(IK_Start_Jnt, apply=1, t=1, r=1, s=1, n=0, pn=1)
     cmds.makeIdentity(IK_End_Jnt, apply=1, t=1, r=1, s=1, n=0, pn=1)
@@ -162,12 +165,12 @@ def build(neckJoints,
     cmds.parent(IK_Start_Jnt, Neck_Parent)
 
     # orientConstraint the ik head joint
-    # cmds.orientConstraint(IK_Head_Ctrl.C, ik_Joints_List[-1], mo=0)
+    # cmds.orientConstraint(IK_Head_Ctrl.C, ik_Joints_List[-2], mo=0)
 
     # ik handle
     IK_Part_List = cmds.ikHandle(n=prefix + 'Head_IK',
                                  sj=ik_Joints_List[0],
-                                 ee=ik_Joints_List[-1],
+                                 ee=ik_Joints_List[-2],
                                  sol='ikSplineSolver',
                                  pcv=0,
                                  numSpans=4)
@@ -201,8 +204,8 @@ def build(neckJoints,
     cmds.setAttr(ik_headWorld_Shape[0] + '.localScaleZ', 0)
     cmds.setAttr(ik_headWorld_Shape[0] + '.template', 1)
 
-    cmds.delete(cmds.parentConstraint(ik_Joints_List[-1], ik_headLocal, mo=0))
-    cmds.delete(cmds.parentConstraint(ik_Joints_List[-1], ik_headWorld, mo=0))
+    cmds.delete(cmds.parentConstraint(ik_Joints_List[-2], ik_headLocal, mo=0))
+    cmds.delete(cmds.parentConstraint(ik_Joints_List[-2], ik_headWorld, mo=0))
 
     IK_Head_OrientConstraint = cmds.orientConstraint(ik_headLocal, ik_headWorld, IK_Head_Ctrl.Off, mo=0)
 
@@ -296,7 +299,7 @@ def build(neckJoints,
     cmds.setAttr(headBlendLoc_Shape[0] + '.localScaleY', 0)
     cmds.setAttr(headBlendLoc_Shape[0] + '.localScaleZ', 0)
     cmds.setAttr(headBlendLoc_Shape[0] + '.template', 1)
-    cmds.pointConstraint(neckJoints[-1], headBlendLoc, mo=0)
+    cmds.pointConstraint(neckJoints[-2], headBlendLoc, mo=0)
     cmds.parent(blendCtrl_Pos, headBlendLoc)
     cmds.parent(IK_FK_BlendCtrl.Off, rigmodule.topGrp)
     cmds.parent(headBlendLoc, rigmodule.topGrp)

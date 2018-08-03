@@ -148,7 +148,7 @@ def build(spineJoints,
 
     C_Chest_Ctrl = control.Control(prefix=prefix,
                                    rigPartName='Chest',
-                                   scale=rigScale,
+                                   scale=rigScale*3,
                                    translateTo=spineJoints[-1],
                                    rotateTo=spineJoints[-1],
                                    axis='x',

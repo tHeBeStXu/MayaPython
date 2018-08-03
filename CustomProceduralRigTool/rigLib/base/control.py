@@ -94,9 +94,7 @@ class Control():
 
         elif shape == 'unitSliderControl':
             ctrlBox = controlShape.unitSliderControl.createShape(prefix=prefix + rigPartName)
-            print ctrlBox
             ctrlObject = cmds.listRelatives(ctrlBox, children=1, parent=0, s=0)
-            print ctrlObject
             ctrlObject = ctrlObject[1]
 
         elif shape == 'squareControl':

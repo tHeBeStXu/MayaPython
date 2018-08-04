@@ -1,6 +1,3 @@
-"""
-build the IK FK Arm rig
-"""
 import maya.cmds as cmds
 
 from ..base import module
@@ -19,6 +16,16 @@ def build(armJoints,
           FK_Parent='',
           switchCtrlPos='',
           baseRig=None):
+    """
+    Build the IK_FK_Arm rig.
+    :param armJoints: list(str), armJoints list, [L_clavical, L_shoulder, L_elbow, L_wrist]
+    :param prefix: str, prefix of the rig
+    :param rigScale: float, rig scale of the IK_FK_Arm rig module.
+    :param FK_Parent: str, parent of the fk part rig, IK_FK_Spine['chest_Ctrl'] is used.
+    :param switchCtrlPos: str, position of the IK_FK_Blend_Ctrl position.
+    :param baseRig: baseRig: str, base atttach of the rig. Base Class instance is used.
+    :return: None
+    """
 
     rigmodule = module.Module(prefix=prefix,
                               rigPartName='Arm',

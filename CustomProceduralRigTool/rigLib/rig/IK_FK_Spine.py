@@ -21,7 +21,7 @@ def build(spineJoints,
     :param prefix: str, prefix of the spine, usually, 'C_' is used.
     :param rigScale: float, rig scale of the whole rigging project.
     :param numFK_Jnt: int, number of FK spine joints, greater than 3.
-    :param baseRig: str, base atttach of the rig. Master_Ctrl_.C is used.
+    :param baseRig: str, base atttach of the rig. Base Class instance is used.
     :return: dictionary, rigModule, chest_ctrl (used for upper body parts rig)and pelvis_ctrl (used for tail rig)
     """
     rigModule = module.Module(prefix=prefix,

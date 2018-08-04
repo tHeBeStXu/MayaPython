@@ -101,11 +101,14 @@ class Control():
             ctrlObject = controlShape.squareControl.createShape(prefix=prefix + rigPartName)
 
         if not ctrlObject:
-            ctrlObject = cmds.circle(n=prefix + rigPartName + '_Ctrl', ch=0,
+            ctrlObject = cmds.circle(n=prefix + rigPartName + '_Ctrl', ch=1,
                                      normal=circleNormal, radius=1.0)[0]
 
         # rotate the ctrlObject
-        self.rotate_Ctrl(ctrlObject=ctrlObject, shape=shape, axis=axis)
+        if shape in ['circle', 'circleX', 'circleY', 'circleZ']:
+            pass
+        else:
+            self.rotate_Ctrl(ctrlObject=ctrlObject, shape=shape, axis=axis)
 
         # ctrl offset group
         ctrlOffset = cmds.group(n=prefix + rigPartName + '_CtrlGrp', em=1)

@@ -1,6 +1,3 @@
-"""
-This IK_FK_Spine build module is used for spine joint chain which is placed in the 0 x-Axis position.
-"""
 import maya.cmds as cmds
 from ..base import module
 from ..base import control
@@ -14,15 +11,16 @@ def build(spineJoints,
           numFK_Jnt=3,
           baseRig=None):
     """
-
+    Build IK_FK_Spine rig.
+    This IK_FK_Spine build module is used for spine joint chain which is placed in the 0 x-Axis position.
     :param spineJoints: list(str), original spine joints, from the C_Spine_0 to C_Spine_x, you need to make true that
                         the spine joints are at same directions, i.e. x-axis is main axis, and z-axis is point to the
                         -x axis of world space.
     :param prefix: str, prefix of the spine, usually, 'C_' is used.
-    :param rigScale: float, rig scale of the whole rigging project.
+    :param rigScale: float, rig scale of the IK_FK_Spine rig module.
     :param numFK_Jnt: int, number of FK spine joints, greater than 3.
     :param baseRig: str, base atttach of the rig. Base Class instance is used.
-    :return: dictionary, rigModule, chest_ctrl (used for upper body parts rig)and pelvis_ctrl (used for tail rig)
+    :return: dictionary, rigModule, chest_ctrl (used for upper body parts rig, IK_FK_Arm .etc)and pelvis_ctrl (used for FK_Tail rig)
     """
     rigModule = module.Module(prefix=prefix,
                               rigPartName='Spine',

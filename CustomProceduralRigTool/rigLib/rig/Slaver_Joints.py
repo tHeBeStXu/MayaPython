@@ -3,8 +3,8 @@ import maya.cmds as cmds
 
 def build(joints=None):
     """
-    create Slave joints for given joints list;
-    if joints = None, create all the slave joints for the joint in the scene without end joint in the joint chain
+    create Slave joints for given joints list.
+    if joints = None, create slave joints for all joints in the scene without end joint in the joint chain
     :param joints: str list, target joints list for create Slave joints
     :return: None
     """
@@ -14,12 +14,11 @@ def build(joints=None):
     else:
         targetJoints = []
 
-        # list all joints without end joints
-        if not joints:
-            allJoints = cmds.ls(type='joint', l=1)
-            for joint in allJoints:
-                if cmds.listRelatives(joint, children=1, s=0 ):
-                    targetJoints.append(joint)
+        # list all selected joints without end joints
+        allJoints = cmds.ls(type='joint', long=1)
+        for joint in allJoints:
+            if cmds.listRelatives(joint, children=1, s=0):
+                targetJoints.append(joint)
 
     # create slave joints
     if targetJoints:

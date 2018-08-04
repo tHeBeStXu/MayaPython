@@ -14,7 +14,7 @@ def build(neckJoints,
           ):
     """
     IK_FK_Neck_rig module
-    :param neckJoints: list(str), neck joints and head joint list, [neck_0, neck_1, ... neck_#, head]
+    :param neckJoints: list(str), neck joints and head joint list, [neck_0, neck_1, ... neck_#, head, head_end]
     :param rigScale: float, rig scale of the control
     :param Neck_Parent: str, the last valid spine joint, Spine_#
     :param prefix: str, 'C_', 'L_' or 'R_'

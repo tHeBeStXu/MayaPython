@@ -40,8 +40,8 @@ def build(rollStart,
     cmds.delete(pc2)
 
     # freeze transformation
-    cmds.makeIdentity(rollStart_Jnt, apply=1)
-    cmds.makeIdentity(rollEnd_Jnt, apply=1)
+    cmds.makeIdentity(rollStart_Jnt, apply=1, t=1, r=1, s=1)
+    cmds.makeIdentity(rollEnd_Jnt, apply=1, t=1, r=1, s=1)
 
     # parent and get the .tx attribute
     cmds.parent(rollEnd_Jnt, rollStart_Jnt)

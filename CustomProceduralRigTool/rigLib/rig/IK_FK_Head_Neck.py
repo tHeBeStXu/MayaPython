@@ -13,14 +13,14 @@ def build(neckJoints,
           baseRig=None
           ):
     """
-    IK_FK_Neck_rig module
+    Build the IK_FK_Neck rig.
     :param neckJoints: list(str), neck joints and head joint list, [neck_0, neck_1, ... neck_#, head, head_end]
     :param rigScale: float, rig scale of the control
     :param Neck_Parent: str, the last valid spine joint, Spine_#
     :param prefix: str, 'C_', 'L_' or 'R_'
     :param blendCtrl_Pos: str, space locator
     :param baseRig: str, base atttach of the rig, Base Class instance is used.
-    :return: current None
+    :return: None
     """
     cmds.select(cl=1)
 

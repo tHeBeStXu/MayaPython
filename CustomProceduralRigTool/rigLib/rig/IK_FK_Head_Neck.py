@@ -63,7 +63,7 @@ def build(neckJoints,
     FK_Neck_CtrlGrp_List = []
     FK_Neck_Ctrl_List = []
 
-    for i in xrange(len(fk_Joints_List)-1):
+    for i in xrange(len(fk_Joints_List)-2):
         FK_Neck_Ctrl = control.Control(prefix='FK_' + prefix,
                                        rigPartName='Neck_' + str(i),
                                        scale=rigScale,
@@ -187,7 +187,6 @@ def build(neckJoints,
     cmds.setAttr(IK_Part_List[0] + '.dWorldUpType', 4)
     cmds.connectAttr(IK_Start_Jnt + '.worldMatrix[0]', IK_Part_List[0] + '.dWorldUpMatrix')
     cmds.connectAttr(IK_End_Jnt + '.worldMatrix[0]', IK_Part_List[0] + '.dWorldUpMatrixEnd')
-
 
     # create ik_head_local and ik_head_world
     ik_headLocal = cmds.spaceLocator(n='IK_' + prefix + 'HeadLocal')

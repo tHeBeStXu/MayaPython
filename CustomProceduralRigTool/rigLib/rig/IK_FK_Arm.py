@@ -143,7 +143,7 @@ def build(armJoints,
                            cd=clavical_Ctrl.C + '.Local2World')
 
     cmds.parent(clavical_Local, armJoints[0])
-    cmds.parent(clavical_World, baseRig.Master_Ctrl.C)
+    cmds.parent(clavical_World, rigmodule.topGrp)
 
     ##############
     # Arm IK Rig #

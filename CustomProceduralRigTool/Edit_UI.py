@@ -1,8 +1,13 @@
 import Main_UI
-reload(Main_UI)
 from PySide2 import QtCore, QtWidgets
 import pymel.core as pm
 import logging
+import rigLib
+from rigLib import rig as rig
+import inspect
+
+reload(Main_UI)
+reload(rig)
 
 
 class EditUI(QtWidgets.QWidget):
@@ -29,7 +34,6 @@ class EditUI(QtWidgets.QWidget):
         layout = QtWidgets.QVBoxLayout()
         self.parent().setLayout(layout)
         self.parent().layout().addWidget(self)
-
 
     def buildUI(self):
         pass
@@ -107,18 +111,10 @@ class IK_FK_Spine_EditUI(EditUI):
         layout.addWidget(formWidget)
 
         self.rowItem = {}
-
-        self.rowItem['spineJoints'] = QtWidgets.QLineEdit()
-        self.rowItem['numFK_Jnt'] = QtWidgets.QLineEdit()
-        self.rowItem['prefix'] = QtWidgets.QLineEdit()
-        self.rowItem['rigScale'] = QtWidgets.QLineEdit()
-        self.rowItem['baseRig'] = QtWidgets.QLineEdit()
-
-        formLayout.addRow('spineJoints: ', self.rowItem['spineJoints'])
-        formLayout.addRow('numFK_Jnt: ', self.rowItem['numFK_Jnt'])
-        formLayout.addRow('prefix: ', self.rowItem['prefix'])
-        formLayout.addRow('rigScale', self.rowItem['rigScale'])
-        formLayout.addRow('baseRig: ', self.rowItem['baseRig'])
+        self.tupe = inspect.getargspec(rig.IK_FK_Spine.build)
+        for i in self.tupe[0]:
+            self.rowItem[i] = QtWidgets.QLineEdit()
+            formLayout.addRow(i, self.rowItem[i])
 
         self.createGeneralButton(layout)
 
@@ -127,11 +123,10 @@ class IK_FK_Spine_EditUI(EditUI):
         Save the args info to the specified rig widget's rigArgs dictionary
         :return: None
         """
-        self.specifiedInstance.rigArgs['spineJoints'] = self.rowItem['spineJoints'].text()
-        self.specifiedInstance.rigArgs['numFK_Jnt'] = self.rowItem['numFK_Jnt'].text()
-        self.specifiedInstance.rigArgs['prefix'] = self.rowItem['prefix'].text()
-        self.specifiedInstance.rigArgs['rigScale'] = self.rowItem['rigScale'].text()
-        self.specifiedInstance.rigArgs['baseRig'] = self.rowItem['baseRig'].text()
+        tupe = inspect.getargspec(rig.IK_FK_Spine.build)
+        for i in tupe[0]:
+            self.specifiedInstance.rigArgs[i] = self.rowItem[i].text()
+
 
 class IK_FK_Arm_EditUI(EditUI):
     def __init__(self, instance, UI_name):
@@ -153,26 +148,12 @@ class IK_FK_Arm_EditUI(EditUI):
         layout.addWidget(formWidget)
 
         self.rowItem = {}
+        self.tupe = inspect.getargspec(rig.IK_FK_Arm.build)
+        print self.tupe[0]
 
-        self.rowItem['topJoint'] = QtWidgets.QLineEdit()
-        self.rowItem['startDupJnt'] = QtWidgets.QLineEdit()
-        self.rowItem['endDupJnt'] = QtWidgets.QLineEdit()
-        self.rowItem['prefix'] = QtWidgets.QLineEdit()
-        self.rowItem['armPvLoc'] = QtWidgets.QLineEdit()
-        self.rowItem['switchCtrlLoc'] = QtWidgets.QLineEdit()
-        self.rowItem['rigScale'] = QtWidgets.QLineEdit()
-        self.rowItem['fkPreParent'] = QtWidgets.QLineEdit()
-        self.rowItem['baseRig'] = QtWidgets.QLineEdit()
-
-        formLayout.addRow('topJoint: ', self.rowItem['topJoint'])
-        formLayout.addRow('startDupJnt: ', self.rowItem['startDupJnt'])
-        formLayout.addRow('endDupJnt: ', self.rowItem['endDupJnt'])
-        formLayout.addRow('prefix: ', self.rowItem['prefix'])
-        formLayout.addRow('armPvLoc: ', self.rowItem['armPvLoc'])
-        formLayout.addRow('switchCtrlLoc', self.rowItem['switchCtrlLoc'])
-        formLayout.addRow('rigScale', self.rowItem['rigScale'])
-        formLayout.addRow('fkPreParent', self.rowItem['fkPreParent'])
-        formLayout.addRow('baseRig', self.rowItem['baseRig'])
+        for i in self.tupe[0]:
+            self.rowItem[i] = QtWidgets.QLineEdit()
+            formLayout.addRow(i, self.rowItem[i])
 
         self.createGeneralButton(layout)
 
@@ -181,18 +162,12 @@ class IK_FK_Arm_EditUI(EditUI):
         Save the args info to the specified rig widget's rigArgs dictionary
         :return: None
         """
-        self.specifiedInstance.rigArgs['topJoint'] = self.rowItem['topJoint'].text()
-        self.specifiedInstance.rigArgs['startDupJnt'] = self.rowItem['startDupJnt'].text()
-        self.specifiedInstance.rigArgs['endDupJnt'] = self.rowItem['endDupJnt'].text()
-        self.specifiedInstance.rigArgs['prefix'] = self.rowItem['prefix'].text()
-        self.specifiedInstance.rigArgs['armPvLoc'] = self.rowItem['armPvLoc'].text()
-        self.specifiedInstance.rigArgs['switchCtrlLoc'] = self.rowItem['switchCtrlLoc'].text()
-        self.specifiedInstance.rigArgs['rigScale'] = self.rowItem['rigScale'].text()
-        self.specifiedInstance.rigArgs['fkPreParent'] = self.rowItem['fkPreParent'].text()
-        self.specifiedInstance.rigArgs['baseRig'] = self.rowItem['baseRig'].text()
+
+        for i in self.tupe[0]:
+            self.specifiedInstance.rigArgs[i] = self.rowItem[i].text()
 
 
-class IK_Leg_EditUI(EditUI):
+class IK_AnimalLeg_EditUI(EditUI):
     def __init__(self, instance, UI_name):
         EditUI.__init__(self, instance, UI_name)
         self.buildUI()
@@ -214,21 +189,12 @@ class IK_Leg_EditUI(EditUI):
 
         self.rowItem = {}
 
-        self.rowItem['topJoint'] = QtWidgets.QLineEdit()
-        self.rowItem['pvLocator'] = QtWidgets.QLineEdit()
-        self.rowItem['revLocator'] = QtWidgets.QLineEdit()
-        self.rowItem['prefix'] = QtWidgets.QLineEdit()
-        self.rowItem['rigScale'] = QtWidgets.QLineEdit()
-        self.rowItem['rollCtrlLOC'] = QtWidgets.QLineEdit()
-        self.rowItem['baseRig'] = QtWidgets.QLineEdit()
+        self.tupe = inspect.getargspec(rig.IK_AnimalLeg.build)
+        print self.tupe[0]
 
-        formLayout.addRow('topJoint:', self.rowItem['topJoint'])
-        formLayout.addRow('pvLocator: ', self.rowItem['pvLocator'])
-        formLayout.addRow('revLocator', self.rowItem['revLocator'])
-        formLayout.addRow('prefix:', self.rowItem['prefix'])
-        formLayout.addRow('rigScale:', self.rowItem['rigScale'])
-        formLayout.addRow('rollCtrlLOC: ', self.rowItem['rollCtrlLOC'])
-        formLayout.addRow('baseRig: ', self.rowItem['baseRig'])
+        for i in self.tupe[0]:
+            self.rowItem[i] = QtWidgets.QLineEdit()
+            formLayout.addRow(i, self.rowItem[i])
 
         self.createGeneralButton(layout)
 
@@ -237,11 +203,89 @@ class IK_Leg_EditUI(EditUI):
         Save the args info to the specified rig widget's rigArgs dictionary
         :return: None
         """
-        self.specifiedInstance.rigArgs['topJoint'] = self.rowItem['topJoint'].text()
-        self.specifiedInstance.rigArgs['pvLocator'] = self.rowItem['pvLocator'].text()
-        self.specifiedInstance.rigArgs['revLocator'] = self.rowItem['revLocator'].text()
-        self.specifiedInstance.rigArgs['prefix'] = self.rowItem['prefix'].text()
-        self.specifiedInstance.rigArgs['rigScale'] = self.rowItem['rigScale'].text()
-        self.specifiedInstance.rigArgs['rollCtrlLOC'] = self.rowItem['rollCtrlLOC'].text()
-        self.specifiedInstance.rigArgs['baseRig'] = self.rowItem['baseRig'].text()
+
+        for i in self.tupe[0]:
+            self.specifiedInstance.rigArgs[i] = self.rowItem[i].text()
+
+
+class IK_FK_Head_Neck_EditUI(EditUI):
+    def __init__(self, instance, UI_name):
+        EditUI.__init__(self, instance, UI_name)
+        self.buildUI()
+        self.populate()
+        self.parent().show()
+
+    def buildUI(self):
+        """
+        Build the IK_Leg UI layout
+        :return: None
+        """
+        layout = QtWidgets.QVBoxLayout(self)
+
+        formLayout = QtWidgets.QFormLayout()
+        formWidget = QtWidgets.QWidget()
+        formWidget.setLayout(formLayout)
+
+        layout.addWidget(formWidget)
+
+        self.rowItem = {}
+
+        self.tupe = inspect.getargspec(rig.IK_FK_Head_Neck.build)
+        print self.tupe[0]
+
+        for i in self.tupe[0]:
+            self.rowItem[i] = QtWidgets.QLineEdit()
+            formLayout.addRow(i, self.rowItem[i])
+
+        self.createGeneralButton(layout)
+
+    def saveData(self):
+        """
+        Save the args info to the specified rig widget's rigArgs dictionary
+        :return: None
+        """
+
+        for i in self.tupe[0]:
+            self.specifiedInstance.rigArgs[i] = self.rowItem[i].text()
+
+
+class FK_Tail_EditUI(EditUI):
+    def __init__(self, instance, UI_name):
+        EditUI.__init__(self, instance, UI_name)
+        self.buildUI()
+        self.populate()
+        self.parent().show()
+
+    def buildUI(self):
+        """
+        Build the IK_Leg UI layout
+        :return: None
+        """
+        layout = QtWidgets.QVBoxLayout(self)
+
+        formLayout = QtWidgets.QFormLayout()
+        formWidget = QtWidgets.QWidget()
+        formWidget.setLayout(formLayout)
+
+        layout.addWidget(formWidget)
+
+        self.rowItem = {}
+
+        self.tupe = inspect.getargspec(rig.FK_Tail.build)
+        print self.tupe[0]
+
+        for i in self.tupe[0]:
+            self.rowItem[i] = QtWidgets.QLineEdit()
+            formLayout.addRow(i, self.rowItem[i])
+
+        self.createGeneralButton(layout)
+
+    def saveData(self):
+        """
+        Save the args info to the specified rig widget's rigArgs dictionary
+        :return: None
+        """
+
+        for i in self.tupe[0]:
+            self.specifiedInstance.rigArgs[i] = self.rowItem[i].text()
 

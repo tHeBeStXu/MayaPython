@@ -76,15 +76,14 @@ def build(legJoints,
                                    scale=rigScale*5,
                                    translateTo=legJoints[-2],
                                    shape='footControl',
-                                   axis='y')
+                                   axis='y',
+                                   lockChannels=['v'])
     cmds.select(cl=1)
     cmds.setAttr(Foot_IK_Ctrl.Off + '.rotateX', 90)
 
     if prefix.startswith('R_'):
-        controlShape = cmds.listRelatives(Foot_IK_Ctrl.C, s=1, p=0, children=0)
-        cluster = cmds.cluster(controlShape)
-        cmds.setAttr(cluster[1] + '.scaleX', -1)
-        cmds.delete(controlShape, ch=1)
+        cmds.setAttr(Foot_IK_Ctrl.Off + '.rotateZ', 180)
+        cmds.setAttr(Foot_IK_Ctrl.Off + '.scaleZ', -1 * cmds.getAttr(Foot_IK_Ctrl.Off + '.scaleZ'))
 
     cmds.select(cl=1)
 
@@ -163,10 +162,7 @@ def build(legJoints,
     condition1 = cmds.createNode('condition', n=prefix + 'Foot_CD#')
     cmds.setAttr(condition1 + '.colorIfFalseR', 0)
 
-    if prefix.startswith('L_'):
-        cmds.setAttr(condition1 + '.operation', 2)
-    elif prefix.startswith('R_'):
-        cmds.setAttr(condition1 + '.operation', 4)
+    cmds.setAttr(condition1 + '.operation', 2)
 
     cmds.connectAttr(revJntRoll_Ctrl.C + '.rotateZ', condition1 + '.firstTerm', f=1)
     cmds.connectAttr(revJntRoll_Ctrl.C + '.rotateZ', condition1 + '.colorIfTrueR', f=1)

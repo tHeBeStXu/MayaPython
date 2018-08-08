@@ -7,13 +7,16 @@ import time
 import os
 from shiboken2 import wrapInstance
 
+import rigLib
 from rigLib.rig import *
+from rigLib.base import module as module
 from skinLib import skinLib
-
 import logging
-
 import Edit_UI
+
 reload(Edit_UI)
+reload(rigLib.rig)
+reload(module)
 
 
 logging.basicConfig()
@@ -59,9 +62,11 @@ def getDock(name='ProceduralRiggingTool'):
 
 class RiggingMainUI(QtWidgets.QWidget):
 
-    rigTypes = {'IK_FK_Spine': '',
+    rigTypes = {'IK_AnimalLeg': '',
                 'IK_FK_Arm': '',
-                'IK_Leg': ''}
+                'IK_FK_Spine': '',
+                'IK_FK_Head_Neck': '',
+                'FK_Tail': ''}
 
     def __init__(self, dock=1):
         """
@@ -92,7 +97,6 @@ class RiggingMainUI(QtWidgets.QWidget):
 
         if not dock:
             parent.show()
-
 
     def buildUI(self):
         """
@@ -185,17 +189,20 @@ class RiggingMainUI(QtWidgets.QWidget):
         Use the info to create the Rig
         :return:
         """
+        if not self.proNameLineEdit.text():
+            return None
         # Before create the rig, save the rig first!
         self.saveRig()
 
+        project = module.Base(characterName=self.proNameLineEdit.text())
         # Spine parts
         for rig in self.findChildren(rigWidget):
             if rig.rigTypeName == 'IK_FK_Spine' and rig.rigArgs:
-                IK_FK_Spine.build(spineJoints=rig.rigArgs['spineJoints'],
-                                  prefix=rig.rigArgs['prefix'],
-                                  rigScale=rig.rigArgs['rigScale'],
-                                  numFK_Jnt=rig.rigArgs['numFK_Jnt'],
-                                  baseRig=rig.rigArgs['baseRig'])
+                self.spine = IK_FK_Spine.build(spineJoints=rig.rigArgs['spineJoints'],
+                                               prefix=rig.rigArgs['prefix'],
+                                               rigScale=rig.rigArgs['rigScale'],
+                                               numFK_Jnt=rig.rigArgs['numFK_Jnt'],
+                                               baseRig=project)
                 logger.debug('%s IK_FK_Spine finished!' % str(rig.rigPartName))
             else:
                 logger.debug("Can't find Spine part, please check your joints.")
@@ -204,26 +211,37 @@ class RiggingMainUI(QtWidgets.QWidget):
         # Other parts
         for rig in self.findChildren(rigWidget):
             if rig.rigTypeName == 'IK_FK_Arm' and rig.rigArgs:
-                IK_FK_Arm.build(prefix=rig.rigArgs['prefix'],
-                                topJoint=rig.rigArgs['topJoint'],
-                                startDupJnt=rig.rigArgs['starDupJnt'],
-                                endDupJnt=rig.rigArgs['endDupJnt'],
-                                armPvLoc=rig.rigArgs['armPvLoc'],
-                                switchCtrlLoc=rig.rigArgs['switchCtrlLoc'],
+                IK_FK_Arm.build(armJoints=rig.rigArgs['armJoints'],
+                                prefix=rig.rigArgs['prefix'],
                                 rigScale=rig.rigArgs['rigScale'],
-                                fkPreParent=rig.rigArgs['fkPreParent'],
-                                baseRig=rig.rigArgs['baseRig'])
+                                FK_Parent=self.spine['chest_Ctrl'],
+                                switchCtrlPos=rig.rigArgs['switchCtrlLoc'],
+                                baseRig=project)
                 logger.info('%s IK_FK_Arm build complete!' % str(rig.rigPartName))
 
-            elif rig.rigTypeName == 'IK_Leg' and rig.rigArgs:
-                IK_HumanLeg.build(topJoint=rig.rigArgs['topJoint'],
-                                  pvLocator=rig.rigArgs['pvLocator'],
-                                  revLocator=rig.rigArgs['revLocator'],
-                                  prefix=rig.rigArgs['prefix'],
-                                  rigScale=rig.rigArgs['rigScale'],
-                                  rollCtrlLOC=rig.rigArgs['rollCtrlLOC'],
-                                  baseRig=rig.rigArgs['baseRig'])
+            elif rig.rigTypeName == 'IK_AnimalLeg' and rig.rigArgs:
+                IK_AnimalLeg.build(legJoints=rig.rigArgs['legJoints'],
+                                   revJntlocList=rig.rigArgs['revJntlocList'],
+                                   ankleRollLoc=rig.rigArgs['ankleRollLoc'],
+                                   spineJnt=rig.rigArgs['spineJnt'],
+                                   prefix=rig.rigArgs['prefix'],
+                                   rigScale=rig.rigArgs['rigScale'],
+                                   baseRig=project)
                 logger.info('%s IK_Leg build complete!' % str(rig.rigPartName))
+            elif rig.rigTypeName == 'IK_FK_Head_Neck' and rig.rigArgs:
+                IK_FK_Head_Neck.build(neckJoints=rig.rigArgs['neckJoints'],
+                                      rigScale=rig.rigArgs['rigScale'],
+                                      Neck_Parent=rig.rigArgs['Neck_Parent'],
+                                      prefix=rig.rigArgs['prefix'],
+                                      blendCtrl_Pos=rig.rigArgs['blendCtrl_Pos'],
+                                      baseRig=project)
+
+            elif rig.rigTypeName == 'FK_Tail' and rig.rigArgs:
+                FK_Tail.build(tailJoints=rig.rigArgs['tailJoints'],
+                              FK_Parent=self.spine['pelvis_Ctrl'],
+                              rigScale=1.0,
+                              prefix=rig.rigArgs['prefix'],
+                              baseRig=project)
             else:
                 logger.debug("Can't find the specified part, please check your rig type.")
                 break
@@ -388,8 +406,12 @@ class rigWidget(QtWidgets.QWidget):
             Edit_UI.IK_FK_Spine_EditUI(self, self.rigTypeName)
         elif self.rigTypeName == 'IK_FK_Arm':
             Edit_UI.IK_FK_Arm_EditUI(self, self.rigTypeName)
-        elif self.rigTypeName == 'IK_Leg':
-            Edit_UI.IK_Leg_EditUI(self, self.rigTypeName)
+        elif self.rigTypeName == 'IK_AnimalLeg':
+            Edit_UI.IK_AnimalLeg_EditUI(self, self.rigTypeName)
+        elif self.rigTypeName == 'FK_Tail':
+            Edit_UI.FK_Tail_EditUI(self, self.rigTypeName)
+        elif self.rigTypeName == 'IK_FK_Head_Neck':
+            Edit_UI.IK_FK_Head_Neck_EditUI(self, self.rigTypeName)
         else:
             logger.debug('Unknown rig type...')
 

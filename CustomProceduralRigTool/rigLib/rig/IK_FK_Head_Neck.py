@@ -276,10 +276,10 @@ def build(neckJoints,
 
     # fk_headLocal and fk_headWorld
     cmds.parent(fk_headLocal, FK_Neck_Ctrl_List[-1])
-    cmds.parent(fk_headWorld, baseRig.Master_Ctrl.C)
+    cmds.parent(fk_headWorld, rigmodule.topGrp)
     # ik_headLocal and ik_headWorld
     cmds.parent(ik_headLocal, neckLoc)
-    cmds.parent(ik_headWorld, baseRig.Master_Ctrl.C)
+    cmds.parent(ik_headWorld, rigmodule.topGrp)
 
     # ik parts
     cmds.parent(IK_Part_List[0], rigmodule.dontTouchGrp)

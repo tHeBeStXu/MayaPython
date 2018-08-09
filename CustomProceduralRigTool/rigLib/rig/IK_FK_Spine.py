@@ -6,10 +6,10 @@ reload(control)
 
 
 def build(spineJoints,
-          prefix,
-          rigScale,
+          prefix='C_',
+          rigScale=1.0,
           numFK_Jnt=3,
-      baseRig=None):
+          baseRig=None):
     """
     Build IK_FK_Spine rig.
     This IK_FK_Spine build module is used for spine joint chain which is placed in the 0 x-Axis position.

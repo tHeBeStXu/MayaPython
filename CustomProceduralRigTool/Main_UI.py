@@ -89,6 +89,8 @@ class RiggingMainUI(QtWidgets.QWidget):
 
         super(RiggingMainUI, self).__init__(parent=parent)
 
+        self.spine = {}
+
         self.buildUI()
 
         self.parent().layout().addWidget(self)
@@ -198,53 +200,90 @@ class RiggingMainUI(QtWidgets.QWidget):
         # Spine parts
         for rig in self.findChildren(rigWidget):
             if rig.rigTypeName == 'IK_FK_Spine' and rig.rigArgs:
-                self.spine = IK_FK_Spine.build(spineJoints=rig.rigArgs['spineJoints'],
-                                               prefix=rig.rigArgs['prefix'],
-                                               rigScale=rig.rigArgs['rigScale'],
-                                               numFK_Jnt=rig.rigArgs['numFK_Jnt'],
+                self.spine = IK_FK_Spine.build(spineJoints=eval(rig.rigArgs['spineJoints']),
+                                               prefix=str(eval(rig.rigArgs['prefix'])),
+                                               rigScale=eval(rig.rigArgs['rigScale']),
+                                               numFK_Jnt=eval(rig.rigArgs['numFK_Jnt']),
                                                baseRig=project)
                 logger.debug('%s IK_FK_Spine finished!' % str(rig.rigPartName))
+                break
             else:
                 logger.debug("Can't find Spine part, please check your joints.")
-                break
+                continue
 
         # Other parts
-        for rig in self.findChildren(rigWidget):
-            if rig.rigTypeName == 'IK_FK_Arm' and rig.rigArgs:
-                IK_FK_Arm.build(armJoints=rig.rigArgs['armJoints'],
-                                prefix=rig.rigArgs['prefix'],
-                                rigScale=rig.rigArgs['rigScale'],
-                                FK_Parent=self.spine['chest_Ctrl'],
-                                switchCtrlPos=rig.rigArgs['switchCtrlLoc'],
-                                baseRig=project)
-                logger.info('%s IK_FK_Arm build complete!' % str(rig.rigPartName))
+        if self.spine:
+            for rig in self.findChildren(rigWidget):
+                if rig.rigTypeName == 'IK_FK_Arm' and rig.rigArgs:
+                    IK_FK_Arm.build(armJoints=eval(rig.rigArgs['armJoints']),
+                                    prefix=str(eval(rig.rigArgs['prefix'])),
+                                    rigScale=eval(rig.rigArgs['rigScale']),
+                                    FK_Parent=self.spine['chest_Ctrl'],
+                                    switchCtrlPos=rig.rigArgs['switchCtrlPos'],
+                                    baseRig=project)
+                    logger.info('%s IK_FK_Arm build complete!' % str(rig.rigPartName))
+                    continue
 
-            elif rig.rigTypeName == 'IK_AnimalLeg' and rig.rigArgs:
-                IK_AnimalLeg.build(legJoints=rig.rigArgs['legJoints'],
-                                   revJntlocList=rig.rigArgs['revJntlocList'],
-                                   ankleRollLoc=rig.rigArgs['ankleRollLoc'],
-                                   spineJnt=rig.rigArgs['spineJnt'],
-                                   prefix=rig.rigArgs['prefix'],
-                                   rigScale=rig.rigArgs['rigScale'],
-                                   baseRig=project)
-                logger.info('%s IK_Leg build complete!' % str(rig.rigPartName))
-            elif rig.rigTypeName == 'IK_FK_Head_Neck' and rig.rigArgs:
-                IK_FK_Head_Neck.build(neckJoints=rig.rigArgs['neckJoints'],
-                                      rigScale=rig.rigArgs['rigScale'],
-                                      Neck_Parent=rig.rigArgs['Neck_Parent'],
-                                      prefix=rig.rigArgs['prefix'],
-                                      blendCtrl_Pos=rig.rigArgs['blendCtrl_Pos'],
-                                      baseRig=project)
+                elif rig.rigTypeName == 'IK_AnimalLeg' and rig.rigArgs:
+                    IK_AnimalLeg.build(legJoints=eval(rig.rigArgs['legJoints']),
+                                       revJntlocList=eval(rig.rigArgs['revJntlocList']),
+                                       ankleRollLoc=rig.rigArgs['ankleRollLoc'],
+                                       prefix=str(eval(rig.rigArgs['prefix'])),
+                                       rigScale=eval(rig.rigArgs['rigScale']),
+                                       baseRig=project)
+                    logger.info('%s IK_Leg build complete!' % str(rig.rigPartName))
+                    continue
+                elif rig.rigTypeName == 'IK_FK_Head_Neck' and rig.rigArgs:
+                    IK_FK_Head_Neck.build(neckJoints=eval(rig.rigArgs['neckJoints']),
+                                          rigScale=eval(rig.rigArgs['rigScale']),
+                                          prefix=str(eval(rig.rigArgs['prefix'])),
+                                          blendCtrl_Pos=rig.rigArgs['blendCtrl_Pos'],
+                                          baseRig=project)
+                    continue
+                elif rig.rigTypeName == 'FK_Tail' and rig.rigArgs:
+                    FK_Tail.build(tailJoints=eval(rig.rigArgs['tailJoints']),
+                                  FK_Parent=self.spine['pelvis_Ctrl'],
+                                  rigScale=1.0,
+                                  prefix=str(eval(rig.rigArgs['prefix'])),
+                                  baseRig=project)
+                    continue
+                else:
+                    logger.debug("Can't find the specified part, please check your rig type.")
+        else:
+            for rig in self.findChildren(rigWidget):
+                if rig.rigTypeName == 'IK_FK_Arm' and rig.rigArgs:
+                    IK_FK_Arm.build(armJoints=eval(rig.rigArgs['armJoints']),
+                                    prefix=str(eval(rig.rigArgs['prefix'])),
+                                    rigScale=eval(rig.rigArgs['rigScale']),
+                                    switchCtrlPos=rig.rigArgs['switchCtrlPos'],
+                                    baseRig=project)
+                    logger.info('%s IK_FK_Arm build complete!' % str(rig.rigPartName))
+                    continue
 
-            elif rig.rigTypeName == 'FK_Tail' and rig.rigArgs:
-                FK_Tail.build(tailJoints=rig.rigArgs['tailJoints'],
-                              FK_Parent=self.spine['pelvis_Ctrl'],
-                              rigScale=1.0,
-                              prefix=rig.rigArgs['prefix'],
-                              baseRig=project)
-            else:
-                logger.debug("Can't find the specified part, please check your rig type.")
-                break
+                elif rig.rigTypeName == 'IK_AnimalLeg' and rig.rigArgs:
+                    IK_AnimalLeg.build(legJoints=eval(rig.rigArgs['legJoints']),
+                                       revJntlocList=eval(rig.rigArgs['revJntlocList']),
+                                       ankleRollLoc=rig.rigArgs['ankleRollLoc'],
+                                       prefix=str(eval(rig.rigArgs['prefix'])),
+                                       rigScale=eval(rig.rigArgs['rigScale']),
+                                       baseRig=project)
+                    logger.info('%s IK_Leg build complete!' % str(rig.rigPartName))
+                    continue
+                elif rig.rigTypeName == 'IK_FK_Head_Neck' and rig.rigArgs:
+                    IK_FK_Head_Neck.build(neckJoints=eval(rig.rigArgs['neckJoints']),
+                                          rigScale=eval(rig.rigArgs['rigScale']),
+                                          prefix=str(eval(rig.rigArgs['prefix'])),
+                                          blendCtrl_Pos=rig.rigArgs['blendCtrl_Pos'],
+                                          baseRig=project)
+                    continue
+                elif rig.rigTypeName == 'FK_Tail' and rig.rigArgs:
+                    FK_Tail.build(tailJoints=eval(rig.rigArgs['tailJoints']),
+                                  rigScale=1.0,
+                                  prefix=str(eval(rig.rigArgs['prefix'])),
+                                  baseRig=project)
+                    continue
+                else:
+                    logger.debug("Can't find the specified part, please check your rig type.")
 
         logger.info("Create rig complete!")
 

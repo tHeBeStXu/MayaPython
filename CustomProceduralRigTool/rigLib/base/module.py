@@ -8,6 +8,7 @@ reload(control)
 
 sceneObjectType = 'rig'
 
+
 class Base():
     """
     class for building top rig structure

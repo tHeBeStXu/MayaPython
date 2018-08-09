@@ -13,7 +13,6 @@ reload(name)
 def build(legJoints,
           revJntlocList,
           ankleRollLoc,
-          spineJnt,
           prefix='L_',
           rigScale=1.0,
           baseRig=None):
@@ -22,12 +21,13 @@ def build(legJoints,
     :param legJoints: list(str), leg joints.[hip, knee, ankle, ball, toe, toeEnd]
     :param revJntlocList: list(str), rev_joint locator list.[CBank, EBank, Heel, Pivot]
     :param ankleRollLoc: str, ankleRoll locator.
-    :param spineJnt: str, end of the spine jnt, i.e C_Spine_0
     :param prefix: str, 'L_' OR 'L_Front'...
     :param rigScale: float, rig scale of the module.
     :param baseRig: instance, base attach of the rig. Base Class instance is used.
     :return: None.
     """
+    spineJnt = cmds.listRelatives(legJoints[0], s=0, children=0, parent=1, type='joint')
+    cmds.select(cl=1)
 
     rigmodule = module.Module(prefix=prefix,
                               rigPartName='Leg',
@@ -75,15 +75,18 @@ def build(legJoints,
                                    rigPartName='Leg',
                                    scale=rigScale*5,
                                    translateTo=legJoints[-2],
+                                   rotateTo=legJoints[-2],
                                    shape='footControl',
                                    axis='y',
                                    lockChannels=['v'])
     cmds.select(cl=1)
+    # flatten Ctrl and mirror the Ctrl action by plan YZ
     cmds.setAttr(Foot_IK_Ctrl.Off + '.rotateX', 90)
+    cmds.setAttr(Foot_IK_Ctrl.Off + '.rotateY', 0)
+    cmds.setAttr(Foot_IK_Ctrl.Off + '.rotateZ', cmds.getAttr(Foot_IK_Ctrl.Off + '.rotateZ') + 90)
 
     if prefix.startswith('R_'):
-        cmds.setAttr(Foot_IK_Ctrl.Off + '.rotateZ', 180)
-        cmds.setAttr(Foot_IK_Ctrl.Off + '.scaleZ', -1 * cmds.getAttr(Foot_IK_Ctrl.Off + '.scaleZ'))
+        cmds.setAttr(Foot_IK_Ctrl.Off + '.scaleZ', cmds.getAttr(Foot_IK_Ctrl.Off + '.scaleZ') * (-1))
 
     cmds.select(cl=1)
 

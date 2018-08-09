@@ -83,6 +83,9 @@ def build(tailJoints,
         cmds.setDrivenKeyframe(ctrlShape_Input_List[i] + '.sweep', cd=FK_tailCtrl_List[0] + '.Tail_Ctrl_Visibility')
 
     # Clean the hierarchy
-    cmds.parent(FK_tailCtrlGrp_List[0], FK_Parent)
+    if FK_Parent:
+        cmds.parent(FK_tailCtrlGrp_List[0], FK_Parent)
+    else:
+        cmds.warning('Warning: FK_Parent is None!')
 
     cmds.select(cl=1)

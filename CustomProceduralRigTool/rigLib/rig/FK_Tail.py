@@ -7,7 +7,7 @@ reload(module)
 
 
 def build(tailJoints,
-          FK_Parent,
+          FK_Parent='',
           rigScale=1.0,
           prefix='C_',
           baseRig=None

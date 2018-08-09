@@ -288,4 +288,3 @@ class FK_Tail_EditUI(EditUI):
 
         for i in self.tupe[0]:
             self.specifiedInstance.rigArgs[i] = self.rowItem[i].text()
-

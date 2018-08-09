@@ -290,7 +290,11 @@ def build(armJoints,
 
     # final cleaning
     cmds.parent(FK_Arm_CtrlGrp_List[0], clavical_Ctrl.C)
-    cmds.parent(clavical_Ctrl.Off, FK_Parent)
+
+    if FK_Parent:
+        cmds.parent(clavical_Ctrl.Off, FK_Parent)
+    else:
+        cmds.warning('FK_Parent is None')
 
     cmds.parent(IK_Arm_PV_Ctrl.Off, rigmodule.topGrp)
     cmds.parent(IK_Arm_Ctrl.Off, rigmodule.topGrp)

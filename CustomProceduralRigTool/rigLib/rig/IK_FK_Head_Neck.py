@@ -6,8 +6,7 @@ reload(control)
 
 
 def build(neckJoints,
-          rigScale,
-          Neck_Parent='',
+          rigScale=1.0,
           prefix='C_',
           blendCtrl_Pos='',
           baseRig=None
@@ -16,12 +15,13 @@ def build(neckJoints,
     Build the IK_FK_Neck rig.
     :param neckJoints: list(str), neck joints and head joint list, [neck_0, neck_1, ... neck_#, head, head_end]
     :param rigScale: float, rig scale of the control
-    :param Neck_Parent: str, the last valid spine joint, Spine_#
     :param prefix: str, 'C_', 'L_' or 'R_'
     :param blendCtrl_Pos: str, space locator
     :param baseRig: str, base atttach of the rig, Base Class instance is used.
     :return: None
     """
+    Neck_Parent = cmds.listRelatives(neckJoints[0], s=0, c=0, parent=1, type='joint')
+
     cmds.select(cl=1)
 
     rigmodule = module.Module(prefix=prefix + 'Head_',
@@ -164,8 +164,8 @@ def build(neckJoints,
     cmds.parent(IK_End_Jnt, IK_Head_Ctrl.C)
     cmds.parent(IK_Start_Jnt, Neck_Parent)
 
-    # orientConstraint the ik head joint
-    # cmds.orientConstraint(IK_Head_Ctrl.C, ik_Joints_List[-2], mo=0)
+    cmds.setAttr(IK_Start_Jnt + '.v', 0)
+    cmds.setAttr(IK_End_Jnt + '.v', 0)
 
     # ik handle
     IK_Part_List = cmds.ikHandle(n=prefix + 'Head_IK',

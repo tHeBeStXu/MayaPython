@@ -1,5 +1,4 @@
 import maya.cmds as cmds
-from functools import partial
 
 
 def PL_DynamicParenting():
@@ -77,8 +76,6 @@ def PL_DynamicParenting():
 
         exprSuf = '_' + str(j)
 
-    print 'exprSuf = ' + exprSuf
-
     cmds.select(DPsetGroup)
     DPsetGroup_FP = cmds.ls(sl=1, l=1)
     cmds.select(cl=1)
@@ -86,10 +83,8 @@ def PL_DynamicParenting():
     constrainedObj_FP = cmds.ls(sl=1, l=1)
     cmds.select(cl=1)
 
-    print DPsetGroup_FP
-    print constrainedObj_FP
-
-    cmds.scriptNode(beforeScript='customScriptJob(DPsetGroup = ' + str(DPsetGroup_FP) + ', constrainedObj=' + str(constrainedObj_FP) + ')',
+    cmds.scriptNode(beforeScript='customScriptJob(DPsetGroup = %s, constrainedObj = %s)'
+                                 % (DPsetGroup_FP, constrainedObj_FP),
                     n='dynparExpr' + exprSuf, stp='python')
 
     cmds.setAttr('dynparExpr' + exprSuf + '.scriptType', 1)
@@ -106,29 +101,40 @@ def customScriptJob(DPsetGroup, constrainedObj):
                    DynParentSpaceSwitch(DPsetGroup=DPsetGroup, constrainedObj=constrainedObj)],
                    killWithScene=1)
 
+
 def DynParentSpaceSwitch(DPsetGroup, constrainedObj):
-    selection = ''
+
+    print 'DPsetGroup = ', DPsetGroup
+    print 'constrainedObj = ', constrainedObj
+
+    selection = cmds.ls(sl=1)
     constraintRelatives = cmds.listRelatives(DPsetGroup, c=1, type='constraint')
+    print 'constraintRelatives = ', constraintRelatives
     cnsRelAttr = cmds.attributeInfo(constraintRelatives, i=0)
+    print 'cnsRelAttr = ', cnsRelAttr
     cnsRelSize = len(cnsRelAttr)
+    print 'cnsRelSize = ', cnsRelSize
     parentVal = cmds.getAttr(constrainedObj[0] + '.Parent')
+    print 'parentVal = ', parentVal
     posDP = cmds.xform(constrainedObj, q=1, ws=1, rp=1)
     rotDP = cmds.xform(constrainedObj, q=1, ws=1, ro=1)
 
     attributeSize = len(cnsRelAttr)
+    print 'attributeSize = ', attributeSize
     selectionSize = len(selection)
+    print 'selectionSize = ', selectionSize
 
     discardedAttributes = attributeSize - selectionSize
+    print discardedAttributes
 
     cnsAttrUsed = cnsRelSize - discardedAttributes
+    print cnsAttrUsed
 
     i = 0
     while i < cnsAttrUsed:
         cmds.setAttr(constrainedObj[0] + '.' + selection[i], 0)
         i += 1
 
-    print len(selection)
-    print parentVal
     cmds.setAttr(constrainedObj[0] + '.' + selection[parentVal], 1)
     cmds.move(posDP[0], posDP[1], posDP[2], constrainedObj, rpr=1)
     cmds.rotate(rotDP[0], rotDP[1], rotDP[2], constrainedObj, a=1, ws=1)

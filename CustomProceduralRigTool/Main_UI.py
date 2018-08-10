@@ -17,6 +17,7 @@ import Edit_UI
 reload(Edit_UI)
 reload(rigLib.rig)
 reload(module)
+reload(skinLib)
 
 
 logging.basicConfig()

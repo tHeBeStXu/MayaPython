@@ -1,10 +1,7 @@
 import string
 from functools import partial
-
 import maya.cmds as cmds
-
-
-from CustomExporter import base, fbxExport, modelExport, export, animLayerExport, animationExport
+from . import base, fbxExport, modelExport, export, animLayerExport, animationExport
 
 reload(base)
 reload(fbxExport)

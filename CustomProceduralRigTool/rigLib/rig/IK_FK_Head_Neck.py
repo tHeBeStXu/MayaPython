@@ -6,6 +6,7 @@ reload(control)
 
 
 def build(neckJoints,
+          Neck_Parent='',
           rigScale=1.0,
           prefix='C_',
           blendCtrl_Pos='',
@@ -14,13 +15,26 @@ def build(neckJoints,
     """
     Build the IK_FK_Neck rig.
     :param neckJoints: list(str), neck joints and head joint list, [neck_0, neck_1, ... neck_#, head, head_end]
+    :param Neck_Parent: str, Neck parent joint, it's usually the last valid joint of the spine joints(i.e. Spine_#)
     :param rigScale: float, rig scale of the control
     :param prefix: str, 'C_', 'L_' or 'R_'
     :param blendCtrl_Pos: str, space locator
     :param baseRig: str, base atttach of the rig, Base Class instance is used.
     :return: None
     """
-    Neck_Parent = cmds.listRelatives(neckJoints[0], s=0, c=0, parent=1, type='joint')
+    if Neck_Parent:
+        try:
+            cmds.objectType(Neck_Parent) == 'joint'
+            pass
+        except:
+            cmds.error('%s is not a joint, please check again' % Neck_Parent)
+
+    else:
+        parentJnt = cmds.listRelatives(neckJoints[0], s=0, c=0, parent=1, type='joint')
+        if parentJnt:
+            Neck_Parent = parentJnt
+        else:
+            cmds.warning('No parent jnt of %s, IK may not work as expected!' % neckJoints[0])
 
     cmds.select(cl=1)
 
@@ -162,7 +176,11 @@ def build(neckJoints,
 
     cmds.select(cl=1)
     cmds.parent(IK_End_Jnt, IK_Head_Ctrl.C)
-    cmds.parent(IK_Start_Jnt, Neck_Parent)
+
+    if Neck_Parent:
+        cmds.parent(IK_Start_Jnt, Neck_Parent)
+    else:
+        cmds.parent(IK_Start_Jnt, rigmodule.topGrp)
 
     cmds.setAttr(IK_Start_Jnt + '.v', 0)
     cmds.setAttr(IK_End_Jnt + '.v', 0)
@@ -270,7 +288,10 @@ def build(neckJoints,
     cmds.setDrivenKeyframe(IK_Head_Ctrl.Off + '.v', cd=IK_FK_BlendCtrl.C + '.ty')
 
     neckLoc = cmds.spaceLocator(n=prefix + 'Neck_Loc')
-    cmds.parentConstraint(Neck_Parent, neckLoc, mo=0)
+
+    if Neck_Parent:
+        cmds.parentConstraint(Neck_Parent, neckLoc, mo=0)
+
     cmds.parent(FK_Neck_CtrlGrp_List[0], neckLoc)
     cmds.parent(IK_Head_Ctrl.Off, neckLoc)
 

@@ -86,6 +86,7 @@ def build(tailJoints,
     if FK_Parent:
         cmds.parent(FK_tailCtrlGrp_List[0], FK_Parent)
     else:
+        cmds.parent(FK_tailCtrlGrp_List[0], rigmodule.topGrp)
         cmds.warning('Warning: FK_Parent is None!')
 
     cmds.select(cl=1)

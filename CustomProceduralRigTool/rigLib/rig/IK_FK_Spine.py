@@ -9,6 +9,7 @@ def build(spineJoints,
           prefix='C_',
           rigScale=1.0,
           numFK_Jnt=3,
+          worldUpAxis='y',
           baseRig=None):
     """
     Build IK_FK_Spine rig.
@@ -58,7 +59,6 @@ def build(spineJoints,
 
         fkJntList.append(fkJnt)
 
-
     # delete the motionPath
     cmds.delete(FK_Crv)
 
@@ -72,10 +72,16 @@ def build(spineJoints,
     for i in fkJntList:
         fkJntList_rev.append(i)
     fkJntList_rev.reverse()
-    
+
+    if worldUpAxis in ['y', 'Y']:
+        worldUpVector = (0, 1, 0)
+    elif worldUpAxis in ['z', 'Z']:
+        worldUpVector = (0, 0, 1)
+    print worldUpAxis
+    print worldUpVector
     for i in xrange(len(fkJntList_rev)-1):
         ac = cmds.aimConstraint(fkJntList_rev[i], fkJntList_rev[i+1], mo=0, weight=1, aimVector=(1, 0, 0),
-                                upVector=(0, 1, 0), worldUpType='vector', worldUpVector=(0, 1, 0))
+                                upVector=(0, 1, 0), worldUpType='vector', worldUpVector=worldUpVector)
         cmds.delete(ac)
 
     # orientConstraint the last joint

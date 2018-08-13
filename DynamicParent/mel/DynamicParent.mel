@@ -1,0 +1,118 @@
+///--------------------------------------------------------------------------------////
+//				only for maya 2011+
+//
+//
+//             DynamicParentScript.mel 
+//             Copyright (C) 2016 Perry Leijten
+//             Email: perryleijten@gmail.com
+// 			   Website: www.perryleijten.com
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// See http://www.gnu.org/licenses/gpl.html for a copy of the GNU General 
+// Public License.
+///--------------------------------------------------------------------------------////
+//					I N S T A L L A T I O N:
+//
+// Copy the "DynamicParent.mel" to your Maya scriptsdirectory:
+// 	MyDocuments\maya\scripts\
+// 		recreate this text to the file structure in which the script is palaced:
+/*
+	source "DynamicParentScript";
+	
+*/
+//	this text can be entered from the script editor and can be made into a button
+//
+//
+//						   U S A G E:
+// 
+// Then select at 'least' 2 objects, the last object selected is the
+// object that recieves the dynamic parent.
+// (advisable for rigging is parenting the DPGroup in the rootcontrol)
+
+
+global proc PL_DynamicParenting(){
+	// get selection
+	$selection = `ls -sl`;
+	// get selection size
+	$sizesel = size($selection);
+	// shw warning if just one object is selected
+	if ($sizesel == 1){
+		error "Not Enough objects selected";
+		}
+	// configure last selected object
+	$constrainedObj = $selection[($sizesel-1)];
+	// create 2 empty groups for the last selected object
+	$DPsetGroup = `group -em -n ($constrainedObj +"_DynPCnsGroup")`;
+	$DPGroup =  `group -em -n ($constrainedObj +"_DynPGroup")`;
+	// position groups
+	parentConstraint -w 1 $constrainedObj $DPsetGroup ;
+	parentConstraint -w 1 $constrainedObj $DPGroup ;
+	// delete constraints for positioning
+	delete ($DPsetGroup+"_parentConstraint1");
+	delete ($DPGroup+"_parentConstraint1");
+	// attach groups and last selected objects together
+	parent $constrainedObj $DPsetGroup;
+	parent $DPsetGroup $DPGroup;
+	// reconfigure selection of objects  without last selected nd add dp group to selection
+	stringArrayRemoveAtIndex(($sizesel-1), $selection);
+	stringArrayInsertAtIndex(0, $selection,$DPGroup);
+	// parentconstraint all objects to lasts parentgroup
+	for ($Node in $selection){
+		parentConstraint -w 1 $Node $DPsetGroup;
+	}	
+	// ad seporator attribute
+	addAttr -ln "DynParent"  -at "enum" -en "-----" $constrainedObj ;
+	setAttr -e -keyable true  -lock true ($constrainedObj + ".DynParent") ;
+    // create a string with all available dynparent object and seperate them with ":"
+	string $selectionstring = stringArrayToString($selection, ":");
+	addAttr -ln "Parent"  -at "enum" -en $selectionstring $constrainedObj ;
+	setAttr -e -keyable true  ($constrainedObj + ".Parent") ; 
+	for ($nodes in $selection){
+		addAttr -ln $nodes -at long  -min 0 -max 1 -dv 0 $constrainedObj ;
+		setAttr -e -keyable true  ($constrainedObj + "."+ $nodes ) ; 
+	}
+	connectAttr	($constrainedObj + "." + $selection[0]) ($DPsetGroup + "_parentConstraint1."+ $DPGroup + "W0");
+	
+	for ($i=1; $i < $sizesel; $i++){
+		connectAttr ($constrainedObj + "." + $selection[$i]) ($DPsetGroup + "_parentConstraint1." + $selection[$i] +"W"+ $i);
+	}
+	string $sforExprString = stringArrayToString($selection, "\", \"");
+	$exprSuf = "_0";	
+	if( `objExists ("dynparExpr"+$exprSuf )`) {
+		$j =1;
+		while(`objExists ("dynparExpr_"+$j)`)
+		{
+			$j++;
+		}
+		$exprSuf = ("_"+$j);
+	}
+	print $exprSuf;
+	string $exptext1 =("global proc DynParenSpaceSwitch"+$exprSuf+"(){\n\string $selection[] = {\"");
+	string $exptext2 = ("\"};\n\t$constraintRelatives = `listRelatives -c -type constraint \":");
+	string $exptext3 = ("\"`;\n\t$cnsRelAttr = `attributeInfo -i 0 $constraintRelatives`;\n\t$cnsRelsize = size($cnsRelAttr);\n\tint $ParentVal = `getAttr(\":");
+	string $exptext4 = (".Parent\") `;\n\tfloat $PosDP[] = `xform -q -ws -rp \":");
+	string $exptext5 = ("\"`;\n\tfloat $RotDP[] = `xform -q -ws -ro \":");
+	string $exptext6 = ("\"`;\n\tint $attributeSize = `size($cnsRelAttr)`;\n\tint $selectionSize = `size($selection)`;\n\t$discardedAttributes = $attributeSize - $selectionSize;\n\t$cnsAttrUsed = $cnsRelsize -$discardedAttributes;\n\tint $i=0;\n\tfor ($i = 0; $i < $cnsAttrUsed; $i++){\n\t\tsetAttr (\":");
+	string $exptext7 = ("\"+\".\"+$selection[$i]) 0;\n\t}\n    setAttr (\":");
+	string $exptext8 = ("\"+\".\"+$selection[$ParentVal]) 1;\n\tmove -rpr $PosDP[0] $PosDP[1] $PosDP[2] \":");
+	string $exptext9 = ("\";\n\trotate -a -ws $RotDP[0] $RotDP[1] $RotDP[2]  \":");
+	string $exptext10 = ("\";\n}\nscriptJob -killWithScene -ac (\":");
+	string $exptext11 = ("\" + \".Parent\") DynParenSpaceSwitch"+$exprSuf+";" );
+	string $TotalExpression = ($exptext1 + $sforExprString + $exptext2 + $DPsetGroup+ $exptext3 + $constrainedObj + $exptext4 + $constrainedObj + $exptext5 + $constrainedObj + $exptext6 + $constrainedObj + $exptext7 + $constrainedObj + $exptext8 + $constrainedObj + $exptext9 + $constrainedObj + $exptext10 + $constrainedObj + $exptext11);
+	scriptNode  -beforeScript  $TotalExpression -n ("dynparExpr" + $exprSuf );
+	setAttr ("dynparExpr" + $exprSuf +".scriptType") 1;
+	scriptNode -executeBefore ("dynparExpr" + $exprSuf);
+	setAttr ($constrainedObj + "." + $selection[0]) 1;
+	select $constrainedObj ;
+}
+
+PL_DynamicParenting;

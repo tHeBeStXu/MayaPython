@@ -1,7 +1,6 @@
 import maya.cmds as cmds
-from CustomExporter import fbxExport
 
-from CustomExporter import base
+from . import fbxExport, base
 reload(base)
 
 

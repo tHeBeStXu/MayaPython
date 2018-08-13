@@ -1,5 +1,5 @@
 import maya.cmds as cmds
-from CustomExporter import base
+from . import base
 reload(base)
 
 def returnFBXExportNodes(origin):

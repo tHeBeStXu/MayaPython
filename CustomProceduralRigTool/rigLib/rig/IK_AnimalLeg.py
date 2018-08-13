@@ -13,6 +13,7 @@ reload(name)
 def build(legJoints,
           revJntlocList,
           ankleRollLoc,
+          spineJnt='',
           prefix='L_',
           rigScale=1.0,
           baseRig=None):
@@ -21,12 +22,24 @@ def build(legJoints,
     :param legJoints: list(str), leg joints.[hip, knee, ankle, ball, toe, toeEnd]
     :param revJntlocList: list(str), rev_joint locator list.[CBank, EBank, Heel, Pivot]
     :param ankleRollLoc: str, ankleRoll locator.
+    :param spineJnt: str, start joint of the spine(i.e. spine_0)
     :param prefix: str, 'L_' OR 'L_Front'...
     :param rigScale: float, rig scale of the module.
     :param baseRig: instance, base attach of the rig. Base Class instance is used.
     :return: None.
     """
-    spineJnt = cmds.listRelatives(legJoints[0], s=0, children=0, parent=1, type='joint')
+    if spineJnt:
+        try:
+            cmds.objectType(spineJnt) == 'joint'
+        except:
+            cmds.error('%s is not a joint type!' %spineJnt)
+    else:
+        parentJnt = cmds.listRelatives(legJoints[0], s=0, children=0, parent=1, type='joint')
+        if parentJnt:
+            spineJnt = parentJnt
+        else:
+            pass
+
     cmds.select(cl=1)
 
     rigmodule = module.Module(prefix=prefix,
@@ -221,7 +234,11 @@ def build(legJoints,
     cmds.select(cl=1)
 
     # final parenting
-    cmds.parent(hintJnt_List[0], spineJnt)
+    if spineJnt:
+        cmds.parent(hintJnt_List[0], spineJnt)
+    else:
+        cmds.warning('No spine joint, IK system may not work as expected!')
+        cmds.parent(hintJnt_List[0], rigmodule.topGrp)
 
     cmds.parent(IK_Hip_Part_List[0], ballRoll_Ctrl.C)
     cmds.parent(IK_Ball_List[0], ballRoll_Ctrl.C)

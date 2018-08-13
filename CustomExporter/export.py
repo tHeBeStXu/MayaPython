@@ -2,8 +2,7 @@ import maya.cmds as cmds
 import os
 import maya.mel as mel
 import sys
-
-from CustomExporter import base, fbxExport, animationExport, animLayerExport, modelExport
+from . import base, fbxExport, animationExport, animLayerExport, modelExport
 
 reload(base)
 reload(fbxExport)

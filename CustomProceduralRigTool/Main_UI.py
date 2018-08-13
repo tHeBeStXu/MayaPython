@@ -205,6 +205,7 @@ class RiggingMainUI(QtWidgets.QWidget):
                                                prefix=str(eval(rig.rigArgs['prefix'])),
                                                rigScale=eval(rig.rigArgs['rigScale']),
                                                numFK_Jnt=eval(rig.rigArgs['numFK_Jnt']),
+                                               worldUpAxis=rig.rigArgs['worldUpAxis'],
                                                baseRig=project)
                 logger.debug('%s IK_FK_Spine finished!' % str(rig.rigPartName))
                 break
@@ -232,7 +233,7 @@ class RiggingMainUI(QtWidgets.QWidget):
                                        prefix=str(eval(rig.rigArgs['prefix'])),
                                        rigScale=eval(rig.rigArgs['rigScale']),
                                        baseRig=project)
-                    logger.info('%s IK_Leg build complete!' % str(rig.rigPartName))
+                    logger.info('%s IK_AnimalLeg build complete!' % str(rig.rigPartName))
                     continue
                 elif rig.rigTypeName == 'IK_FK_Head_Neck' and rig.rigArgs:
                     IK_FK_Head_Neck.build(neckJoints=eval(rig.rigArgs['neckJoints']),
@@ -265,6 +266,7 @@ class RiggingMainUI(QtWidgets.QWidget):
                     IK_AnimalLeg.build(legJoints=eval(rig.rigArgs['legJoints']),
                                        revJntlocList=eval(rig.rigArgs['revJntlocList']),
                                        ankleRollLoc=rig.rigArgs['ankleRollLoc'],
+                                       spineJnt=rig.rigArgs['spineJnt'],
                                        prefix=str(eval(rig.rigArgs['prefix'])),
                                        rigScale=eval(rig.rigArgs['rigScale']),
                                        baseRig=project)
@@ -272,6 +274,7 @@ class RiggingMainUI(QtWidgets.QWidget):
                     continue
                 elif rig.rigTypeName == 'IK_FK_Head_Neck' and rig.rigArgs:
                     IK_FK_Head_Neck.build(neckJoints=eval(rig.rigArgs['neckJoints']),
+                                          Neck_Parent=rig.rigArgs['Neck_Parent'],
                                           rigScale=eval(rig.rigArgs['rigScale']),
                                           prefix=str(eval(rig.rigArgs['prefix'])),
                                           blendCtrl_Pos=rig.rigArgs['blendCtrl_Pos'],

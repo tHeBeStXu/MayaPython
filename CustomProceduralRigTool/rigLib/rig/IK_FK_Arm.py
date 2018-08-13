@@ -295,6 +295,7 @@ def build(armJoints,
         cmds.parent(clavical_Ctrl.Off, FK_Parent)
     else:
         cmds.warning('FK_Parent is None')
+        cmds.parent(clavical_Ctrl.Off, rigmodule.topGrp)
 
     cmds.parent(IK_Arm_PV_Ctrl.Off, rigmodule.topGrp)
     cmds.parent(IK_Arm_Ctrl.Off, rigmodule.topGrp)

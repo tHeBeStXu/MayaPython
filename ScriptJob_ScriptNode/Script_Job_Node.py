@@ -1,3 +1,6 @@
+"""
+scriptJob and scriptNode example
+"""
 import maya.cmds as cmds
 
 codeStr = '''

@@ -4,10 +4,12 @@ from ..base import module
 from ..base import control
 
 from .. utils import name
+from .. utils import IK_FK_Switch
 
 reload(module)
 reload(control)
 reload(name)
+reload(IK_FK_Switch)
 
 
 def build(armJoints,
@@ -82,8 +84,8 @@ def build(armJoints,
         cmds.select(cl=1)
 
     # lock the .rx and ry attribute of elbowCtrl
-    cmds.setAttr(FK_Arm_Ctrl_List[1] + '.rx', l=1, k=0)
-    cmds.setAttr(FK_Arm_Ctrl_List[1] + '.ry', l=1, k=0)
+    # cmds.setAttr(FK_Arm_Ctrl_List[1] + '.rx', l=1, k=0)
+    # cmds.setAttr(FK_Arm_Ctrl_List[1] + '.ry', l=1, k=0)
 
     # parent the CtrlGrps to the proper places
     for i in xrange(len(FK_Arm_Ctrl_List)-1):
@@ -149,7 +151,7 @@ def build(armJoints,
     # Arm IK Rig #
     ##############
     IK_Arm_Ctrl = control.Control(prefix=prefix + 'IK_',
-                                  rigPartName='Arm_',
+                                  rigPartName='Arm',
                                   scale=rigScale*3,
                                   translateTo=ik_Joint_List[-1],
                                   rotateTo=ik_Joint_List[-1],
@@ -238,6 +240,8 @@ def build(armJoints,
                                        translateTo=switchCtrlPos,
                                        shape='unitSliderControl',
                                        lockChannels=['tx', 'tz', 'r', 's', 'v'])
+    # add enum attr for IK_FK seamless switch
+    cmds.addAttr(IK_FK_Blend_Ctrl.C, ln='Mode', at='enum', en='FK:IK', k=1)
 
     cmds.rotate(0, 0, -90, IK_FK_Blend_Ctrl.Off, relative=1, objectSpace=1)
 
@@ -301,5 +305,16 @@ def build(armJoints,
     cmds.parent(IK_Arm_Ctrl.Off, rigmodule.topGrp)
     cmds.parent(switchCtrlLoc, rigmodule.topGrp)
     cmds.parent(IK_FK_Blend_Ctrl.Off, rigmodule.topGrp)
+
+    cmds.setAttr(IK_FK_Blend_Ctrl.C + '.ty', 0)
+
+    cmds.select(cl=1)
+
+    IK_FK_Switch.IK_FK_Switch(prefix=prefix,
+                              switchCtrl=IK_FK_Blend_Ctrl.C,
+                              pvCtrl=IK_Arm_PV_Ctrl.C,
+                              ikCtrl=IK_Arm_Ctrl.C,
+                              skinJoints=armJoints[1:],
+                              fkCtrlList=FK_Arm_Ctrl_List)
 
     cmds.select(cl=1)

@@ -47,4 +47,5 @@ cmds.scriptJob(attributeChange=['{5}' + '.Mode', switch])
            skinJoints,
            fkCtrlList,
            switchCtrl)
-    cmds.scriptNode(st=2, bs=codeStr.replace("'''", "''"), n=prefix + 'Arm_IKFK_Switch_Node_#', stp='python')
+    nodeName = cmds.scriptNode(st=2, bs=codeStr.replace("'''", "''"), n=prefix + 'Arm_IKFK_Switch_Node_#', stp='python')
+    cmds.scriptNode(nodeName, executeBefore=1)

@@ -96,7 +96,7 @@ class RiggingMainUI(QtWidgets.QWidget):
 
         self.parent().layout().addWidget(self)
 
-        self.projectName = ''
+        # self.projectName = ''
 
         if not dock:
             parent.show()
@@ -181,7 +181,8 @@ class RiggingMainUI(QtWidgets.QWidget):
         Set the Rig project name and store it in self.projectName
         :return: None
         """
-        self.projectName = self.proNameLineEdit.text()
+        # self.projectName = self.proNameLineEdit.text()
+        pass
 
     def clearRig(self):
         for rig in self.findChildren(rigWidget):
@@ -205,9 +206,9 @@ class RiggingMainUI(QtWidgets.QWidget):
                                                prefix=rig.rigArgs['prefix'],
                                                rigScale=eval(rig.rigArgs['rigScale']),
                                                numFK_Jnt=eval(rig.rigArgs['numFK_Jnt']),
-                                               worldUpAxis=rig.rigArgs['worldUpAxis'],
+                                               spineBackUpAxis=rig.rigArgs['spineBackUpAxis'],
                                                baseRig=project)
-                logger.debug('%s IK_FK_Spine finished!' % rig.rigPartName)
+                logger.debug('%s IK_FK_Spine finished!' % rig.rigPartLineEdit.text())
                 break
             else:
                 logger.debug("Can't find Spine part, please check your joints.")
@@ -223,7 +224,7 @@ class RiggingMainUI(QtWidgets.QWidget):
                                     FK_Parent=self.spine['chest_Ctrl'],
                                     switchCtrlPos=rig.rigArgs['switchCtrlPos'],
                                     baseRig=project)
-                    logger.info('%s IK_FK_Arm build complete!' % rig.rigPartName)
+                    logger.info('%s IK_FK_Arm build complete!' % rig.rigPartLineEdit.text())
                     continue
 
                 elif rig.rigTypeName == 'IK_AnimalLeg' and rig.rigArgs:
@@ -233,7 +234,7 @@ class RiggingMainUI(QtWidgets.QWidget):
                                        prefix=rig.rigArgs['prefix'],
                                        rigScale=eval(rig.rigArgs['rigScale']),
                                        baseRig=project)
-                    logger.info('%s IK_AnimalLeg build complete!' % rig.rigPartName)
+                    logger.info('%s IK_AnimalLeg build complete!' % rig.rigPartLineEdit.text())
                     continue
                 elif rig.rigTypeName == 'IK_FK_Head_Neck' and rig.rigArgs:
                     IK_FK_Head_Neck.build(neckJoints=eval(rig.rigArgs['neckJoints']),
@@ -241,7 +242,7 @@ class RiggingMainUI(QtWidgets.QWidget):
                                           prefix=rig.rigArgs['prefix'],
                                           blendCtrl_Pos=rig.rigArgs['blendCtrl_Pos'],
                                           baseRig=project)
-                    logger.info('%s IK_FK_Head_Neck build complete!' % rig.rigPartName)
+                    logger.info('%s IK_FK_Head_Neck build complete!' % rig.rigPartLineEdit.text())
                     continue
                 elif rig.rigTypeName == 'FK_Tail' and rig.rigArgs:
                     FK_Tail.build(tailJoints=eval(rig.rigArgs['tailJoints']),
@@ -249,7 +250,7 @@ class RiggingMainUI(QtWidgets.QWidget):
                                   rigScale=1.0,
                                   prefix=rig.rigArgs['prefix'],
                                   baseRig=project)
-                    logger.info('%s FK_Tail build complete!' % rig.rigPartName)
+                    logger.info('%s FK_Tail build complete!' % rig.rigPartLineEdit.text())
                     continue
                 else:
                     logger.debug("Can't find the specified part, please check your rig type.")
@@ -261,7 +262,7 @@ class RiggingMainUI(QtWidgets.QWidget):
                                     rigScale=eval(rig.rigArgs['rigScale']),
                                     switchCtrlPos=rig.rigArgs['switchCtrlPos'],
                                     baseRig=project)
-                    logger.info('%s IK_FK_Arm build complete!' % rig.rigPartName)
+                    logger.info('%s IK_FK_Arm build complete!' % rig.rigPartLineEdit.text())
                     continue
 
                 elif rig.rigTypeName == 'IK_AnimalLeg' and rig.rigArgs:
@@ -272,7 +273,7 @@ class RiggingMainUI(QtWidgets.QWidget):
                                        prefix=rig.rigArgs['prefix'],
                                        rigScale=eval(rig.rigArgs['rigScale']),
                                        baseRig=project)
-                    logger.info('%s IK_Leg build complete!' % rig.rigPartName)
+                    logger.info('%s IK_Leg build complete!' % rig.rigPartLineEdit.text())
                     continue
                 elif rig.rigTypeName == 'IK_FK_Head_Neck' and rig.rigArgs:
                     IK_FK_Head_Neck.build(neckJoints=eval(rig.rigArgs['neckJoints']),
@@ -281,14 +282,14 @@ class RiggingMainUI(QtWidgets.QWidget):
                                           prefix=rig.rigArgs['prefix'],
                                           blendCtrl_Pos=rig.rigArgs['blendCtrl_Pos'],
                                           baseRig=project)
-                    logger.info('%s IK_FK_Head_Neck build complete!' % rig.rigPartName)
+                    logger.info('%s IK_FK_Head_Neck build complete!' % rig.rigPartLineEdit.text())
                     continue
                 elif rig.rigTypeName == 'FK_Tail' and rig.rigArgs:
                     FK_Tail.build(tailJoints=eval(rig.rigArgs['tailJoints']),
                                   rigScale=1.0,
                                   prefix=rig.rigArgs['prefix'],
                                   baseRig=project)
-                    logger.info('%s FK_Tail build complete!' % rig.rigPartName)
+                    logger.info('%s FK_Tail build complete!' % rig.rigPartLineEdit.text())
                     continue
                 else:
                     logger.debug("Can't find the specified part, please check your rig type.")
@@ -336,21 +337,22 @@ class RiggingMainUI(QtWidgets.QWidget):
         :return: None
         """
         properties = {}
-        properties['Procedural Rig Name'] = str(self.projectName)
+        properties['Procedural Rig Name'] = self.proNameLineEdit.text()
 
         for rig in self.findChildren(rigWidget):
-            if str(rig.rigPartName) in properties.keys():
+            if str(rig.rigPartLineEdit.text()) in properties.keys():
                 # raise RuntimeError("Rig file save failed, you have already same name rig part name!")
                 logger.debug("Rig file save failed, you have already same name rig part!!!")
                 break
-            properties[str(rig.rigPartName)] = {}
-            properties[str(rig.rigPartName)]['rigType'] = rig.rigTypeName
-            properties[str(rig.rigPartName)]['rigArgs'] = rig.rigArgs
+            properties[str(rig.rigPartLineEdit.text())] = {}
+            properties[str(rig.rigPartLineEdit.text())]['rigType'] = rig.rigTypeName
+            properties[str(rig.rigPartLineEdit.text())]['rigArgs'] = rig.rigArgs
 
         if len(properties.keys()) == len(self.findChildren(rigWidget)) + 1:
 
             rigLogDir = self.getDirectory()
-            rigLogFile = os.path.join(rigLogDir, 'rigLogFile_%s.json' % time.strftime('%m%d_%H_%M'))
+            rigLogFile = os.path.join(rigLogDir,
+                                      self.proNameLineEdit.text() + '_rigLogFile_%s.json' % time.strftime('%m%d_%H_%M'))
             with open(rigLogFile, 'w') as f:
                 json.dump(properties, f, indent=4)
 
@@ -392,7 +394,7 @@ class rigWidget(QtWidgets.QWidget):
 
         self.rigTypeName = rigTypeName
 
-        self.rigPartName = None
+        # self.rigPartName = None
         self.rigPartLineEdit = None
         self.editBtn = None
         self.buildUI()
@@ -426,7 +428,7 @@ class rigWidget(QtWidgets.QWidget):
         label = QtWidgets.QLabel('Rig part: ')
         label.setAlignment(QtCore.Qt.AlignRight)
         self.rigPartLineEdit = QtWidgets.QLineEdit(str(self.rigTypeName))
-        self.rigPartLineEdit.textEdited.connect(self.setRigPartName)
+        # self.rigPartLineEdit.textEdited.connect(self.setRigPartName)
         editLineLayout.addWidget(label)
         editLineLayout.addWidget(self.rigPartLineEdit)
 
@@ -469,4 +471,5 @@ class rigWidget(QtWidgets.QWidget):
         Set the rig part name of the widget
         :return: None
         """
-        self.rigPartName = self.rigPartLineEdit.text()
+        # self.rigPartName = self.rigPartLineEdit.text()
+        pass

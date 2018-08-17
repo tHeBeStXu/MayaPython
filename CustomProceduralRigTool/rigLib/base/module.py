@@ -67,6 +67,8 @@ class Base():
             cmds.connectAttr(self.Master_Ctrl.C + '.sx', self.Master_Ctrl.C + '.s' + axis)
             cmds.setAttr(self.Master_Ctrl.C + '.s' + axis, k=0)
 
+        cmds.aliasAttr('Global_Scale', self.Master_Ctrl.C + '.sx')
+
         # make more groups
 
         # self.jointGrp = cmds.group(n='joint_grp', em=1, p=Move_Ctrl.C)
@@ -77,6 +79,8 @@ class Base():
         self.dontTouchGrp = cmds.group(n='Dont_Touch_Grp', em=1, p=self.topGrp)
         # lock the inherits Transform attr
         cmds.setAttr(self.dontTouchGrp + '.it', 0, l=1)
+
+        cmds.select(cl=1)
 
         # make main control
         # mainCtrl = control.Control(prefix='main', scale=scale*1, parent=Move_Ctrl.C, translateTo=mainCtrlAttachObj, lockChannels=['t', 'r', 's', 'v'])
@@ -170,3 +174,5 @@ class Module():
         if baseObject:
 
             cmds.parent(self.topGrp, baseObject.Master_Ctrl.C)
+
+        cmds.select(cl=1)

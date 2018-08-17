@@ -241,7 +241,7 @@ def build(armJoints,
                                        shape='unitSliderControl',
                                        lockChannels=['tx', 'tz', 'r', 's', 'v'])
     # add enum attr for IK_FK seamless switch
-    cmds.addAttr(IK_FK_Blend_Ctrl.C, ln='Mode', at='enum', en='FK:IK', k=1)
+    cmds.addAttr(IK_FK_Blend_Ctrl.C, ln='Mode', at='enum', en='IK:FK', k=1)
 
     cmds.rotate(0, 0, -90, IK_FK_Blend_Ctrl.Off, relative=1, objectSpace=1)
 
@@ -306,10 +306,8 @@ def build(armJoints,
     cmds.parent(switchCtrlLoc, rigmodule.topGrp)
     cmds.parent(IK_FK_Blend_Ctrl.Off, rigmodule.topGrp)
 
-    cmds.setAttr(IK_FK_Blend_Ctrl.C + '.ty', 0)
-
     cmds.select(cl=1)
-
+    # IK_FK_seamless Switch by scriptJob and scriptNode
     IK_FK_Switch.IK_FK_Switch(prefix=prefix,
                               switchCtrl=IK_FK_Blend_Ctrl.C,
                               pvCtrl=IK_Arm_PV_Ctrl.C,

@@ -216,3 +216,5 @@ class Control():
 
         # delete the cluster
         cmds.delete(ctrlShape, ch=1)
+
+        cmds.select(cl=1)

@@ -39,4 +39,6 @@ def build(joints=None):
     else:
         cmds.error('No joints for create slave joints!\nPlease check your joints!')
 
+    cmds.select(cl=1)
+
 

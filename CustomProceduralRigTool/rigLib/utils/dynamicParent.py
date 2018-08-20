@@ -30,7 +30,7 @@ def dynamicParent():
     cmds.select(cl=1)
 
     for i in xrange(len(newList)):
-        cmds.parentConstraint(newList[i], pcGroup, mo=1)
+        cmds.parentConstraint(newList[i], pcGroup, mo=0)
 
     parentConstraint = cmds.listRelatives(pcGroup, s=0, c=1, p=0, type='parentConstraint')[0]
 

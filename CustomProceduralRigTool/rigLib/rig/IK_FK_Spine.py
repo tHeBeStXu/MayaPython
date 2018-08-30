@@ -27,6 +27,11 @@ def build(spineJoints,
                               rigPartName='Spine',
                               baseObject=baseRig)
 
+    if spineBackUpAxis in ['y', 'Y']:
+        worldUpVector = (0, 1, 0)
+    elif spineBackUpAxis in ['z', 'Z']:
+        worldUpVector = (0, 0, 1)
+
     # fk skeleton chain
     # create FK crv
     ik_part_list = []
@@ -44,16 +49,20 @@ def build(spineJoints,
         pc = cmds.parentConstraint(spineJoints[0], fkJnt, mo=0)
         cmds.delete(pc)
 
-        motionPath = cmds.pathAnimation(FK_Crv, fkJnt, n=fkJnt + '_motionPath', fractionMode=1, follow=1, followAxis='x', upAxis='y', worldUpType='Vector',
-                                        worldUpVector=(0, 1, 0), inverseUp=0, inverseFront=0, bank=0)
+        motionPath = cmds.pathAnimation(FK_Crv, fkJnt, n=fkJnt + '_motionPath', fractionMode=1, follow=1,
+                                        followAxis='x', upAxis='y', worldUpType='Vector',
+                                        worldUpVector=worldUpVector, inverseUp=0, inverseFront=0, bank=0)
 
-        cmds.disconnectAttr(motionPath + '.rotateX', fkJnt + '.rotateX')
-        cmds.disconnectAttr(motionPath + '.rotateY', fkJnt + '.rotateY')
-        cmds.disconnectAttr(motionPath + '.rotateZ', fkJnt + '.rotateZ')
-
-        cmds.disconnectAttr(motionPath + '_uValue.output', motionPath + '.uValue')
+        # cmds.disconnectAttr(motionPath + '_uValue.output', motionPath + '.uValue')
+        cmds.cutKey(motionPath + '.u', time=())
 
         cmds.setAttr(motionPath + '.uValue', eachADD * float(i))
+
+        for attr in ['t', 'r']:
+            for axis in ['x', 'y', 'z']:
+                cmds.delete(fkJnt + '.%s%s' % (attr, axis), icn=1)
+
+        cmds.delete(motionPath)
 
         cmds.select(cl=1)
 
@@ -72,11 +81,6 @@ def build(spineJoints,
     for i in fkJntList:
         fkJntList_rev.append(i)
     fkJntList_rev.reverse()
-
-    if spineBackUpAxis in ['y', 'Y']:
-        worldUpVector = (0, 1, 0)
-    elif spineBackUpAxis in ['z', 'Z']:
-        worldUpVector = (0, 0, 1)
 
     for i in xrange(len(fkJntList_rev)-1):
         ac = cmds.aimConstraint(fkJntList_rev[i], fkJntList_rev[i+1], mo=0, weight=1, aimVector=(1, 0, 0),

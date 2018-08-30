@@ -307,6 +307,7 @@ def build(armJoints,
     cmds.parent(IK_FK_Blend_Ctrl.Off, rigmodule.topGrp)
 
     cmds.select(cl=1)
+
     # IK_FK_seamless Switch by scriptJob and scriptNode
     IK_FK_Switch.IK_FK_Switch(prefix=prefix,
                               switchCtrl=IK_FK_Blend_Ctrl.C,

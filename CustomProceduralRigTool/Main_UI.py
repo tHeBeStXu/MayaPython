@@ -194,6 +194,7 @@ class RiggingMainUI(QtWidgets.QWidget):
         :return:
         """
         if not self.proNameLineEdit.text():
+            logger.error('No rig name found , please input a rig name!')
             return None
         # Before create the rig, save the rig first!
         self.saveRig()

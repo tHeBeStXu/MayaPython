@@ -10,6 +10,7 @@ def build(spineJoints,
           rigScale=1.0,
           numFK_Jnt=3,
           spineBackUpAxis='y',
+          mainSpineAttach=None,
           baseRig=None):
     """
     Build IK_FK_Spine rig.
@@ -20,6 +21,8 @@ def build(spineJoints,
     :param prefix: str, prefix of the spine, usually, 'C_' is used.
     :param rigScale: float, rig scale of the IK_FK_Spine rig module.
     :param numFK_Jnt: int, number of FK spine joints, greater than 3.
+    :param mainSpineAttach: str, main Spine Attach part name, if the spine is not the mainSpine, must set a attachJoint
+                            name to it. Usually the last valid joint of attached part.
     :param baseRig: str, base atttach of the rig. Base Class instance is used.
     :return: dictionary, rigModule, chest_ctrl (used for upper body parts rig, IK_FK_Arm .etc)and pelvis_ctrl (used for FK_Tail rig)
     """
@@ -136,14 +139,17 @@ def build(spineJoints,
     # Body Ctrl #
     #############
 
-    # create a square control shape for body ctrl
-
-    body_Ctrl = control.Control(prefix=prefix,
-                                rigPartName='Body',
-                                scale=rigScale * 15,
-                                shape='squareControl',
-                                translateTo=spineJoints[0],
-                                axis='z')
+    if not mainSpineAttach:
+        # create a square control shape for body ctrl
+        body_Ctrl = control.Control(prefix=prefix,
+                                    rigPartName='Body',
+                                    scale=rigScale * 15,
+                                    shape='squareControl',
+                                    translateTo=spineJoints[0],
+                                    axis='z')
+    else:
+        body_Loc = cmds.spaceLocator(n=prefix + 'Spine_Loc')
+        cmds.parentConstraint(mainSpineAttach, body_Loc, mo=0)
 
     C_Pelvis_Ctrl = control.Control(prefix=prefix,
                                     rigPartName='Pelvis',
@@ -206,10 +212,15 @@ def build(spineJoints,
     cmds.parent(chest_Jnt, C_Chest_Ctrl.C)
 
     # parent fk_jnt to body_Ctrl
-    cmds.parent(fkJntList[0], body_Ctrl.C)
+    if not mainSpineAttach:
+        cmds.parent(fkJntList[0], body_Ctrl.C)
 
-    # parent pelvis_CtrlGrp to body_Ctrl
-    cmds.parent(C_Pelvis_Ctrl.Off, body_Ctrl.C)
+        # parent pelvis_CtrlGrp to body_Ctrl
+        cmds.parent(C_Pelvis_Ctrl.Off, body_Ctrl.C)
+    else:
+        cmds.parent(fkJntList[0], rigModule.topGrp)
+        cmds.parent(C_Pelvis_Ctrl.Off, rigModule.topGrp)
+
 
     # parent chest_CtrlGrp to fkJntList[-1]
     cmds.parent(C_Chest_Ctrl.Off, fkJntList[-1])
@@ -217,9 +228,12 @@ def build(spineJoints,
     cmds.parent(IK_Part_List[-1], IK_Part_List[0], rigModule.dontTouchGrp)
 
     # parent body_CtrlGrp to rigmodule.topGrp
-    cmds.parent(body_Ctrl.Off, rigModule.topGrp)
+    if not mainSpineAttach:
+        cmds.parent(body_Ctrl.Off, rigModule.topGrp)
+    else:
+        cmds.parent(rigModule.topGrp, body_Loc)
 
     cmds.select(cl=1)
 
     # return
-    return {'module': rigModule, 'chest_Ctrl': C_Chest_Ctrl.C, 'pelvis_Ctrl': C_Pelvis_Ctrl.C}
+    return {'chest_Ctrl': C_Chest_Ctrl.C, 'pelvis_Ctrl': C_Pelvis_Ctrl.C}

@@ -272,7 +272,6 @@ class FK_Tail_EditUI(EditUI):
         self.rowItem = {}
 
         self.tupe = inspect.getargspec(rig.FK_Tail.build)
-        print self.tupe[0]
 
         for i in self.tupe[0]:
             self.rowItem[i] = QtWidgets.QLineEdit()

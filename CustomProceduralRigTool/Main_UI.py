@@ -227,13 +227,13 @@ class RiggingMainUI(QtWidgets.QWidget):
                 continue
 
         # Other parts
-        if self.spine:
+        if self.mainSpine or self.attachSpine:
             for rig in self.findChildren(rigWidget):
                 if rig.rigTypeName == 'IK_FK_Arm' and rig.rigArgs:
                     IK_FK_HumanArm.build(armJoints=eval(rig.rigArgs['armJoints']),
                                          prefix=rig.rigArgs['prefix'],
                                          rigScale=eval(rig.rigArgs['rigScale']),
-                                         FK_Parent=self.mainSpine['chest_Ctrl'],
+                                         FK_Parent=rig.rigArgs['FK_Parent'],
                                          switchCtrlPos=rig.rigArgs['switchCtrlPos'],
                                          baseRig=project)
                     logger.info('%s IK_FK_Arm build complete!' % rig.rigPartLineEdit.text())
@@ -258,7 +258,7 @@ class RiggingMainUI(QtWidgets.QWidget):
                     continue
                 elif rig.rigTypeName == 'FK_Tail' and rig.rigArgs:
                     FK_Tail.build(tailJoints=eval(rig.rigArgs['tailJoints']),
-                                  FK_Parent=self.spine['pelvis_Ctrl'],
+                                  FK_Parent=rig.rigArgs['FK_Parent'],
                                   rigScale=1.0,
                                   prefix=rig.rigArgs['prefix'],
                                   baseRig=project)

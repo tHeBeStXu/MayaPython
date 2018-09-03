@@ -16,7 +16,7 @@ def build(tailJoints,
     Build the FK_Tail rig.
     :param tailJoints: list(str), tailJoints to the end. i.e.[tail_1, tail_2, tail_3, ... tail_x, tail_end]
     :param rigScale: float, rig scale of the FK_Tail rig module, 1.0 is used.
-    :param FK_Parent: str, IK_FK_Spine['pelvis_Ctrl'] is used.
+    :param FK_Parent: str, name of a spine joint is used.
     :param prefix: str, prefix of the tail rig.
     :param baseRig: str, base atttach of the rig, Base Class instance is used.
     :return: None
@@ -84,7 +84,10 @@ def build(tailJoints,
 
     # Clean the hierarchy
     if FK_Parent:
-        cmds.parent(FK_tailCtrlGrp_List[0], FK_Parent)
+        FK_Loc = cmds.spaceLocator(n=prefix + 'Tail_Loc')
+        cmds.parentConstraint(FK_Parent, FK_Loc, mo=0)
+        cmds.parent(FK_tailCtrlGrp_List[0], FK_Loc)
+        cmds.parent(FK_Loc, rigmodule.topGrp)
     else:
         cmds.parent(FK_tailCtrlGrp_List[0], rigmodule.topGrp)
         cmds.warning('Warning: FK_Parent is None!')

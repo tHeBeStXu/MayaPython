@@ -296,7 +296,10 @@ def build(armJoints,
     cmds.parent(FK_Arm_CtrlGrp_List[0], clavical_Ctrl.C)
 
     if FK_Parent:
-        cmds.parent(clavical_Ctrl.Off, FK_Parent)
+        FK_Loc = cmds.spaceLocator(n=prefix + 'Arm_Loc')
+        cmds.parentConstraint(FK_Parent, FK_Loc, mo=0)
+        cmds.parent(clavical_Ctrl.Off, FK_Loc)
+        cmds.parent(FK_Loc, rigmodule.topGrp)
     else:
         cmds.warning('FK_Parent is None')
         cmds.parent(clavical_Ctrl.Off, rigmodule.topGrp)

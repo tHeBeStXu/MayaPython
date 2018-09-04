@@ -1,6 +1,8 @@
 from shiboken2 import wrapInstance
 from PySide2 import QtCore, QtWidgets
 import maya.OpenMayaUI as openmayaui
+from functools import partial
+import maya.cmds as cmds
 
 
 import pymel.core as pm
@@ -30,6 +32,7 @@ class EditUI(QtWidgets.QDialog):
         self.setModal(False)
 
         self.buildUI()
+        self.refreshListWidget()
 
     def buildUI(self):
         self.mainLayout = QtWidgets.QHBoxLayout()
@@ -46,24 +49,33 @@ class EditUI(QtWidgets.QDialog):
         self.mainLayout.addWidget(formWidget)
         self.mainLayout.addWidget(selectionWidget)
 
-        self.rowItem = {}
-        self.tupe = inspect.getargspec(func=rig.IK_AnimalLeg.build)
-        for i in self.tupe[0]:
-            layout = QtWidgets.QHBoxLayout()
-
-            self.rowItem[i] = QtWidgets.QLineEdit()
-            button = QtWidgets.QPushButton('<<<')
-            layout.addWidget(self.rowItem[i])
-            layout.addWidget(button)
-
-            formLayout.addRow(i, layout)
-
         self.listWidget = QtWidgets.QListWidget()
         self.listWidget.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+
+        self.rowItem = {}
+        self.buttons = {}
+        self.layout = {}
+        self.tupe = inspect.getargspec(func=rig.IK_AnimalLeg.build)
+        for i in self.tupe[0]:
+            self.layout[i] = QtWidgets.QHBoxLayout()
+
+            self.rowItem[i] = QtWidgets.QLineEdit()
+            self.buttons[i] = QtWidgets.QPushButton('<<<')
+
+            self.layout[i].addWidget(self.rowItem[i])
+            self.layout[i].addWidget(self.buttons[i])
+
+            self.buttons[i].clicked.connect(partial(self.setEditLine, self.rowItem[i]))
+
+            formLayout.addRow(i, self.layout[i])
+
+        # print self.rowItem
+        # print self.buttons
 
         selectionLayout.addWidget(self.listWidget)
 
         self.createGeneralButton(self.mainLayout)
+
 
     def createGeneralButton(self, layout):
         """
@@ -100,3 +112,14 @@ class EditUI(QtWidgets.QDialog):
         :return: None
         """
         self.close()
+
+    def setEditLine(self, editLine):
+
+        items = self.listWidget.selectedItems()
+        editLine.setText(str(items))
+
+    def refreshListWidget(self):
+        joints = cmds.ls(type='joint')
+        if len(joints) > 1:
+            self.listWidget.addItems(joints)
+

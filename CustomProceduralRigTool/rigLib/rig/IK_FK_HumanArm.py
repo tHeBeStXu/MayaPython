@@ -297,6 +297,10 @@ def build(armJoints,
 
     if FK_Parent:
         FK_Loc = cmds.spaceLocator(n=prefix + 'Arm_Loc')
+        FK_LocShape = cmds.listRelatives(FK_Loc, s=1)
+        cmds.setAttr(FK_LocShape[0] + '.localScaleX', 0)
+        cmds.setAttr(FK_LocShape[0] + '.localScaleY', 0)
+        cmds.setAttr(FK_LocShape[0] + '.localScaleZ', 0)
         cmds.parentConstraint(FK_Parent, FK_Loc, mo=0)
         cmds.parent(clavical_Ctrl.Off, FK_Loc)
         cmds.parent(FK_Loc, rigmodule.topGrp)

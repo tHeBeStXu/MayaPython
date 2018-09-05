@@ -149,6 +149,10 @@ def build(spineJoints,
                                     axis='z')
     else:
         body_Loc = cmds.spaceLocator(n=prefix + 'Spine_Loc')
+        body_LocShape = cmds.listRelatives(body_Loc, s=1)
+        cmds.setAttr(body_LocShape[0] + '.localScaleX', 0)
+        cmds.setAttr(body_LocShape[0] + '.localScaleY', 0)
+        cmds.setAttr(body_LocShape[0] + '.localScaleZ', 0)
         cmds.parentConstraint(mainSpineAttach, body_Loc, mo=0)
 
     C_Pelvis_Ctrl = control.Control(prefix=prefix,
@@ -218,8 +222,8 @@ def build(spineJoints,
         # parent pelvis_CtrlGrp to body_Ctrl
         cmds.parent(C_Pelvis_Ctrl.Off, body_Ctrl.C)
     else:
-        cmds.parent(fkJntList[0], rigModule.topGrp)
-        cmds.parent(C_Pelvis_Ctrl.Off, rigModule.topGrp)
+        cmds.parent(fkJntList[0], body_Loc)
+        cmds.parent(C_Pelvis_Ctrl.Off, body_Loc)
 
 
     # parent chest_CtrlGrp to fkJntList[-1]
@@ -231,7 +235,7 @@ def build(spineJoints,
     if not mainSpineAttach:
         cmds.parent(body_Ctrl.Off, rigModule.topGrp)
     else:
-        cmds.parent(rigModule.topGrp, body_Loc)
+        cmds.parent(body_Loc, rigModule.topGrp)
 
     cmds.select(cl=1)
 

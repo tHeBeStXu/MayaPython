@@ -1,17 +1,13 @@
-import Main_UI
-from PySide2 import QtCore, QtWidgets
+from PySide2 import QtWidgets
 import pymel.core as pm
 import logging
-import rigLib
-from rigLib import rig as rig
 import inspect
+import maya.cmds as cmds
+from functools import partial
 
-reload(Main_UI)
-reload(rig)
 
-
-class EditUI(QtWidgets.QWidget):
-    def __init__(self, instance, UI_name):
+class EditUI(QtWidgets.QDialog):
+    def __init__(self, instance, UI_name, func):
 
         logging.basicConfig()
         logger = logging.getLogger('%s' % UI_name)
@@ -22,21 +18,122 @@ class EditUI(QtWidgets.QWidget):
         except:
             logger.debug('No %s UI exists!' % UI_name)
 
-        parent = QtWidgets.QDialog(parent=Main_UI.getMayaMainWindow())
-        parent.setObjectName('%s' % UI_name)
-        parent.setWindowTitle('%s' % UI_name)
-        super(EditUI, self).__init__(parent=parent)
-
-        # self.buildUI()
+        super(EditUI, self).__init__(parent=instance)
+        self.setObjectName('%s' % UI_name)
+        self.setWindowTitle('%s' % UI_name)
+        self.setModal(True)
 
         self.specifiedInstance = instance
+        self.func = func
 
-        layout = QtWidgets.QVBoxLayout()
-        self.parent().setLayout(layout)
-        self.parent().layout().addWidget(self)
+        self.buildUI()
+        self.populate()
+        self.show()
+
+        self.refreshListWidget()
+
+    def refreshListWidget(self):
+        """
+                refresh listWidget with specified checked
+                :return: None
+                """
+        self.listWidget.clear()
+
+        joints = []
+        locators = []
+        if self.jointCheck.isChecked():
+            joints = cmds.ls(type='joint')
+
+        locaterShapes = []
+        if self.locatorCheck.isChecked():
+            locaterShapes = cmds.ls(type='locator')
+
+        for loc in locaterShapes:
+            locators.append(cmds.listRelatives(loc, p=1)[0])
+
+        returnList = joints + locators
+
+        if returnList:
+            if len(returnList) > 1:
+                self.listWidget.addItems(returnList)
+            else:
+                self.listWidget.addItem(returnList[0])
 
     def buildUI(self):
-        pass
+
+        # main layout
+        self.mainlayout = QtWidgets.QHBoxLayout()
+        self.setLayout(self.mainlayout)
+
+        # parameters part
+        formWidget = QtWidgets.QWidget()
+        formLayout = QtWidgets.QFormLayout()
+        formWidget.setLayout(formLayout)
+
+        # selection part
+        selectionWidget = QtWidgets.QWidget()
+        selectionLayout = QtWidgets.QVBoxLayout()
+        selectionWidget.setLayout(selectionLayout)
+
+        # filter part
+        filterWidget = QtWidgets.QWidget()
+        filterLayout = QtWidgets.QHBoxLayout()
+        filterWidget.setLayout(filterLayout)
+
+        filterLabel = QtWidgets.QLabel('Filter:    ')
+        self.jointCheck = QtWidgets.QCheckBox('joint')
+        self.locatorCheck = QtWidgets.QCheckBox('locator')
+
+        filterLayout.addWidget(filterLabel)
+        filterLayout.addWidget(self.jointCheck)
+        filterLayout.addWidget(self.locatorCheck)
+
+        self.jointCheck.stateChanged.connect(self.refreshListWidget)
+        self.locatorCheck.stateChanged.connect(self.refreshListWidget)
+
+        # arrangement
+        self.mainlayout.addWidget(formWidget)
+        self.mainlayout.addWidget(selectionWidget)
+
+        self.listWidget = QtWidgets.QListWidget()
+        self.listWidget.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+
+        self.rowItem = {}
+        self.tupe = inspect.getargspec(func=self.func)
+        for i in self.tupe[0]:
+            layout = QtWidgets.QHBoxLayout()
+
+            self.rowItem[i] = QtWidgets.QLineEdit()
+            button = QtWidgets.QPushButton('<<<')
+
+            layout.addWidget(self.rowItem[i])
+            layout.addWidget(button)
+
+            button.clicked.connect(partial(self.setEditLine, self.rowItem[i]))
+
+            formLayout.addRow(i, layout)
+
+        selectionLayout.addWidget(filterWidget)
+        selectionLayout.addWidget(self.listWidget)
+
+        self.createGeneralButton(self.mainlayout)
+
+    def setEditLine(self, editLine):
+        """
+                set specified editLine text
+                :param editLine: specified editLine
+                :return: None
+                """
+        items = self.listWidget.selectedItems()
+        itemStr = []
+        for i in items:
+            itemStr.append(self.listWidget.item(self.listWidget.row(i)).text())
+
+        if itemStr:
+            if len(itemStr) < 2:
+                editLine.setText(itemStr[0])
+            else:
+                editLine.setText(str(itemStr))
 
     def createGeneralButton(self, layout):
         """
@@ -65,14 +162,14 @@ class EditUI(QtWidgets.QWidget):
         self.saveData()
         # print self.specifiedInstance
 
-        self.parent().close()
+        self.close()
 
     def cancel(self):
         """
         Cancel button action -> close the rigArgs dialog
         :return: None
         """
-        self.parent().close()
+        self.close()
 
     def populate(self):
         """
@@ -86,204 +183,10 @@ class EditUI(QtWidgets.QWidget):
                 raise RuntimeWarning('No specified properties!')
 
     def saveData(self):
-        pass
-
-
-class IK_FK_Spine_EditUI(EditUI):
-    def __init__(self, instance, UI_name):
-        EditUI.__init__(self, instance, UI_name)
-
-        self.buildUI()
-        self.populate()
-        self.parent().show()
-
-    def buildUI(self):
-        """
-        Build the IK_FK_Spine Edit UI Dialog
-        :return: None
-        """
-        layout = QtWidgets.QVBoxLayout(self)
-
-        formWidget = QtWidgets.QWidget()
-        formLayout = QtWidgets.QFormLayout()
-        formWidget.setLayout(formLayout)
-
-        layout.addWidget(formWidget)
-
-        self.rowItem = {}
-        self.tupe = inspect.getargspec(rig.IK_FK_Spine.build)
-        for i in self.tupe[0]:
-            self.rowItem[i] = QtWidgets.QLineEdit()
-            formLayout.addRow(i, self.rowItem[i])
-
-        self.createGeneralButton(layout)
-
-    def saveData(self):
         """
         Save the args info to the specified rig widget's rigArgs dictionary
         :return: None
         """
-        tupe = inspect.getargspec(rig.IK_FK_Spine.build)
+        tupe = inspect.getargspec(self.func)
         for i in tupe[0]:
-            self.specifiedInstance.rigArgs[i] = self.rowItem[i].text()
-
-
-class IK_FK_Arm_EditUI(EditUI):
-    def __init__(self, instance, UI_name):
-        EditUI.__init__(self, instance, UI_name)
-        self.buildUI()
-        self.populate()
-        self.parent().show()
-
-    def buildUI(self):
-        """
-        Build the IK_FK_Arm Edit UI layout
-        :return: None
-        """
-        layout = QtWidgets.QVBoxLayout(self)
-
-        formWidget = QtWidgets.QWidget()
-        formLayout = QtWidgets.QFormLayout()
-        formWidget.setLayout(formLayout)
-        layout.addWidget(formWidget)
-
-        self.rowItem = {}
-        self.tupe = inspect.getargspec(rig.IK_FK_Arm.build)
-        print self.tupe[0]
-
-        for i in self.tupe[0]:
-            self.rowItem[i] = QtWidgets.QLineEdit()
-            formLayout.addRow(i, self.rowItem[i])
-
-        self.createGeneralButton(layout)
-
-    def saveData(self):
-        """
-        Save the args info to the specified rig widget's rigArgs dictionary
-        :return: None
-        """
-
-        for i in self.tupe[0]:
-            self.specifiedInstance.rigArgs[i] = self.rowItem[i].text()
-
-
-class IK_AnimalLeg_EditUI(EditUI):
-    def __init__(self, instance, UI_name):
-        EditUI.__init__(self, instance, UI_name)
-        self.buildUI()
-        self.populate()
-        self.parent().show()
-
-    def buildUI(self):
-        """
-        Build the IK_Leg UI layout
-        :return: None
-        """
-        layout = QtWidgets.QVBoxLayout(self)
-
-        formLayout = QtWidgets.QFormLayout()
-        formWidget = QtWidgets.QWidget()
-        formWidget.setLayout(formLayout)
-
-        layout.addWidget(formWidget)
-
-        self.rowItem = {}
-
-        self.tupe = inspect.getargspec(rig.IK_AnimalLeg.build)
-        print self.tupe[0]
-
-        for i in self.tupe[0]:
-            self.rowItem[i] = QtWidgets.QLineEdit()
-            formLayout.addRow(i, self.rowItem[i])
-
-        self.createGeneralButton(layout)
-
-    def saveData(self):
-        """
-        Save the args info to the specified rig widget's rigArgs dictionary
-        :return: None
-        """
-
-        for i in self.tupe[0]:
-            self.specifiedInstance.rigArgs[i] = self.rowItem[i].text()
-
-
-class IK_FK_Head_Neck_EditUI(EditUI):
-    def __init__(self, instance, UI_name):
-        EditUI.__init__(self, instance, UI_name)
-        self.buildUI()
-        self.populate()
-        self.parent().show()
-
-    def buildUI(self):
-        """
-        Build the IK_Leg UI layout
-        :return: None
-        """
-        layout = QtWidgets.QVBoxLayout(self)
-
-        formLayout = QtWidgets.QFormLayout()
-        formWidget = QtWidgets.QWidget()
-        formWidget.setLayout(formLayout)
-
-        layout.addWidget(formWidget)
-
-        self.rowItem = {}
-
-        self.tupe = inspect.getargspec(rig.IK_FK_Head_Neck.build)
-        print self.tupe[0]
-
-        for i in self.tupe[0]:
-            self.rowItem[i] = QtWidgets.QLineEdit()
-            formLayout.addRow(i, self.rowItem[i])
-
-        self.createGeneralButton(layout)
-
-    def saveData(self):
-        """
-        Save the args info to the specified rig widget's rigArgs dictionary
-        :return: None
-        """
-
-        for i in self.tupe[0]:
-            self.specifiedInstance.rigArgs[i] = self.rowItem[i].text()
-
-
-class FK_Tail_EditUI(EditUI):
-    def __init__(self, instance, UI_name):
-        EditUI.__init__(self, instance, UI_name)
-        self.buildUI()
-        self.populate()
-        self.parent().show()
-
-    def buildUI(self):
-        """
-        Build the IK_Leg UI layout
-        :return: None
-        """
-        layout = QtWidgets.QVBoxLayout(self)
-
-        formLayout = QtWidgets.QFormLayout()
-        formWidget = QtWidgets.QWidget()
-        formWidget.setLayout(formLayout)
-
-        layout.addWidget(formWidget)
-
-        self.rowItem = {}
-
-        self.tupe = inspect.getargspec(rig.FK_Tail.build)
-
-        for i in self.tupe[0]:
-            self.rowItem[i] = QtWidgets.QLineEdit()
-            formLayout.addRow(i, self.rowItem[i])
-
-        self.createGeneralButton(layout)
-
-    def saveData(self):
-        """
-        Save the args info to the specified rig widget's rigArgs dictionary
-        :return: None
-        """
-
-        for i in self.tupe[0]:
             self.specifiedInstance.rigArgs[i] = self.rowItem[i].text()

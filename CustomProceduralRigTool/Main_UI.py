@@ -464,15 +464,20 @@ class rigWidget(QtWidgets.QWidget):
         :return: None
         """
         if self.rigTypeName == 'IK_FK_Spine':
-            Edit_UI.IK_FK_Spine_EditUI(self, self.rigTypeName)
+            Edit_UI.EditUI(self, self.rigTypeName, rigLib.rig.IK_FK_Spine.build)
+            # Edit_UI.IK_FK_Spine_EditUI(self, self.rigTypeName)
         elif self.rigTypeName == 'IK_FK_Arm':
-            Edit_UI.IK_FK_Arm_EditUI(self, self.rigTypeName)
+            Edit_UI.EditUI(self, self.rigTypeName, rigLib.rig.IK_FK_HumanArm.build)
+            # Edit_UI.IK_FK_Arm_EditUI(self, self.rigTypeName)
         elif self.rigTypeName == 'IK_AnimalLeg':
-            Edit_UI.IK_AnimalLeg_EditUI(self, self.rigTypeName)
+            Edit_UI.EditUI(self, self.rigTypeName, rigLib.rig.IK_AnimalLeg.build)
+            # Edit_UI.IK_AnimalLeg_EditUI(self, self.rigTypeName)
         elif self.rigTypeName == 'FK_Tail':
-            Edit_UI.FK_Tail_EditUI(self, self.rigTypeName)
+            Edit_UI.EditUI(self, self.rigTypeName, rigLib.rig.FK_Tail.build)
+            # Edit_UI.FK_Tail_EditUI(self, self.rigTypeName)
         elif self.rigTypeName == 'IK_FK_Head_Neck':
-            Edit_UI.IK_FK_Head_Neck_EditUI(self, self.rigTypeName)
+            Edit_UI.EditUI(self, self.rigTypeName, rigLib.rig.IK_FK_Head_Neck.build)
+            # Edit_UI.IK_FK_Head_Neck_EditUI(self, self.rigTypeName)
         else:
             logger.debug('Unknown rig type...')
 

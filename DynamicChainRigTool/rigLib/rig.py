@@ -1,5 +1,8 @@
 import maya.cmds as cmds
 from ..utils import name
+from ..base import control
+reload(name)
+reload(control)
 
 
 def createSplineIK(jointList, curve=None):
@@ -26,7 +29,14 @@ def createSplineIK(jointList, curve=None):
 
 
 def createCtrlSystem(jointList, numCtrl, curve, upAxis='y'):
-
+    """
+    create
+    :param jointList:
+    :param numCtrl:
+    :param curve:
+    :param upAxis:
+    :return:
+    """
     cmds.select(cl=1)
 
     prefixName = name.removeSuffix(jointList[0])
@@ -85,3 +95,77 @@ def createCtrlSystem(jointList, numCtrl, curve, upAxis='y'):
     cmds.makeIdentity(fkJntList[0], apply=1)
 
     cmds.select(cl=1)
+
+    # FK Ctrls and CtrlGrps
+
+    FK_CtrlGrp_List = []
+    FK_Ctrl_List = []
+
+    for i in xrange(len(fkJntList)):
+        FK_Ctrl = control.Control(prefix='FK_' + prefixName,
+                                  rigPartName=str(i),
+                                  scale=5,
+                                  translateTo=fkJntList[i],
+                                  rotateTo=fkJntList[i],
+                                  shape='circle',
+                                  lockChannels=['t', 's', 'v'])
+
+        cmds.orientConstraint(FK_Ctrl.C, fkJntList[i], mo=0)
+
+        FK_CtrlGrp_List.append(FK_Ctrl.Off)
+        FK_Ctrl_List.append(FK_Ctrl.C)
+
+        cmds.select(cl=1)
+
+    for i in xrange(len(FK_Ctrl_List) - 1):
+        cmds.parent(FK_CtrlGrp_List[i+1], FK_Ctrl_List[i])
+
+    cmds.select(cl=1)
+
+
+def assignHairSys2Crv(jointList, curve):
+
+    prefixName = name.removeSuffix(jointList[0])
+    # follicle
+    follicleShape = cmds.createNode('follicle', n=prefixName + '_follicleShape')
+    follicleTransNode = cmds.listRelatives(follicleShape, p=1, c=0, s=0)[0]
+    follicleTransNode = cmds.rename(follicleTransNode, prefixName + '_follicleNode')
+    cmds.select(cl=1)
+
+
+def createHairSys(jointList, nucleus=None):
+    prefixName = name.removeSuffix(jointList[0])
+
+    nucleus = nucleus or createNucleus()
+    # hair System
+    hairShape = cmds.createNode('hairSystem', n=prefixName + '_hairSysShape')
+    hairTransNode = cmds.listRelatives(hairShape, p=1, c=0, s=0)[0]
+    hairTransNode = cmds.rename(hairTransNode, prefixName + '_hairSysNode')
+    cmds.select(cl=1)
+
+    # connectAttr
+    cmds.connectAttr('time1.outTime', hairShape + '.currentTime', f=1)
+    index = cmds.getAttr(nucleus + '.inputActive', size=1)
+    inputActive = '%s.inputActive[%s]' % (nucleus, index)
+    inputStart = '%s.inputActiveStart[%s]' % (nucleus, index)
+    output_object = '%s.outputObjects[%s]' % (nucleus, index)
+
+    cmds.setAttr(hairShape + '.active', 1)
+
+    cmds.connectAttr(hairShape + '.currentState', inputActive)
+    cmds.connectAttr(hairShape + '.startState', inputStart)
+    cmds.connectAttr(nucleus + '.')
+
+
+
+
+
+
+
+def createNucleus(jointList):
+    prefixName = name.removeSuffix(jointList[0])
+
+    nucleus = cmds.createNode('nucleus', n=prefixName + '_nucleus')
+    cmds.connectAttr('time1.outTime', nucleus + '.currentTime', f=1)
+
+    return nucleus

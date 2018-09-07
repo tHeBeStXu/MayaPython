@@ -1,1 +1,2 @@
 import rig
+reload(rig)

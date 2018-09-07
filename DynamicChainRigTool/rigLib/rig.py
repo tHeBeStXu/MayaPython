@@ -136,7 +136,7 @@ def assignHairSys2Crv(jointList, curve):
 def createHairSys(jointList, nucleus=None):
     prefixName = name.removeSuffix(jointList[0])
 
-    nucleus = nucleus or createNucleus()
+    nucleus = nucleus or createNucleus(jointList)
     # hair System
     hairShape = cmds.createNode('hairSystem', n=prefixName + '_hairSysShape')
     hairTransNode = cmds.listRelatives(hairShape, p=1, c=0, s=0)[0]

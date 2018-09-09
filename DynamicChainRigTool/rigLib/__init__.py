@@ -1,2 +1,2 @@
-import rig
-reload(rig)
+import lib
+reload(lib)

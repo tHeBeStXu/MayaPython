@@ -15,13 +15,13 @@ def createSplineIK(jointList, prefixName, curve=None):
     if not curve:
         # create IK Spline
         IK_Handle = cmds.ikHandle(n=prefixName + '_ikh', sj=jointList[0],
-                                  ee=jointList[-1], sol='ikSplineSolver', ns=4, pcv=0)
-        IK_Handle[-1] = cmds.rename(IK_Handle[-1], prefixName + '_Crv')
+                                  ee=jointList[-1], sol='ikSplineSolver', scv=0, pcv=0)
+        IK_Handle[-1] = cmds.rename(IK_Handle[-1], prefixName + '_Crv_Input')
 
     else:
         # add jointList to exists curve
         IK_Handle = cmds.ikHandle(n=prefixName + '_ikh', sj=jointList[0], ee=jointList[-1],
-                                  sol='ikSplineSolver', c=curve, ccv=0, roc=0, pcv=0, snc=1, ns=4)
+                                  sol='ikSplineSolver', c=curve, ccv=0, roc=0, pcv=0, snc=1)
         IK_Handle.append(curve)
 
     return IK_Handle
@@ -146,9 +146,9 @@ def createFollicle(curveShape, prefixName):
     cmds.connectAttr(curveShape + '.local', follicleShape + '.startPosition', f=1)
 
     # create output curve
-    curveShapeOut = cmds.createNode('nurbsCurve', n=prefixName + '_crvShapeOut')
+    curveShapeOut = cmds.createNode('nurbsCurve', n=prefixName + '_CrvShape_Output')
     curveTransNodeOut = cmds.listRelatives(curveShapeOut, p=1, c=0, s=0)[0]
-    curveTransNodeOut = cmds.rename(curveTransNodeOut, prefixName + '_crvNodeOut')
+    curveTransNodeOut = cmds.rename(curveTransNodeOut, prefixName + '_Crv_Output')
     curveShapeOut = cmds.listRelatives(curveTransNodeOut, c=1, p=0, s=1)[0]
 
     cmds.connectAttr(follicleTransNode + '.outCurve', curveShapeOut + '.create', f=0)
@@ -246,7 +246,7 @@ def createBakedCtrlSystem(jointList, prefixName):
 
     for i in xrange(len(jointList)-1):
         FK_Ctrl = control.Control(prefix='Baked_FK_' + prefixName,
-                                  rigPartName='_' + str(i),
+                                  rigPartName='_' + str(i) + '_Ctrl',
                                   scale=7,
                                   translateTo=jointList[i],
                                   rotateTo=jointList[i],

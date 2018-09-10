@@ -5,14 +5,13 @@ reload(name)
 reload(control)
 
 
-def createSplineIK(jointList, curve=None):
+def createSplineIK(jointList, prefixName, curve=None):
     """
     create Spline IK whether curve is given or not
     :param jointList: list(str), list of joint chain
     :param curve: str, curve name
     :return: list(str), IK_Handle = [ikh, effector, crv]
     """
-    prefixName = name.removeSuffix(jointList[0])
     if not curve:
         # create IK Spline
         IK_Handle = cmds.ikHandle(n=prefixName + '_ikh', sj=jointList[0],
@@ -122,12 +121,19 @@ def createCtrlSystem(jointList, numCtrl, curve, upAxis='y'):
 
     cmds.select(cl=1)
 
-    return {'FK_CtrlGrp_List': FK_CtrlGrp_List, 'FK_Ctrl_List': FK_Ctrl_List, 'FK_Joint_List': fkJntList}
+    return {'FK_CtrlGrp_List': FK_CtrlGrp_List,
+            'FK_Ctrl_List': FK_Ctrl_List,
+            'fkJntList': fkJntList}
 
 
-def createFollicle(jointList, curveShape):
+def createFollicle(curveShape, prefixName):
+    """
+    create a follicle node for curve
+    :param curveShape: str, curve shape
+    :param prefixName: str, prefix name of the original joint chain
+    :return: dict, {'follicle': [follicleTransNode, follicleShape], 'curveOut': [curveTransNodeOut, curveShapeOut]}
+    """
 
-    prefixName = name.removeSuffix(jointList[0])
     # follicle
     follicleShape = cmds.createNode('follicle', n=prefixName + '_follicleShape')
     follicleTransNode = cmds.listRelatives(follicleShape, p=1, c=0, s=0)[0]
@@ -149,13 +155,21 @@ def createFollicle(jointList, curveShape):
 
     cmds.select(cl=1)
 
-    return {'follicle': [follicleTransNode, follicleShape], 'curveOut': [curveTransNodeOut, curveShapeOut]}
+    return {'follicleTransNode': follicleTransNode,
+            'follicleShape': follicleShape,
+            'curveTransNodeOut': curveTransNodeOut,
+            'curveShapeOut': curveShapeOut}
 
 
-def createHairSys(jointList, nucleus=None):
-    prefixName = name.removeSuffix(jointList[0])
+def createHairSys(prefixName, nucleus=None):
+    """
+    create hair system
+    :param prefixName: str, prefix_name of the original joint chain
+    :param nucleus: str, whether specified nucleus
+    :return: dict, {'hair_shape': hairShape, 'hairTransNode': hairTransNode}
+    """
 
-    nucleus = nucleus or createNucleus(jointList)
+    nucleus = nucleus or createNucleus(prefixName=prefixName)
     # hair System
     hairShape = cmds.createNode('hairSystem', n=prefixName + '_hairSysShape')
     hairTransNode = cmds.listRelatives(hairShape, p=1, c=0, s=0)[0]
@@ -177,16 +191,15 @@ def createHairSys(jointList, nucleus=None):
     cmds.connectAttr(nucleus + '.startFrame', hairShape + '.startFrame', f=1)
     cmds.connectAttr(output_object, hairShape + '.nextState', f=1)
 
-    return {'hair_shape': hairShape, 'hairTransNode': hairTransNode}
+    return {'hairShape': hairShape, 'hairTransNode': hairTransNode}
 
 
-def createNucleus(jointList):
+def createNucleus(prefixName):
     """
     create nucleus
     :param jointList: list(str), joint chain list.
     :return: nucleus
     """
-    prefixName = name.removeSuffix(jointList[0])
 
     nucleus = cmds.createNode('nucleus', n=prefixName + '_nucleus')
     cmds.connectAttr('time1.outTime', nucleus + '.currentTime', f=1)
@@ -220,10 +233,10 @@ def rigInputCrv(fkJointList, curveNode):
     cmds.select(cl=1)
 
 
-def createBakingCtrlSystem(jointList):
+def createBakedCtrlSystem(jointList, prefixName):
     """
-    create FK controls for original joint chain list
-    :param jointList: list(str), original joint chain list
+    create FK controls for FK_Joint chain list
+    :param jointList: list(str), FK_Joint chain list
     :return: dict, {'FK_ctrlGrpList', 'FK_ctrlList'}
     """
     FK_ctrlList = []
@@ -231,15 +244,14 @@ def createBakingCtrlSystem(jointList):
 
     cmds.select(cl=1)
 
-    prefixName = name.removeSuffix(jointList[0])
-
     for i in xrange(len(jointList)-1):
         FK_Ctrl = control.Control(prefix='Baked_FK_' + prefixName,
                                   rigPartName='_' + str(i),
                                   scale=7,
                                   translateTo=jointList[i],
                                   rotateTo=jointList[i],
-                                  shape='squareControl')
+                                  shape='squareControl',
+                                  axis='z')
 
         cmds.pointConstraint(FK_Ctrl.C, jointList[i], mo=0)
         cmds.orientConstraint(FK_Ctrl.C, jointList[i], mo=0)
@@ -255,3 +267,56 @@ def createBakingCtrlSystem(jointList):
     cmds.select(cl=1)
 
     return {'FK_ctrlGrpList': FK_ctrlGrpList, 'FK_ctrlList': FK_ctrlList}
+
+
+def bakeDynamic2Ctrls(jointList, FK_ctrlList):
+    """
+    bake dynamic to the Baked_FK_controls
+    :param jointList: list(str), joint chain list with dynamic
+    :param FK_ctrlList: list(str)
+    :return: None
+    """
+    animMinTime = cmds.playbackOptions(min=1, q=1)
+    animMaxTime = cmds.playbackOptions(max=1, q=1)
+
+    for i in xrange(int(animMaxTime-animMinTime) + 1):
+        cmds.currentTime(animMinTime + i)
+
+        for j in xrange(len(jointList)):
+            cmds.matchTransform(FK_ctrlList[j], jointList[j], pos=1, rot=1)
+            for at in ['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ']:
+                cmds.setKeyframe(FK_ctrlList[j], at=at, time=cmds.currentTime(q=1))
+
+        print 'current time is: ' + str(animMinTime + i)
+
+    cmds.select(cl=1)
+
+
+def createBakedJointChain(jointList):
+    """
+    create baked joint chain list
+    :param jointList: list(str), original joint chain list
+    :return:list(str), baked joint chain list
+    """
+    prefixName = name.removeSuffix(jointList[0])
+
+    bakedJointList = []
+    for i in xrange(len(jointList)):
+        cmds.select(cl=1)
+        bakedJnt = cmds.joint(n='Baked_' + prefixName + '_' + str(i))
+        cmds.parentConstraint(jointList[i], bakedJnt, mo=0)
+        bakedJointList.append(bakedJnt)
+        cmds.select(cl=1)
+
+    for i in xrange(len(bakedJointList) - 1):
+
+        cmds.parent(bakedJointList[i+1], bakedJointList[i])
+
+    cmds.makeIdentity(bakedJointList[0], apply=1)
+
+    if cmds.listRelatives(jointList[0], p=1, c=0, s=0):
+        cmds.parent(bakedJointList[0], cmds.listRelatives(jointList[0], p=1, c=0, s=0)[0])
+
+    cmds.select(cl=1)
+
+    return bakedJointList

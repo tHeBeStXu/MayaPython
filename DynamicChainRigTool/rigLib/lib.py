@@ -304,7 +304,7 @@ def createBakedJointChain(jointList):
     for i in xrange(len(jointList)):
         cmds.select(cl=1)
         bakedJnt = cmds.joint(n='Baked_' + prefixName + '_' + str(i))
-        cmds.parentConstraint(jointList[i], bakedJnt, mo=0)
+        cmds.delete(cmds.parentConstraint(jointList[i], bakedJnt, mo=0))
         bakedJointList.append(bakedJnt)
         cmds.select(cl=1)
 

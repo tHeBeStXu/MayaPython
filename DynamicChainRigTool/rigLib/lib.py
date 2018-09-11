@@ -18,11 +18,17 @@ def createSplineIK(jointList, prefixName, curve=None):
                                   ee=jointList[-1], sol='ikSplineSolver', scv=0, pcv=0)
         IK_Handle[-1] = cmds.rename(IK_Handle[-1], prefixName + '_Crv_Input')
 
+        if not cmds.attributeQuery('inputCurve', node=IK_Handle[-1], exists=1):
+            cmds.addAttr(IK_Handle[-1], longName='inputCurve', at='message')
+
     else:
         # add jointList to exists curve
         IK_Handle = cmds.ikHandle(n=prefixName + '_ikh', sj=jointList[0], ee=jointList[-1],
                                   sol='ikSplineSolver', c=curve, ccv=0, roc=0, pcv=0, snc=1)
         IK_Handle.append(curve)
+
+    if not cmds.attributeQuery('IKHandle', node=IK_Handle[0], exists=1):
+        cmds.addAttr(IK_Handle[0], longName='IKHandle', at='message')
 
     return IK_Handle
 
@@ -50,7 +56,7 @@ def createCtrlSystem(jointList, numCtrl, curve, upAxis='y'):
     fkJntList = []
 
     for i in range(numCtrl):
-        fkJnt = cmds.joint(n='FK_' + prefixName + '_' +str(i))
+        fkJnt = cmds.joint(n=prefixName + '_' + str(i) + '_FK')
 
         cmds.delete(cmds.parentConstraint(jointList[0], fkJnt, mo=0))
 
@@ -101,8 +107,8 @@ def createCtrlSystem(jointList, numCtrl, curve, upAxis='y'):
     FK_Ctrl_List = []
 
     for i in xrange(len(fkJntList)):
-        FK_Ctrl = control.Control(prefix='FK_' + prefixName,
-                                  rigPartName='_' + str(i),
+        FK_Ctrl = control.Control(prefix=prefixName,
+                                  rigPartName='_' + str(i) + '_FK',
                                   scale=5,
                                   translateTo=fkJntList[i],
                                   rotateTo=fkJntList[i],
@@ -114,10 +120,18 @@ def createCtrlSystem(jointList, numCtrl, curve, upAxis='y'):
         FK_CtrlGrp_List.append(FK_Ctrl.Off)
         FK_Ctrl_List.append(FK_Ctrl.C)
 
-        cmds.select(cl=1)
+        if not cmds.attributeQuery('FKCtrl', node=FK_Ctrl.C, exists=1):
+            cmds.addAttr(FK_Ctrl.C, longName='FKCtrl', at='message')
+
+    cmds.select(cl=1)
 
     for i in xrange(len(FK_Ctrl_List) - 1):
         cmds.parent(FK_CtrlGrp_List[i+1], FK_Ctrl_List[i])
+
+    cmds.select(cl=1)
+
+    if not cmds.attributeQuery('FKCtrlGrp', node=FK_CtrlGrp_List[0], exists=1):
+        cmds.addAttr(FK_CtrlGrp_List[0], longName='FKCtrlGrp', at='message')
 
     cmds.select(cl=1)
 
@@ -152,6 +166,14 @@ def createFollicle(curveShape, prefixName):
     curveShapeOut = cmds.listRelatives(curveTransNodeOut, c=1, p=0, s=1)[0]
 
     cmds.connectAttr(follicleTransNode + '.outCurve', curveShapeOut + '.create', f=0)
+
+    cmds.select(cl=1)
+
+    if not cmds.attributeQuery('follicle', node=follicleShape, exists=1):
+        cmds.addAttr(follicleShape, longName='follicle', at='message')
+
+    if not cmds.attributeQuery('outputCurve', node=curveTransNodeOut, exists=1):
+        cmds.addAttr(curveTransNodeOut, longName='outputCurve', at='message')
 
     cmds.select(cl=1)
 
@@ -191,7 +213,12 @@ def createHairSys(prefixName, nucleus=None):
     cmds.connectAttr(nucleus + '.startFrame', hairShape + '.startFrame', f=1)
     cmds.connectAttr(output_object, hairShape + '.nextState', f=1)
 
-    return {'hairShape': hairShape, 'hairTransNode': hairTransNode}
+    if not cmds.attributeQuery('hair', node=hairShape, exists=1):
+        cmds.addAttr(hairShape, longName='hair', at='message')
+
+    return {'hairShape': hairShape,
+            'hairTransNode': hairTransNode,
+            'nucleus': nucleus}
 
 
 def createNucleus(prefixName):
@@ -203,6 +230,9 @@ def createNucleus(prefixName):
 
     nucleus = cmds.createNode('nucleus', n=prefixName + '_nucleus')
     cmds.connectAttr('time1.outTime', nucleus + '.currentTime', f=1)
+
+    if not cmds.attributeQuery('nucleus', node=nucleus, exists=1):
+        cmds.addAttr(nucleus, longName='nucleus', at='message')
 
     return nucleus
 
@@ -237,36 +267,42 @@ def createBakedCtrlSystem(jointList, prefixName):
     """
     create FK controls for FK_Joint chain list
     :param jointList: list(str), FK_Joint chain list
-    :return: dict, {'FK_ctrlGrpList', 'FK_ctrlList'}
+    :return: dict, {'Bake_FK_ctrlGrpList', 'Bake_FK_ctrlList'}
     """
-    FK_ctrlList = []
-    FK_ctrlGrpList = []
+    Bake_FK_ctrlList = []
+    Bake_FK_ctrlGrpList = []
 
     cmds.select(cl=1)
 
     for i in xrange(len(jointList)-1):
-        FK_Ctrl = control.Control(prefix='Baked_FK_' + prefixName,
-                                  rigPartName='_' + str(i) + '_Ctrl',
-                                  scale=7,
-                                  translateTo=jointList[i],
-                                  rotateTo=jointList[i],
-                                  shape='squareControl',
-                                  axis='z')
+        Bake_FK_Ctrl = control.Control(prefix=prefixName,
+                                       rigPartName='_' + str(i) + '_Baked_FK',
+                                       scale=7,
+                                       translateTo=jointList[i],
+                                       rotateTo=jointList[i],
+                                       shape='squareControl',
+                                       axis='z')
 
-        cmds.pointConstraint(FK_Ctrl.C, jointList[i], mo=0)
-        cmds.orientConstraint(FK_Ctrl.C, jointList[i], mo=0)
+        cmds.pointConstraint(Bake_FK_Ctrl.C, jointList[i], mo=0)
+        cmds.orientConstraint(Bake_FK_Ctrl.C, jointList[i], mo=0)
 
-        FK_ctrlList.append(FK_Ctrl.C)
-        FK_ctrlGrpList.append(FK_Ctrl.Off)
+        Bake_FK_ctrlList.append(Bake_FK_Ctrl.C)
+        Bake_FK_ctrlGrpList.append(Bake_FK_Ctrl.Off)
+
+        if not cmds.attributeQuery('BakeFKCtrl', node=Bake_FK_Ctrl.C, exists=1):
+            cmds.addAttr(Bake_FK_Ctrl.C, longName='BakeFKCtrl', at='message')
 
         cmds.select(cl=1)
 
-    for i in xrange(len(FK_ctrlList) - 1):
-        cmds.parent(FK_ctrlGrpList[i+1], FK_ctrlList[i])
+    for i in xrange(len(Bake_FK_ctrlList) - 1):
+        cmds.parent(Bake_FK_ctrlGrpList[i+1], Bake_FK_ctrlList[i])
 
     cmds.select(cl=1)
 
-    return {'FK_ctrlGrpList': FK_ctrlGrpList, 'FK_ctrlList': FK_ctrlList}
+    if not cmds.attributeQuery('BakeFKCtrlGrp', node=Bake_FK_ctrlGrpList[0], exists=1):
+        cmds.addAttr(Bake_FK_ctrlGrpList[0], longName='BakeFKCtrlGrp', at='message')
+
+    return {'Bake_FK_ctrlGrpList': Bake_FK_ctrlGrpList, 'Bake_FK_ctrlList': Bake_FK_ctrlList}
 
 
 def bakeDynamic2Ctrls(jointList, FK_ctrlList):
@@ -303,7 +339,7 @@ def createBakedJointChain(jointList):
     bakedJointList = []
     for i in xrange(len(jointList)):
         cmds.select(cl=1)
-        bakedJnt = cmds.joint(n='Baked_' + prefixName + '_' + str(i))
+        bakedJnt = cmds.joint(n=prefixName + '_' + str(i) + '_Baked')
         cmds.delete(cmds.parentConstraint(jointList[i], bakedJnt, mo=0))
         bakedJointList.append(bakedJnt)
         cmds.select(cl=1)
@@ -320,3 +356,63 @@ def createBakedJointChain(jointList):
     cmds.select(cl=1)
 
     return bakedJointList
+
+
+def createSettingGrp(prefixName):
+    settingGrp = cmds.group(n=prefixName + '_setting_Grp', em=1)
+
+    if not cmds.attributeQuery('hair', node=settingGrp, exists=1):
+        cmds.addAttr(settingGrp, longName='hair', at='message')
+
+    if not cmds.attributeQuery('follicle', node=settingGrp, exists=1):
+        cmds.addAttr(settingGrp, longName='follicle', at='message')
+
+    if not cmds.attributeQuery('nucleus', node=settingGrp, exists=1):
+        cmds.addAttr(settingGrp, longName='nucleus', at='message')
+
+    if not cmds.attributeQuery('inputCurve', node=settingGrp, exists=1):
+        cmds.addAttr(settingGrp, longName='inputCurve', at='message')
+
+    if not cmds.attributeQuery('outputCurve', node=settingGrp, exists=1):
+        cmds.addAttr(settingGrp, longName='outputCurve', at='message')
+
+    if not cmds.attributeQuery('FKCtrl', node=settingGrp, exists=1):
+        cmds.addAttr(settingGrp, longName='FKCtrl', at='message')
+
+    if not cmds.attributeQuery('FKCtrlGrp', node=settingGrp, exists=1):
+        cmds.addAttr(settingGrp, longName='FKCtrlGrp', at='message')
+
+    if not cmds.attributeQuery('IKHandle', node=settingGrp, exists=1):
+        cmds.addAttr(settingGrp, longName='IKHandle', at='message')
+
+    if not cmds.attributeQuery('BakeFKCtrl', node=settingGrp, exists=1):
+        cmds.addAttr(settingGrp, longName='BakeFKCtrl', at='message')
+
+    if not cmds.attributeQuery('BakeFKCtrlGrp', node=settingGrp, exists=1):
+        cmds.addAttr(settingGrp, longName='BakeFKCtrlGrp', at='message')
+
+    cmds.select(cl=1)
+
+    return settingGrp
+
+
+def connectAttr(setGrp, hair, follicle, nucleus, inputCrv, outputCrv, IK_Handle, FK_CtrlList,
+                FK_CtrlGrp, Bake_FK_CtrlList, Bake_FK_CtrlGrp):
+
+    # connect attrs
+    cmds.connectAttr(setGrp + '.hair', hair + '.hair', f=1)
+    cmds.connectAttr(setGrp + '.follicle', follicle + '.follicle', f=1)
+    cmds.connectAttr(setGrp + '.nucleus', nucleus + '.nucleus', f=1)
+    cmds.connectAttr(setGrp + '.inputCurve', inputCrv + '.inputCurve', f=1)
+    cmds.connectAttr(setGrp + '.outputCurve', outputCrv + '.outputCurve', f=1)
+    cmds.connectAttr(setGrp + '.IKHandle', IK_Handle + '.IKHandle', f=1)
+    cmds.connectAttr(setGrp + '.FKCtrlGrp', FK_CtrlGrp + '.FKCtrlGrp', f=1)
+    cmds.connectAttr(setGrp + '.BakeFKCtrlGrp', Bake_FK_CtrlGrp + '.BakeFKCtrlGrp', f=1)
+
+    for i in FK_CtrlList:
+        cmds.connectAttr(setGrp + '.FKCtrl', i + '.FKCtrl', f=1)
+
+    for i in Bake_FK_CtrlList:
+        cmds.connectAttr(setGrp + '.BakeFKCtrl', i + '.BakeFKCtrl', f=1)
+
+    cmds.select(cl=1)

@@ -98,7 +98,7 @@ class Control():
             ctrlObject = ctrlObject[1]
 
         elif shape == 'squareControl':
-            ctrlObject = controlShape.squareControl.createShape(prefix=prefix + rigPartName)
+            ctrlObject = controlShape.squareControl.createShape(prefix=prefix + rigPartName + '_Ctrl')
 
         if not ctrlObject:
             ctrlObject = cmds.circle(n=prefix + rigPartName + '_Ctrl', ch=1,

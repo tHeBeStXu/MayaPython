@@ -1,4 +1,4 @@
-from PySide2 import QtCore, QtWidgets
+from PySide2 import QtCore, QtWidgets, QtGui
 from shiboken2 import wrapInstance
 import maya.OpenMayaUI as omui
 import maya.cmds as cmds
@@ -85,7 +85,9 @@ class MainUI(QtWidgets.QDialog):
         self.mainWidget.addTab(self.firstWidget, 'Create')
         self.mainWidget.addTab(self.secondWidget, 'Bake')
 
-        # build 'Create' widget
+        #########################
+        # build 'Create' widget #
+        #########################
         self.firstLayout = QtWidgets.QVBoxLayout()
         self.firstWidget.setLayout(self.firstLayout)
 
@@ -107,6 +109,13 @@ class MainUI(QtWidgets.QDialog):
 
             formlayout.addRow(i, layout)
 
+        self.firstLayout.addWidget(formWidget)
+
+        # selection splitter
+        self.listSplitter = splitter()
+        self.firstLayout.addWidget(self.listSplitter)
+
+        # selection widget
         selectionWidget = QtWidgets.QWidget()
         selectionLayout = QtWidgets.QVBoxLayout()
         selectionWidget.setLayout(selectionLayout)
@@ -126,7 +135,6 @@ class MainUI(QtWidgets.QDialog):
         self.jointCheck.stateChanged.connect(self.refreshListWidget)
         self.hairCheck.stateChanged.connect(self.refreshListWidget)
 
-        self.firstLayout.addWidget(formWidget)
         self.firstLayout.addWidget(selectionWidget)
 
         self.listWidget = QtWidgets.QListWidget()
@@ -135,14 +143,71 @@ class MainUI(QtWidgets.QDialog):
         selectionLayout.addWidget(filterWidget)
         selectionLayout.addWidget(self.listWidget)
 
+        # create rig splitter
+        self.createRigSplitter = splitter()
+        self.firstLayout.addWidget(self.createRigSplitter)
+
         # create rig button
-        self.createButton = QtWidgets.QPushButton('Create Dynamic Chain Rig!')
-        self.createButton.clicked.connect(self.buildRig)
-        self.firstLayout.addWidget(self.createButton)
+        self.createRigButton = QtWidgets.QPushButton('Create Dynamic Chain Rig!')
+        self.createRigButton.clicked.connect(self.buildRig)
+        self.firstLayout.addWidget(self.createRigButton)
 
-        # build 'Bake' widget
-        #self.secondLayout = QtWidgets.QLAYOUT
+        #######################
+        # build 'Bake' widget #
+        #######################
+        self.secondLayout = QtWidgets.QVBoxLayout()
+        self.secondWidget.setLayout(self.secondLayout)
 
+        # setting group splitter
+        self.settingSplitter = splitter(text='SETTING GROUPS')
+        self.secondLayout.addWidget(self.settingSplitter)
+
+        # setting group comboBox
+        self.setGrpComboBox = QtWidgets.QComboBox()
+        self.secondLayout.addWidget(self.setGrpComboBox)
+
+
+        # selection splitter
+        self.selSplitter = splitter(text='SELECTION')
+        self.secondLayout.addWidget(self.selSplitter)
+
+        # seleciton buttons
+        self.selGridLayout = QtWidgets.QGridLayout()
+
+        self.selHairBtn = QtWidgets.QPushButton('Select Hair System')
+        self.selNucleusBtn = QtWidgets.QPushButton('Select Nucleus')
+        self.selBakeCtrlBtn = QtWidgets.QPushButton('Select Bake Ctrls')
+        self.selIKCtrlBtn = QtWidgets.QPushButton('Select IK Ctrls')
+        self.selBakeJntBtn = QtWidgets.QPushButton('Select Bake Joints')
+        self.selIKJntBtn = QtWidgets.QPushButton('Select IK Joints')
+        self.selDynCrvBtn = QtWidgets.QPushButton('Select Dynamic Curve')
+        self.selIKCrvBtn = QtWidgets.QPushButton('Select IK Curve')
+        self.selOriginJntBtn = QtWidgets.QPushButton('Select Origin Joints')
+        self.selSetGrpBtn = QtWidgets.QPushButton('Select Setting Grp')
+
+        self.selGridLayout.addWidget(self.selHairBtn, 0, 0, 1, 2)
+        self.selGridLayout.addWidget(self.selNucleusBtn, 0, 2, 1, 2)
+        self.selGridLayout.addWidget(self.selBakeCtrlBtn, 1, 0, 1, 2)
+        self.selGridLayout.addWidget(self.selIKCtrlBtn, 1, 2, 1, 2)
+        self.selGridLayout.addWidget(self.selBakeJntBtn, 2, 0, 1, 2)
+        self.selGridLayout.addWidget(self.selIKJntBtn, 2, 2, 1, 2)
+        self.selGridLayout.addWidget(self.selDynCrvBtn, 3, 0, 1, 2)
+        self.selGridLayout.addWidget(self.selIKCrvBtn, 3, 2, 1, 2)
+        self.selGridLayout.addWidget(self.selOriginJntBtn, 4, 0, 1, 2)
+        self.selGridLayout.addWidget(self.selSetGrpBtn, 4, 2, 1, 2)
+
+        self.secondLayout.addLayout(self.selGridLayout)
+
+        # bake splitter
+        self.bakeSplitter = splitter(text='BAKE')
+        self.secondLayout.addWidget(self.bakeSplitter)
+
+        # bake button
+        self.bakeBtnLayout = QtWidgets.QHBoxLayout()
+        self.bakeDynamicBtn = QtWidgets.QPushButton('Bake Dynamic on Bake Ctrls')
+        self.bakeBtnLayout.addWidget(self.bakeDynamicBtn)
+
+        self.secondLayout.addLayout(self.bakeBtnLayout)
 
     def setEditLine(self, editLine):
         items = self.listWidget.selectedItems()
@@ -170,6 +235,49 @@ class MainUI(QtWidgets.QDialog):
         rig.build(jointList=jointList,
                   numCtrl=numCtrl,
                   hairSystem=hairSystem)
+
+class splitter(QtWidgets.QWidget):
+    def __init__(self, text=None):
+        super(splitter, self).__init__()
+
+        self.setMinimumHeight(2)
+        self.mainLayout = QtWidgets.QHBoxLayout()
+        self.setLayout(self.mainLayout)
+        self.mainLayout.setContentsMargins(0, 0, 0, 0)
+        self.mainLayout.setSpacing(0)
+        self.mainLayout.setAlignment(QtCore.Qt.AlignVCenter)
+
+        firstLine = QtWidgets.QFrame()
+        firstLine.setFrameStyle(QtWidgets.QFrame.HLine)
+        self.mainLayout.addWidget(firstLine)
+
+        if not text:
+            return
+
+        font = QtGui.QFont()
+        font.setBold(True)
+
+        textWidth = QtGui.QFontMetrics(font)
+        width = textWidth.width(text) + 10
+
+        label = QtWidgets.QLabel()
+        label.setText(text)
+        label.setFont(font)
+        label.setMaximumWidth(width)
+        label.setAlignment(QtCore.Qt.AlignVCenter | QtCore.Qt.AlignHCenter)
+
+        self.mainLayout.addWidget(label)
+
+        secondLine = QtWidgets.QFrame()
+        secondLine.setFrameStyle(QtWidgets.QFrame.HLine)
+        self.mainLayout.addWidget(secondLine)
+
+
+
+
+
+
+
 
 
 

@@ -34,9 +34,9 @@ class EditUI(QtWidgets.QDialog):
 
     def refreshListWidget(self):
         """
-                refresh listWidget with specified checked
-                :return: None
-                """
+        refresh listWidget with specified checked
+        :return: None
+        """
         self.listWidget.clear()
 
         joints = []
@@ -120,10 +120,10 @@ class EditUI(QtWidgets.QDialog):
 
     def setEditLine(self, editLine):
         """
-                set specified editLine text
-                :param editLine: specified editLine
-                :return: None
-                """
+        set specified editLine text
+        :param editLine: specified editLine
+        :return: None
+        """
         items = self.listWidget.selectedItems()
         itemStr = []
         for i in items:

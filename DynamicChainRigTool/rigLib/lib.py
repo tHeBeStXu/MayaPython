@@ -18,6 +18,7 @@ def createSplineIK(jointList, prefixName, curve=None):
                                   ee=jointList[-1], sol='ikSplineSolver', scv=0, pcv=0)
         IK_Handle[-1] = cmds.rename(IK_Handle[-1], prefixName + '_Crv_Input')
 
+        # add input curve attr
         if not cmds.attributeQuery('inputCurve', node=IK_Handle[-1], exists=1):
             cmds.addAttr(IK_Handle[-1], longName='inputCurve', at='message')
 
@@ -27,8 +28,11 @@ def createSplineIK(jointList, prefixName, curve=None):
                                   sol='ikSplineSolver', c=curve, ccv=0, roc=0, pcv=0, snc=1)
         IK_Handle.append(curve)
 
+    # add IK handle attr
     if not cmds.attributeQuery('IKHandle', node=IK_Handle[0], exists=1):
         cmds.addAttr(IK_Handle[0], longName='IKHandle', at='message')
+
+    cmds.select(cl=1)
 
     return IK_Handle
 
@@ -120,6 +124,7 @@ def createCtrlSystem(jointList, numCtrl, curve, upAxis='y'):
         FK_CtrlGrp_List.append(FK_Ctrl.Off)
         FK_Ctrl_List.append(FK_Ctrl.C)
 
+        # add fk control attr
         if not cmds.attributeQuery('FKCtrl', node=FK_Ctrl.C, exists=1):
             cmds.addAttr(FK_Ctrl.C, longName='FKCtrl', at='message')
 
@@ -130,6 +135,7 @@ def createCtrlSystem(jointList, numCtrl, curve, upAxis='y'):
 
     cmds.select(cl=1)
 
+    # add fk control group attr
     if not cmds.attributeQuery('FKCtrlGrp', node=FK_CtrlGrp_List[0], exists=1):
         cmds.addAttr(FK_CtrlGrp_List[0], longName='FKCtrlGrp', at='message')
 
@@ -169,9 +175,11 @@ def createFollicle(curveShape, prefixName):
 
     cmds.select(cl=1)
 
+    # add follicle attr
     if not cmds.attributeQuery('follicle', node=follicleShape, exists=1):
         cmds.addAttr(follicleShape, longName='follicle', at='message')
 
+    # add output curve attr
     if not cmds.attributeQuery('outputCurve', node=curveTransNodeOut, exists=1):
         cmds.addAttr(curveTransNodeOut, longName='outputCurve', at='message')
 
@@ -213,8 +221,15 @@ def createHairSys(prefixName, nucleus=None):
     cmds.connectAttr(nucleus + '.startFrame', hairShape + '.startFrame', f=1)
     cmds.connectAttr(output_object, hairShape + '.nextState', f=1)
 
+    # add hair attr
     if not cmds.attributeQuery('hair', node=hairShape, exists=1):
-        cmds.addAttr(hairShape, longName='hair', at='message')
+        cmds.addAttr(hairShape, longName='hair', at='message', multi=1)
+
+    # add nucleus attr
+    if not cmds.attributeQuery('nucleus', node=nucleus, exists=1):
+        cmds.addAttr(nucleus, longName='nucleus', at='message', multi=1)
+
+    cmds.select(cl=1)
 
     return {'hairShape': hairShape,
             'hairTransNode': hairTransNode,
@@ -231,8 +246,11 @@ def createNucleus(prefixName):
     nucleus = cmds.createNode('nucleus', n=prefixName + '_nucleus')
     cmds.connectAttr('time1.outTime', nucleus + '.currentTime', f=1)
 
+    # add nucleus attr
     if not cmds.attributeQuery('nucleus', node=nucleus, exists=1):
-        cmds.addAttr(nucleus, longName='nucleus', at='message')
+        cmds.addAttr(nucleus, longName='nucleus', at='message', multi=1)
+
+    cmds.select(cl=1)
 
     return nucleus
 
@@ -249,6 +267,8 @@ def addFollicle(follicleShape, hairShape):
     output_hair = '%s.outputHair[%s]' % (hairShape, hairIndex)
     cmds.connectAttr(follicleShape + '.outHair', input_hair, f=1)
     cmds.connectAttr(output_hair, follicleShape + '.currentPosition', f=1)
+
+    cmds.select(cl=1)
 
 
 def rigInputCrv(fkJointList, curveNode):
@@ -289,6 +309,7 @@ def createBakedCtrlSystem(jointList, prefixName):
         Bake_FK_ctrlList.append(Bake_FK_Ctrl.C)
         Bake_FK_ctrlGrpList.append(Bake_FK_Ctrl.Off)
 
+        # add bake fk control attr
         if not cmds.attributeQuery('BakeFKCtrl', node=Bake_FK_Ctrl.C, exists=1):
             cmds.addAttr(Bake_FK_Ctrl.C, longName='BakeFKCtrl', at='message')
 
@@ -299,17 +320,20 @@ def createBakedCtrlSystem(jointList, prefixName):
 
     cmds.select(cl=1)
 
+    # add bake fk control group attr
     if not cmds.attributeQuery('BakeFKCtrlGrp', node=Bake_FK_ctrlGrpList[0], exists=1):
         cmds.addAttr(Bake_FK_ctrlGrpList[0], longName='BakeFKCtrlGrp', at='message')
+
+    cmds.select(cl=1)
 
     return {'Bake_FK_ctrlGrpList': Bake_FK_ctrlGrpList, 'Bake_FK_ctrlList': Bake_FK_ctrlList}
 
 
-def bakeDynamic2Ctrls(jointList, FK_ctrlList):
+def bakeDynamic2Ctrls(jointList, Bake_FK_ctrlList):
     """
     bake dynamic to the Baked_FK_controls
     :param jointList: list(str), joint chain list with dynamic
-    :param FK_ctrlList: list(str)
+    :param Bake_FK_ctrlList: list(str)
     :return: None
     """
     animMinTime = cmds.playbackOptions(min=1, q=1)
@@ -318,10 +342,10 @@ def bakeDynamic2Ctrls(jointList, FK_ctrlList):
     for i in xrange(int(animMaxTime-animMinTime) + 1):
         cmds.currentTime(animMinTime + i)
 
-        for j in xrange(len(jointList)):
-            cmds.matchTransform(FK_ctrlList[j], jointList[j], pos=1, rot=1)
+        for j in xrange(len(jointList) - 1):
+            cmds.matchTransform(Bake_FK_ctrlList[j], jointList[j], pos=1, rot=1)
             for at in ['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ']:
-                cmds.setKeyframe(FK_ctrlList[j], at=at, time=cmds.currentTime(q=1))
+                cmds.setKeyframe(Bake_FK_ctrlList[j], at=at, time=cmds.currentTime(q=1))
 
         print 'current time is: ' + str(animMinTime + i)
 
@@ -359,6 +383,11 @@ def createBakedJointChain(jointList):
 
 
 def createSettingGrp(prefixName):
+    """
+    create setting group for connections
+    :param prefixName: str, prefix_name of the joint chain
+    :return: str, setting group
+    """
     settingGrp = cmds.group(n=prefixName + '_setting_Grp', em=1)
 
     if not cmds.attributeQuery('hair', node=settingGrp, exists=1):
@@ -398,11 +427,31 @@ def createSettingGrp(prefixName):
 
 def connectAttr(setGrp, hair, follicle, nucleus, inputCrv, outputCrv, IK_Handle, FK_CtrlList,
                 FK_CtrlGrp, Bake_FK_CtrlList, Bake_FK_CtrlGrp):
-
+    """
+    connect the specified attrs between setting group and the other objects
+    :param setGrp: str, setting group
+    :param hair: str, hair system shape
+    :param follicle: str, follicle shape
+    :param nucleus: str, nucleus
+    :param inputCrv: str, input curve trans node
+    :param outputCrv: str, output curve trans node
+    :param IK_Handle: str, IK_handle of the spline IK system
+    :param FK_CtrlList: list(str), FK control list
+    :param FK_CtrlGrp: str, first FK control GRP of FK control group list
+    :param Bake_FK_CtrlList: list(str), bake FK control list
+    :param Bake_FK_CtrlGrp: str, first bake FK control GRP of bake FK control group list
+    :return: None
+    """
     # connect attrs
-    cmds.connectAttr(setGrp + '.hair', hair + '.hair', f=1)
+    hairIndex = cmds.getAttr(hair + '.hair', size=1)
+    hairAttr = '%s.hair[%s]' % (hair, hairIndex)
+    cmds.connectAttr(setGrp + '.hair', hairAttr, f=1)
     cmds.connectAttr(setGrp + '.follicle', follicle + '.follicle', f=1)
-    cmds.connectAttr(setGrp + '.nucleus', nucleus + '.nucleus', f=1)
+
+    nucleusIndex = cmds.getAttr(nucleus + '.nucleus', size=1)
+    nucleusAttr = '%s.nucleus[%s]' % (nucleus, nucleusIndex)
+    cmds.connectAttr(setGrp + '.nucleus', nucleusAttr, f=1)
+
     cmds.connectAttr(setGrp + '.inputCurve', inputCrv + '.inputCurve', f=1)
     cmds.connectAttr(setGrp + '.outputCurve', outputCrv + '.outputCurve', f=1)
     cmds.connectAttr(setGrp + '.IKHandle', IK_Handle + '.IKHandle', f=1)

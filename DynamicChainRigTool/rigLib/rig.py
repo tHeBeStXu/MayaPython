@@ -26,11 +26,13 @@ def build(jointList, numCtrl, hairSystem=None):
     if not hairSystem:
         hair_nucleus = lib.createHairSys(prefixName=prefixName)
     else:
-        hair_nucleus = hairSystem['hairShape']
+        hair_nucleus = {}
+        hair_nucleus['hairShape'] = hairSystem
+        hair_nucleus['nucleus'] = cmds.listConnections(hairSystem + '.startFrame', source=1, destination=0)[0]
 
     # create and add follicle
     follicle_outputCrv = lib.createFollicle(curveShape=inputCrvShape,
-                                                prefixName=prefixName)
+                                            prefixName=prefixName)
 
     lib.addFollicle(follicleShape=follicle_outputCrv['follicleShape'],
                     hairShape=hair_nucleus['hairShape'])

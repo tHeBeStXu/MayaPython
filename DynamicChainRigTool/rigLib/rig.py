@@ -45,6 +45,7 @@ def build(jointList, numCtrl, hairSystem=None):
         hair_nucleus = lib.createHairSys(prefixName=prefixName)
     else:
         hair_nucleus = {}
+        hair_nucleus['hairTransNode'] = cmds.listRelatives(hairSystem, s=0, p=1, c=0, type='transform')
         hair_nucleus['hairShape'] = hairSystem
         hair_nucleus['nucleus'] = cmds.listConnections(hairSystem + '.startFrame', source=1, destination=0)[0]
 
@@ -86,3 +87,32 @@ def build(jointList, numCtrl, hairSystem=None):
                     IKJointList=IK_Bake_JointList['IKJointList'],
                     bakeJointList=IK_Bake_JointList['bakeJointList'],
                     originJointList=jointList)
+
+    # create root group
+    rootGrp = cmds.group(n=prefixName + '_Dynamic_Root_Grp', em=1)
+    jointGrp = cmds.group(n=prefixName + '_Dynamic_Joints_Grp', em=1)
+    ctrlGrp = cmds.group(n=prefixName + '_Dynamic_Ctrls_Grp', em=1)
+    extraGrp = cmds.group(n=prefixName + '_Dynamic_Extra_Grp', em=1)
+
+    # clean hierarchy
+    cmds.parent(FK_Ctrl['fkJntList'][0], jointGrp)
+    cmds.parent(FK_Ctrl['FK_CtrlGrp_List'][0], ctrlGrp)
+    cmds.parent(baked_FK_Ctrls['Bake_FK_ctrlGrpList'][0], ctrlGrp)
+
+    cmds.parent(follicle_outputCrv['follicleTransNode'], extraGrp)
+    cmds.parent(hair_nucleus['hairTransNode'], extraGrp)
+    cmds.parent(hair_nucleus['nucleus'], extraGrp)
+    cmds.parent(follicle_outputCrv['curveTransNodeOut'], extraGrp)
+    cmds.parent(inputCrv, extraGrp)
+    cmds.parent(IK_List_Output[0], extraGrp)
+
+    if not cmds.listRelatives(IK_Bake_JointList['IKJointList'][0], s=0, p=1, c=0, type='joint'):
+        cmds.parent(IK_Bake_JointList['IKJointList'][0], ctrlGrp)
+        cmds.parent(IK_Bake_JointList['bakeJointList'][0], ctrlGrp)
+
+    cmds.parent(extraGrp, rootGrp)
+    cmds.parent(ctrlGrp, rootGrp)
+    cmds.parent(jointGrp, rootGrp)
+    cmds.parent(settingGrp, rootGrp)
+
+    cmds.select(cl=1)

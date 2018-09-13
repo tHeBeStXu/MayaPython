@@ -117,6 +117,7 @@ def createCtrlSystem(jointList, prefixName, numCtrl, curve, upAxis='y'):
                                   shape='circle',
                                   lockChannels=['t', 's', 'v'])
 
+        cmds.pointConstraint(FK_Ctrl.C, fkJntList[i], mo=0)
         cmds.orientConstraint(FK_Ctrl.C, fkJntList[i], mo=0)
 
         FK_CtrlGrp_List.append(FK_Ctrl.Off)

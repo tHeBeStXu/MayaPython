@@ -37,7 +37,7 @@ def createSplineIK(jointList, prefixName, curve=None):
     return IK_Handle
 
 
-def createCtrlSystem(jointList, numCtrl, curve, upAxis='y'):
+def createCtrlSystem(jointList, prefixName, numCtrl, curve, upAxis='y'):
     """
     create FK Joints control system for controlling line shape
     :param jointList: list(str), joint chain list
@@ -47,8 +47,6 @@ def createCtrlSystem(jointList, numCtrl, curve, upAxis='y'):
     :return: dict, {'FK_CtrlGrp_List', 'FK_Ctrl_List'}
     """
     cmds.select(cl=1)
-
-    prefixName = name.removeSuffix(jointList[0])
 
     if upAxis in ['y', 'Y']:
         worldUpVector = (0, 1, 0)
@@ -352,7 +350,7 @@ def bakeDynamic2Ctrls(jointList, Bake_FK_ctrlList):
     cmds.select(cl=1)
 
 
-def createBakedJointChain(jointList):
+def createIK_BakeJointChain(jointList):
     """
     create baked joint chain list
     :param jointList: list(str), original joint chain list
@@ -360,26 +358,42 @@ def createBakedJointChain(jointList):
     """
     prefixName = name.removeSuffix(jointList[0])
 
-    bakedJointList = []
+    IKJointList = []
+    bakeJointList = []
     for i in xrange(len(jointList)):
+        # bake joint
         cmds.select(cl=1)
-        bakedJnt = cmds.joint(n=prefixName + '_' + str(i) + '_Baked')
+        bakedJnt = cmds.joint(n=prefixName + '_' + str(i) + '_Bake')
         cmds.delete(cmds.parentConstraint(jointList[i], bakedJnt, mo=0))
-        bakedJointList.append(bakedJnt)
+        bakeJointList.append(bakedJnt)
+        if not cmds.attributeQuery('bakeJoint', node=bakedJnt, exists=1):
+            cmds.addAttr(bakedJnt, longName='bakeJoint', at='message')
         cmds.select(cl=1)
 
-    for i in xrange(len(bakedJointList) - 1):
+        # ik joint
+        IKJnt = cmds.joint(n=prefixName + '_' + str(i) + '_IK')
+        cmds.delete(cmds.parentConstraint(jointList[i], IKJnt, mo=0))
+        IKJointList.append(IKJnt)
+        if not cmds.attributeQuery('IKJoint', node=IKJnt, exists=1):
+            cmds.addAttr(IKJnt, longName='IKJoint', at='message')
+        cmds.select(cl=1)
 
-        cmds.parent(bakedJointList[i+1], bakedJointList[i])
+    for i in xrange(len(bakeJointList) - 1):
 
-    cmds.makeIdentity(bakedJointList[0], apply=1)
+        cmds.parent(bakeJointList[i+1], bakeJointList[i])
+        cmds.parent(IKJointList[i+1], IKJointList[i])
 
-    if cmds.listRelatives(jointList[0], p=1, c=0, s=0):
-        cmds.parent(bakedJointList[0], cmds.listRelatives(jointList[0], p=1, c=0, s=0)[0])
+    cmds.makeIdentity(bakeJointList[0], apply=1)
+    cmds.makeIdentity(IKJointList[0], apply=1)
+
+    if cmds.listRelatives(jointList[0], p=1, c=0, s=0, type='joint'):
+        cmds.parent(bakeJointList[0], cmds.listRelatives(jointList[0], p=1, c=0, s=0, type='joint')[0])
+        cmds.parent(IKJointList[0], cmds.listRelatives(jointList[0], p=1, c=0, s=0, type='joint')[0])
 
     cmds.select(cl=1)
 
-    return bakedJointList
+    return {'bakeJointList': bakeJointList,
+            'IKJointList': IKJointList}
 
 
 def createSettingGrp(prefixName):
@@ -388,7 +402,16 @@ def createSettingGrp(prefixName):
     :param prefixName: str, prefix_name of the joint chain
     :return: str, setting group
     """
-    settingGrp = cmds.group(n=prefixName + '_setting_Grp', em=1)
+    settingGrp = cmds.group(n=prefixName + '_settingGrp', em=1)
+
+    # set visibility to false
+    cmds.setAttr(settingGrp + '.v', 0)
+
+    for attr in ['tx', 'ty', 'tz', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz', 'v']:
+        cmds.setAttr(settingGrp + '.' + attr, keyable=0, lock=1, channelBox=0)
+
+    if not cmds.attributeQuery('IK2Bake', node=settingGrp, exists=1):
+        cmds.addAttr(settingGrp, longName='IK2Bake', at="float", min=0, max=1, keyable=1)
 
     if not cmds.attributeQuery('hair', node=settingGrp, exists=1):
         cmds.addAttr(settingGrp, longName='hair', at='message')
@@ -420,13 +443,22 @@ def createSettingGrp(prefixName):
     if not cmds.attributeQuery('BakeFKCtrlGrp', node=settingGrp, exists=1):
         cmds.addAttr(settingGrp, longName='BakeFKCtrlGrp', at='message')
 
+    if not cmds.attributeQuery('IKJointList', node=settingGrp, exists=1):
+        cmds.addAttr(settingGrp, longName='IKJoint', at='message')
+
+    if not cmds.attributeQuery('bakeJointList', node=settingGrp, exists=1):
+        cmds.addAttr(settingGrp, longName='bakeJoint', at='message')
+
+    if not cmds.attributeQuery('originJointList', node=settingGrp, exists=1):
+        cmds.addAttr(settingGrp, longName='originJoint', at='message')
+
     cmds.select(cl=1)
 
     return settingGrp
 
 
 def connectAttr(setGrp, hair, follicle, nucleus, inputCrv, outputCrv, IK_Handle, FK_CtrlList,
-                FK_CtrlGrp, Bake_FK_CtrlList, Bake_FK_CtrlGrp):
+                FK_CtrlGrp, Bake_FK_CtrlList, Bake_FK_CtrlGrp, IKJointList, bakeJointList, originJointList):
     """
     connect the specified attrs between setting group and the other objects
     :param setGrp: str, setting group
@@ -446,6 +478,7 @@ def connectAttr(setGrp, hair, follicle, nucleus, inputCrv, outputCrv, IK_Handle,
     hairIndex = cmds.getAttr(hair + '.hair', size=1)
     hairAttr = '%s.hair[%s]' % (hair, hairIndex)
     cmds.connectAttr(setGrp + '.hair', hairAttr, f=1)
+
     cmds.connectAttr(setGrp + '.follicle', follicle + '.follicle', f=1)
 
     nucleusIndex = cmds.getAttr(nucleus + '.nucleus', size=1)
@@ -464,4 +497,44 @@ def connectAttr(setGrp, hair, follicle, nucleus, inputCrv, outputCrv, IK_Handle,
     for i in Bake_FK_CtrlList:
         cmds.connectAttr(setGrp + '.BakeFKCtrl', i + '.BakeFKCtrl', f=1)
 
+    for i in bakeJointList:
+        cmds.connectAttr(setGrp + '.bakeJoint', i + '.bakeJoint', f=1)
+
+    for i in IKJointList:
+        cmds.connectAttr(setGrp + '.IKJoint', i + '.IKJoint', f=1)
+
+    for i in originJointList:
+        cmds.connectAttr(setGrp + '.originJoint', i + '.originJoint', f=1)
+
     cmds.select(cl=1)
+
+
+def createSwitchSystem(originJointList, IKJointList, bakeJointList, settingGrp):
+    """
+
+    :param originJointList:
+    :param IKJointList:
+    :param bakeJointList:
+    :param settingGrp:
+    :return:
+    """
+    for i in xrange(len(originJointList)):
+
+        # rotation
+        rotBlendColor = cmds.createNode('blendColors')
+        # bake
+        cmds.connectAttr(bakeJointList[i] + '.r', rotBlendColor + '.color1', f=1)
+        # ik
+        cmds.connectAttr(IKJointList[i] + '.r', rotBlendColor + '.color2', f=1)
+        # setting group
+        cmds.connectAttr(settingGrp + '.IK2Bake', rotBlendColor + '.blender', f=1)
+        # origin
+        cmds.connectAttr(rotBlendColor + '.output', originJointList[i] + '.r', f=1)
+
+    cmds.select(cl=1)
+
+
+def addAttr2OriginJoints(originJoints):
+    for i in xrange(len(originJoints)):
+        if not cmds.attributeQuery('originJoint', node=originJoints[i], exists=1):
+            cmds.addAttr(originJoints[i], longName='originJoint', at='message')

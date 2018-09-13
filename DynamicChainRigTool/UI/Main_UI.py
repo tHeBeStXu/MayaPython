@@ -166,7 +166,6 @@ class MainUI(QtWidgets.QDialog):
         self.setGrpComboBox = QtWidgets.QComboBox()
         self.secondLayout.addWidget(self.setGrpComboBox)
 
-
         # selection splitter
         self.selSplitter = splitter(text='SELECTION')
         self.secondLayout.addWidget(self.selSplitter)
@@ -235,6 +234,7 @@ class MainUI(QtWidgets.QDialog):
         rig.build(jointList=jointList,
                   numCtrl=numCtrl,
                   hairSystem=hairSystem)
+
 
 class splitter(QtWidgets.QWidget):
     def __init__(self, text=None):

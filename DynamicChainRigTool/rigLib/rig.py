@@ -9,16 +9,34 @@ def build(jointList, numCtrl, hairSystem=None):
     # get the prefixName
     prefixName = name.removeSuffix(jointList[0])
 
+    # create attrs for origin joint list
+    lib.addAttr2OriginJoints(originJoints=jointList)
+
+    # create setting group
+    settingGrp = lib.createSettingGrp(prefixName=prefixName)
+
+    # create IK and Bake joint chain
+    IK_Bake_JointList = lib.createIK_BakeJointChain(jointList=jointList)
+    cmds.setAttr(IK_Bake_JointList['IKJointList'][0] + '.v', 0)
+    cmds.setAttr(IK_Bake_JointList['bakeJointList'][0] + '.v', 0)
+
+    # create switch system between IK and Bake joint chain
+    lib.createSwitchSystem(originJointList=jointList,
+                           IKJointList=IK_Bake_JointList['IKJointList'],
+                           bakeJointList=IK_Bake_JointList['bakeJointList'],
+                           settingGrp=settingGrp)
+
     # create input curve for hair system
-    IK_List_Input = lib.createSplineIK(jointList=jointList, prefixName=prefixName)
+    IK_List_Input = lib.createSplineIK(jointList=IK_Bake_JointList['IKJointList'], prefixName=prefixName)
     inputCrv = IK_List_Input[-1]
 
     cmds.delete(IK_List_Input[0])
 
     # create FK control system
-    FK_Ctrl = lib.createCtrlSystem(jointList=jointList,
-                                          numCtrl=numCtrl,
-                                          curve=inputCrv)
+    FK_Ctrl = lib.createCtrlSystem(jointList=IK_Bake_JointList['IKJointList'],
+                                   prefixName=prefixName,
+                                   numCtrl=numCtrl,
+                                   curve=inputCrv)
 
     # create hairSystem by inputCrv
     inputCrvShape = cmds.listRelatives(inputCrv, c=1, p=0, s=1)[0]
@@ -38,7 +56,7 @@ def build(jointList, numCtrl, hairSystem=None):
                     hairShape=hair_nucleus['hairShape'])
 
     # create splineIK with output curve
-    IK_List_Output = lib.createSplineIK(jointList=jointList,
+    IK_List_Output = lib.createSplineIK(jointList=IK_Bake_JointList['IKJointList'],
                                         prefixName=prefixName,
                                         curve=follicle_outputCrv['curveTransNodeOut'])
 
@@ -49,14 +67,9 @@ def build(jointList, numCtrl, hairSystem=None):
     # Baked Part #
     ##############
 
-    # create baked joint chain
-    bakedJointList = lib.createBakedJointChain(jointList=jointList)
-
     # create baked FK controls
-    baked_FK_Ctrls = lib.createBakedCtrlSystem(jointList=bakedJointList, prefixName=prefixName)
-
-    # create setting group
-    settingGrp = lib.createSettingGrp(prefixName=prefixName)
+    baked_FK_Ctrls = lib.createBakedCtrlSystem(jointList=IK_Bake_JointList['bakeJointList'],
+                                               prefixName=prefixName)
 
     # connect settingGrp extra attr to specified attr
     lib.connectAttr(setGrp=settingGrp,
@@ -69,4 +82,7 @@ def build(jointList, numCtrl, hairSystem=None):
                     FK_CtrlList=FK_Ctrl['FK_Ctrl_List'],
                     FK_CtrlGrp=FK_Ctrl['FK_CtrlGrp_List'][0],
                     Bake_FK_CtrlList=baked_FK_Ctrls['Bake_FK_ctrlList'],
-                    Bake_FK_CtrlGrp=baked_FK_Ctrls['Bake_FK_ctrlGrpList'][0])
+                    Bake_FK_CtrlGrp=baked_FK_Ctrls['Bake_FK_ctrlGrpList'][0],
+                    IKJointList=IK_Bake_JointList['IKJointList'],
+                    bakeJointList=IK_Bake_JointList['bakeJointList'],
+                    originJointList=jointList)

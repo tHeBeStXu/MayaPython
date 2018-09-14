@@ -546,3 +546,18 @@ def addAttr2OriginJoints(originJoints):
     for i in xrange(len(originJoints)):
         if not cmds.attributeQuery('originJoint', node=originJoints[i], exists=1):
             cmds.addAttr(originJoints[i], longName='originJoint', at='message')
+
+
+def findSettingGrp():
+    """
+    find and return setting group for selection
+    :return: list(str), setting groups
+    """
+    transformNodes = cmds.ls(type='transform')
+
+    settingGrps = []
+    for i in transformNodes:
+        if cmds.attributeQuery('IK2Bake', node=i, exists=1):
+            settingGrps.append(i)
+
+    return settingGrps

@@ -473,6 +473,8 @@ def connectAttr(setGrp, hair, follicle, nucleus, inputCrv, outputCrv, IK_Handle,
     :param FK_CtrlGrp: str, first FK control GRP of FK control group list
     :param Bake_FK_CtrlList: list(str), bake FK control list
     :param Bake_FK_CtrlGrp: str, first bake FK control GRP of bake FK control group list
+    :param bakeJointList: list(str), bake_joint_list
+    :param originJointList: list(str), origin_joint_list
     :return: None
     """
     # connect attrs
@@ -512,12 +514,12 @@ def connectAttr(setGrp, hair, follicle, nucleus, inputCrv, outputCrv, IK_Handle,
 
 def createSwitchSystem(originJointList, IKJointList, bakeJointList, settingGrp):
     """
-
-    :param originJointList:
-    :param IKJointList:
-    :param bakeJointList:
-    :param settingGrp:
-    :return:
+    create switch system between IKJointList and bakeJointList
+    :param originJointList: list(str), original joint list
+    :param IKJointList: list(str), IK joint list
+    :param bakeJointList: list(str), bake joint list
+    :param settingGrp: dynamic joint chain setting group
+    :return: None
     """
     for i in xrange(len(originJointList)):
 
@@ -536,6 +538,11 @@ def createSwitchSystem(originJointList, IKJointList, bakeJointList, settingGrp):
 
 
 def addAttr2OriginJoints(originJoints):
+    """
+    add 'originJoint' attr to originJointList
+    :param originJoints: origin joint list
+    :return: None
+    """
     for i in xrange(len(originJoints)):
         if not cmds.attributeQuery('originJoint', node=originJoints[i], exists=1):
             cmds.addAttr(originJoints[i], longName='originJoint', at='message')

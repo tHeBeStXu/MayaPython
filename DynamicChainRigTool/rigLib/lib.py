@@ -444,13 +444,13 @@ def createSettingGrp(prefixName):
     if not cmds.attributeQuery('BakeFKCtrlGrp', node=settingGrp, exists=1):
         cmds.addAttr(settingGrp, longName='BakeFKCtrlGrp', at='message')
 
-    if not cmds.attributeQuery('IKJointList', node=settingGrp, exists=1):
+    if not cmds.attributeQuery('IKJoint', node=settingGrp, exists=1):
         cmds.addAttr(settingGrp, longName='IKJoint', at='message')
 
-    if not cmds.attributeQuery('bakeJointList', node=settingGrp, exists=1):
+    if not cmds.attributeQuery('bakeJoint', node=settingGrp, exists=1):
         cmds.addAttr(settingGrp, longName='bakeJoint', at='message')
 
-    if not cmds.attributeQuery('originJointList', node=settingGrp, exists=1):
+    if not cmds.attributeQuery('originJoint', node=settingGrp, exists=1):
         cmds.addAttr(settingGrp, longName='originJoint', at='message')
 
     cmds.select(cl=1)

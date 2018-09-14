@@ -6,6 +6,8 @@ import logging
 import inspect
 from ..rigLib import rig
 from functools import partial
+from ..rigLib import lib
+reload(lib)
 reload(rig)
 
 
@@ -39,6 +41,8 @@ class MainUI(QtWidgets.QDialog):
         self.setWindowTitle('Dynamic Chain Rigging Tool')
 
         self.buildUI()
+        self.setGrps = []
+        self.currentSetGrp = None
         self.show()
         self.refreshListWidget()
 
@@ -84,6 +88,8 @@ class MainUI(QtWidgets.QDialog):
         # add widget to TabWidget
         self.mainWidget.addTab(self.firstWidget, 'Create')
         self.mainWidget.addTab(self.secondWidget, 'Bake')
+
+        self.mainWidget.currentChanged.connect(self.populateSettingGrp)
 
         #########################
         # build 'Create' widget #
@@ -164,6 +170,7 @@ class MainUI(QtWidgets.QDialog):
 
         # setting group comboBox
         self.setGrpComboBox = QtWidgets.QComboBox()
+        self.setGrpComboBox.currentIndexChanged.connect(self.setCurrentSetGrp)
         self.secondLayout.addWidget(self.setGrpComboBox)
 
         # selection splitter
@@ -182,7 +189,8 @@ class MainUI(QtWidgets.QDialog):
         self.selDynCrvBtn = QtWidgets.QPushButton('Select Dynamic Curve')
         self.selIKCrvBtn = QtWidgets.QPushButton('Select IK Curve')
         self.selOriginJntBtn = QtWidgets.QPushButton('Select Origin Joints')
-        self.selSetGrpBtn = QtWidgets.QPushButton('Select Setting Grp')
+        self.selFollicleBtn = QtWidgets.QPushButton('Select Follicle')
+        self.selSetGrpBtn = QtWidgets.QPushButton('Select Setting Group')
 
         self.selGridLayout.addWidget(self.selHairBtn, 0, 0, 1, 2)
         self.selGridLayout.addWidget(self.selNucleusBtn, 0, 2, 1, 2)
@@ -193,7 +201,20 @@ class MainUI(QtWidgets.QDialog):
         self.selGridLayout.addWidget(self.selDynCrvBtn, 3, 0, 1, 2)
         self.selGridLayout.addWidget(self.selIKCrvBtn, 3, 2, 1, 2)
         self.selGridLayout.addWidget(self.selOriginJntBtn, 4, 0, 1, 2)
-        self.selGridLayout.addWidget(self.selSetGrpBtn, 4, 2, 1, 2)
+        self.selGridLayout.addWidget(self.selFollicleBtn, 4, 2, 1, 2)
+        self.selGridLayout.addWidget(self.selSetGrpBtn, 5, 1, 1, 2)
+
+        self.selHairBtn.clicked.connect(partial(self.selectSpecifiedItem, 'hair'))
+        self.selNucleusBtn.clicked.connect(partial(self.selectSpecifiedItem, 'nucleus'))
+        self.selBakeCtrlBtn.clicked.connect(partial(self.selectSpecifiedItem, 'BakeFKCtrl'))
+        self.selIKCtrlBtn.clicked.connect(partial(self.selectSpecifiedItem, 'FKCtrl'))
+        self.selBakeJntBtn.clicked.connect(partial(self.selectSpecifiedItem, 'bakeJoint'))
+        self.selIKJntBtn.clicked.connect(partial(self.selectSpecifiedItem, 'IKJoint'))
+        self.selDynCrvBtn.clicked.connect(partial(self.selectSpecifiedItem, 'inputCurve'))
+        self.selIKCrvBtn.clicked.connect(partial(self.selectSpecifiedItem, 'outputCurve'))
+        self.selOriginJntBtn.clicked.connect(partial(self.selectSpecifiedItem, 'originJoint'))
+        self.selFollicleBtn.clicked.connect(partial(self.selectSpecifiedItem, 'follicle'))
+        self.selSetGrpBtn.clicked.connect(self.selectCurentSetGrp)
 
         self.secondLayout.addLayout(self.selGridLayout)
 
@@ -205,8 +226,13 @@ class MainUI(QtWidgets.QDialog):
         self.bakeBtnLayout = QtWidgets.QHBoxLayout()
         self.bakeDynamicBtn = QtWidgets.QPushButton('Bake Dynamic on Bake Ctrls')
         self.bakeBtnLayout.addWidget(self.bakeDynamicBtn)
+        self.bakeDynamicBtn.clicked.connect(self.bakeDynamic2Ctrls, )
 
         self.secondLayout.addLayout(self.bakeBtnLayout)
+
+        # to be continued... splitter
+        self.toBeContinuedSplitter = splitter(text='TO BE CONTINUED...')
+        self.secondLayout.addWidget(self.toBeContinuedSplitter)
 
     def setEditLine(self, editLine):
         items = self.listWidget.selectedItems()
@@ -235,6 +261,61 @@ class MainUI(QtWidgets.QDialog):
                   numCtrl=numCtrl,
                   hairSystem=hairSystem)
 
+    def populateSettingGrp(self):
+
+        self.setGrpComboBox.clear()
+        self.setGrps = lib.findSettingGrp()
+        self.setGrpComboBox.addItems(self.setGrps)
+
+    def setCurrentSetGrp(self):
+        self.currentSetGrp = self.setGrpComboBox.currentText()
+
+    def selectSpecifiedItem(self, item):
+        if item not in ['hair', 'nucleus', 'follicle', 'inputCurve', 'outputCurve',
+                        'FKCtrl', 'BakeFKCtrl', 'IKJoint', 'bakeJoint', 'originJoint']:
+            cmds.warning('Unknown item, please check again!')
+
+        listConnection = cmds.listConnections(self.currentSetGrp + '.' + item, source=0, destination=1)
+
+        if listConnection:
+            if len(listConnection) > 2:
+                listConnection.sort()
+                cmds.select(cl=1)
+                for i in listConnection:
+                    cmds.select(i, add=1)
+
+            else:
+                cmds.select(listConnection[0])
+
+    def bakeDynamic2Ctrls(self):
+        """
+        bake dynamic to the Baked_FK_controls
+        :return: None
+        """
+        originJointList = cmds.listConnections(self.currentSetGrp + '.originJoint', source=0, destination=1)
+        if originJointList:
+            originJointList.sort()
+        bakeFKCtrlList = cmds.listConnections(self.currentSetGrp + '.BakeFKCtrl', source=0, destination=1)
+        if bakeFKCtrlList:
+            bakeFKCtrlList.sort()
+
+        animMinTime = cmds.playbackOptions(min=1, q=1)
+        animMaxTime = cmds.playbackOptions(max=1, q=1)
+
+        for i in xrange(int(animMaxTime - animMinTime) + 1):
+            cmds.currentTime(animMinTime + i)
+
+            for j in xrange(len(originJointList) - 1):
+                cmds.matchTransform(bakeFKCtrlList[j], originJointList[j], pos=1, rot=1)
+                for at in ['translateX', 'translateY', 'translateZ', 'rotateX', 'rotateY', 'rotateZ']:
+                    cmds.setKeyframe(bakeFKCtrlList[j], at=at, time=cmds.currentTime(q=1))
+
+            print 'current time is: ' + str(animMinTime + i)
+
+        cmds.select(cl=1)
+
+    def selectCurentSetGrp(self):
+        cmds.select(self.currentSetGrp)
 
 class splitter(QtWidgets.QWidget):
     def __init__(self, text=None):

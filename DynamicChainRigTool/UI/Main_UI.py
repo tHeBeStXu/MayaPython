@@ -55,6 +55,7 @@ class MainUI(QtWidgets.QDialog):
 
         joints = []
         hairs = []
+        nucleus = []
 
         if self.jointCheck.isChecked():
             joints = cmds.ls(type='joint')
@@ -62,7 +63,10 @@ class MainUI(QtWidgets.QDialog):
         if self.hairCheck.isChecked():
             hairs = cmds.ls(type='hairSystem')
 
-        returnList = joints + hairs
+        if self.nucleusCheck.isChecked():
+            nucleus = cmds.ls(type='nucleus')
+
+        returnList = joints + hairs + nucleus
 
         if returnList:
             if len(returnList) > 1:
@@ -133,13 +137,16 @@ class MainUI(QtWidgets.QDialog):
         filterLable = QtWidgets.QLabel('Filter:    ')
         self.jointCheck = QtWidgets.QCheckBox('Joint')
         self.hairCheck = QtWidgets.QCheckBox('Hair')
+        self.nucleusCheck = QtWidgets.QCheckBox('Nucleus')
 
         filterLayout.addWidget(filterLable)
         filterLayout.addWidget(self.jointCheck)
         filterLayout.addWidget(self.hairCheck)
+        filterLayout.addWidget(self.nucleusCheck)
 
         self.jointCheck.stateChanged.connect(self.refreshListWidget)
         self.hairCheck.stateChanged.connect(self.refreshListWidget)
+        self.nucleusCheck.stateChanged.connect(self.refreshListWidget)
 
         self.firstLayout.addWidget(selectionWidget)
 

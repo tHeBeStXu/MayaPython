@@ -5,7 +5,7 @@ reload(lib)
 reload(name)
 
 
-def build(jointList, numCtrl, hairSystem=None):
+def build(jointList, numCtrl, hairSystem=None, nucleus=None):
     # get the prefixName
     prefixName = name.removeSuffix(jointList[0])
 
@@ -41,14 +41,20 @@ def build(jointList, numCtrl, hairSystem=None):
     # create hairSystem by inputCrv
     inputCrvShape = cmds.listRelatives(inputCrv, c=1, p=0, s=1)[0]
 
-    if not hairSystem:
+    if not hairSystem and not nucleus:
         hair_nucleus = lib.createHairSys(prefixName=prefixName)
-    else:
+    elif not nucleus and hairSystem:
         hair_nucleus = {}
         hair_nucleus['hairTransNode'] = cmds.listRelatives(hairSystem, s=0, p=1, c=0, type='transform')
         hair_nucleus['hairShape'] = hairSystem
         hair_nucleus['nucleus'] = cmds.listConnections(hairSystem + '.startFrame', source=1, destination=0)[0]
-
+    elif not hairSystem and nucleus:
+        hair_nucleus = lib.createHairSys(prefixName=prefixName, nucleus=nucleus)
+    else:
+        hair_nucleus = {}
+        hair_nucleus['hairTransNode'] = cmds.listRelatives(hairSystem, s=0, p=1, c=0, type='transform')
+        hair_nucleus['hairShape'] = hairSystem
+        hair_nucleus['nucleus'] = nucleus
     # create and add follicle
     follicle_outputCrv = lib.createFollicle(curveShape=inputCrvShape,
                                             prefixName=prefixName)

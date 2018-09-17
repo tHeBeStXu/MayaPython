@@ -237,6 +237,27 @@ class MainUI(QtWidgets.QDialog):
 
         self.secondLayout.addLayout(self.bakeBtnLayout)
 
+        # replace splitter
+        self.replaceSplitter = splitter(text='REPLACE')
+        self.secondLayout.addWidget(self.replaceSplitter)
+
+        # replace layout
+        self.replaceLayout = QtWidgets.QGridLayout()
+
+        self.repHairComBox = QtWidgets.QComboBox()
+        self.repHairBtn = QtWidgets.QPushButton('Replace')
+        self.repHairBtn.clicked.connect(self.replaceHairSystem)
+        self.repNecleusComBox = QtWidgets.QComboBox()
+        self.repNecleusBtn = QtWidgets.QPushButton('Replace')
+        # self.repNecleusBtn.clicked.connect()
+
+        self.replaceLayout.addWidget(self.repHairComBox, 0, 0, 1, 2)
+        self.replaceLayout.addWidget(self.repHairBtn, 0, 2, 1, 1)
+        self.replaceLayout.addWidget(self.repNecleusComBox, 1, 0, 1, 2)
+        self.replaceLayout.addWidget(self.repNecleusBtn, 1, 2, 1, 1)
+
+        self.secondLayout.addLayout(self.replaceLayout)
+
         # to be continued... splitter
         self.toBeContinuedSplitter = splitter(text='TO BE CONTINUED...')
         self.secondLayout.addWidget(self.toBeContinuedSplitter)
@@ -277,12 +298,48 @@ class MainUI(QtWidgets.QDialog):
     def setCurrentSetGrp(self):
         self.currentSetGrp = self.setGrpComboBox.currentText()
 
+        # hair
+        self.repHairComBox.clear()
+
+        hairSystemList = cmds.ls(type='hairSystem')
+        connectedHair = cmds.listConnections(self.currentSetGrp + '.hair', source=0, destination=1,
+                                             type='hairSystem', shapes=1)
+
+        self.repHairComBox.addItems(connectedHair)
+
+        for i in hairSystemList:
+            if i not in connectedHair:
+                self.repHairComBox.addItem(i)
+
+        # add item new
+        self.repHairComBox.addItem('New...')
+
+        # necleus
+        self.repNecleusComBox.clear()
+
+        nucleusList = cmds.ls(type='nucleus')
+        connectedNucleus = cmds.listConnections(self.currentSetGrp + '.nucleus', source=0, destination=1,
+                                                type='nucleus')
+
+        self.repNecleusComBox.addItems(connectedNucleus)
+
+        for i in nucleusList:
+            if i not in connectedNucleus:
+                self.repNecleusComBox.addItem(i)
+
+        # add item new
+        self.repNecleusComBox.addItem('New...')
+
+
     def selectSpecifiedItem(self, item):
         if item not in ['hair', 'nucleus', 'follicle', 'inputCurve', 'outputCurve',
                         'FKCtrl', 'BakeFKCtrl', 'IKJoint', 'bakeJoint', 'originJoint']:
             cmds.warning('Unknown item, please check again!')
 
-        listConnection = cmds.listConnections(self.currentSetGrp + '.' + item, source=0, destination=1)
+        if item in ['hair', 'follicle']:
+            listConnection = cmds.listConnections(self.currentSetGrp + '.' + item, source=0, destination=1, shapes=1)
+        else:
+            listConnection = cmds.listConnections(self.currentSetGrp + '.' + item, source=0, destination=1)
 
         if listConnection:
             if len(listConnection) > 2:
@@ -323,6 +380,49 @@ class MainUI(QtWidgets.QDialog):
 
     def selectCurentSetGrp(self):
         cmds.select(self.currentSetGrp)
+
+    def replaceHairSystem(self):
+
+        # doesn't change
+
+        # disconnect from original hair system
+        currentFollicle = cmds.listConnections(self.currentSetGrp + '.follicle', source=0, destination=1, shapes=1)[0]
+
+        curPosConnections = cmds.listConnections(currentFollicle + '.currentPosition', source=1, destination=0, plugs=1)
+        outHairConnections = cmds.listConnections(currentFollicle + '.outHair', source=0, destination=1, plugs=1)
+
+        if curPosConnections:
+            for i in curPosConnections:
+                cmds.disconnectAttr(i, currentFollicle + '.currentPosition')
+
+        if outHairConnections:
+            for i in outHairConnections:
+                cmds.disconnectAttr(currentFollicle + '.outHair', i)
+
+        currentHairSystemAttr = cmds.listConnections(self.currentSetGrp + '.hair', source=0, destination=1, plugs=1)[0]
+        currentNucleusAttr = cmds.listConnections(self.currentSetGrp + '.nucleus', source=0, destination=1, plugs=1)[0]
+
+        cmds.disconnectAttr(self.currentSetGrp + '.hair', currentHairSystemAttr)
+        cmds.disconnectAttr(self.currentSetGrp + '.nucleus', currentNucleusAttr)
+
+
+        # add current follicle to specified hair system
+
+        lib.addFollicle(follicleShape=currentFollicle, hairShape=self.repHairComBox.currentText())
+
+        hairIndex = cmds.getAttr(self.repHairComBox.currentText() + '.hair', size=1)
+        targetNucleus = cmds.listConnections(self.repHairComBox.currentText() + '.startFrame',
+                                             source=1, destination=0)[0]
+
+        nucleusIndex = cmds.getAttr(targetNucleus + '.nucleus', size=1)
+
+        cmds.connectAttr(self.currentSetGrp + '.hair',
+                         self.repHairComBox.currentText() + '.hair[%s]' % (str(hairIndex)), f=1)
+        cmds.connectAttr(self.currentSetGrp + '.nucleus',
+                         targetNucleus + '.nucleus[%s]' % (str(nucleusIndex)), f=1)
+
+        # new...
+
 
 class splitter(QtWidgets.QWidget):
     def __init__(self, text=None):

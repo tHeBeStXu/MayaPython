@@ -202,7 +202,7 @@ def createHairSys(prefixName, nucleus=None):
     # hair System
     hairShape = cmds.createNode('hairSystem', n=prefixName + '_hairSysShape')
     hairTransNode = cmds.listRelatives(hairShape, p=1, c=0, s=0)[0]
-    hairTransNode = cmds.rename(hairTransNode, prefixName + '_hairSysNode')
+    hairTransNode = cmds.rename(hairTransNode, prefixName + '_hairSysNode_#')
     hairShape = cmds.listRelatives(hairTransNode, c=1, p=0, s=1)[0]
     cmds.select(cl=1)
 
@@ -242,7 +242,7 @@ def createNucleus(prefixName):
     :return: nucleus
     """
 
-    nucleus = cmds.createNode('nucleus', n=prefixName + '_nucleus')
+    nucleus = cmds.createNode('nucleus', n=prefixName + '_nucleus_#')
     cmds.connectAttr('time1.outTime', nucleus + '.currentTime', f=1)
 
     # add nucleus attr

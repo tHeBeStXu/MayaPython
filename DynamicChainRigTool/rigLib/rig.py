@@ -6,6 +6,14 @@ reload(name)
 
 
 def build(jointList, numCtrl, hairSystem=None, nucleus=None):
+    """
+    build the dynamic chain with parameters
+    :param jointList: list(str), list of joints.
+    :param numCtrl: int, number of FK controls
+    :param hairSystem: str, specified hair system shape
+    :param nucleus: str, specified nucleus node
+    :return: None
+    """
     # get the prefixName
     prefixName = name.removeSuffix(jointList[0])
 

@@ -261,11 +261,22 @@ def addFollicle(follicleShape, hairShape):
     :param str, hairShape: hair system shape node
     :return: None
     """
-    hairIndex = cmds.getAttr(hairShape + '.inputHair', size=1)
-    input_hair = '%s.inputHair[%s]' % (hairShape, hairIndex)
-    output_hair = '%s.outputHair[%s]' % (hairShape, hairIndex)
-    cmds.connectAttr(follicleShape + '.outHair', input_hair, f=1)
-    cmds.connectAttr(output_hair, follicleShape + '.currentPosition', f=1)
+    # find a available index number for connections
+    hairIndex = 0
+
+    while hairIndex < 10000:
+        input_hair = '%s.inputHair[%s]' % (hairShape, hairIndex)
+        output_hair = '%s.outputHair[%s]' % (hairShape, hairIndex)
+
+        inputAttrs = cmds.listConnections(input_hair, plugs=1)
+        outputAttrs = cmds.listConnections(output_hair, plugs=1)
+
+        if not inputAttrs:
+            if not outputAttrs:
+                cmds.connectAttr(follicleShape + '.outHair', input_hair, f=1)
+                cmds.connectAttr(output_hair, follicleShape + '.currentPosition', f=1)
+                break
+        hairIndex += 1
 
     cmds.select(cl=1)
 

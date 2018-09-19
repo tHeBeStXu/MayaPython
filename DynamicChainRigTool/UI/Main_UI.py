@@ -525,11 +525,6 @@ class MainUI(QtWidgets.QDialog):
                                                       source=0, destination=1, plugs=1)[0]
             cmds.disconnectAttr(self.currentSetGrp + '.nucleus', currentNucleusAttr)
 
-            otherConnectedNucleusAttr = cmds.listConnections(currentNucleus + '.nucleus',
-                                                             source=1, destination=0, plugs=1)
-            for i in otherConnectedNucleusAttr:
-                cmds.disconnectAttr(i, currentNucleus + '.nucleus')
-
             # connect specified nucleus
             inputActiveIndex = cmds.getAttr(self.repNecleusComBox.currentText() + '.inputActive', size=1)
             inputActiveStartIndex = cmds.getAttr(self.repNecleusComBox.currentText() + '.inputActiveStart', size=1)
@@ -550,10 +545,6 @@ class MainUI(QtWidgets.QDialog):
 
             cmds.connectAttr(self.currentSetGrp + '.nucleus',
                              self.repNecleusComBox.currentText() + '.nucleus[%s]' % (str(nucleusIndex)), f=1)
-
-            for i in otherConnectedNucleusAttr:
-                index = cmds.getAttr(self.repNecleusComBox.currentText() + '.nucleus', size=1)
-                cmds.connectAttr(i, self.repNecleusComBox.currentText() + '.nucleus[%s]' % (str(index)), f=1)
 
         else:
             # disconnect original nucleus

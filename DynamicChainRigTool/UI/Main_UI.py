@@ -430,8 +430,10 @@ class MainUI(QtWidgets.QDialog):
                 for i in outHairConnections:
                     cmds.disconnectAttr(currentFollicle + '.outHair', i)
 
-            currentHairSystemAttr = cmds.listConnections(self.currentSetGrp + '.hair', source=0, destination=1, plugs=1)[0]
-            currentNucleusAttr = cmds.listConnections(self.currentSetGrp + '.nucleus', source=0, destination=1, plugs=1)[0]
+            currentHairSystemAttr = cmds.listConnections(self.currentSetGrp + '.hair',
+                                                         source=0, destination=1, plugs=1)[0]
+            currentNucleusAttr = cmds.listConnections(self.currentSetGrp + '.nucleus',
+                                                      source=0, destination=1, plugs=1)[0]
 
             cmds.disconnectAttr(self.currentSetGrp + '.hair', currentHairSystemAttr)
             cmds.disconnectAttr(self.currentSetGrp + '.nucleus', currentNucleusAttr)

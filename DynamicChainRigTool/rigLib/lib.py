@@ -572,3 +572,49 @@ def findSettingGrp():
             settingGrps.append(i)
 
     return settingGrps
+
+
+def findSingleAvailableIndex(attr):
+    """
+    find the first free array index of multi-attribute
+    :param attr: str, attribute without index
+    :return: int, index of free array.
+    """
+    index = 0
+
+    while index < 10000:
+        fullAttr = attr + '[%s]' % (str(index))
+
+        inputAttr = cmds.listConnections(fullAttr, plugs=1)
+
+        if not inputAttr:
+            return index
+
+        index += 1
+
+
+def findTribleAvailableIndex(firstAttr, secondAttr, thirdAttr):
+    """
+    find the common free array index of 3 multi-attributes.
+    :param firstAttr: str, first attribute without index.
+    :param secondAttr:str, second attribute without index.
+    :param thirdAttr:str, third attribute without index.
+    :return:int, index of free array.
+    """
+    index = 0
+
+    while index < 10000:
+        firstFullAttr = firstAttr + '[%s]' % (str(index))
+        secondFullAttr = secondAttr + '[%s]' % (str(index))
+        thirdFullAttr = thirdAttr + '[%s]' % (str(index))
+
+        firstInputAttr = cmds.listConnections(firstFullAttr, plugs=1)
+        secondInputAttr = cmds.listConnections(secondFullAttr, plugs=1)
+        thirdInputAttr = cmds.listConnections(thirdFullAttr, plugs=1)
+
+        if not firstInputAttr:
+            if not secondInputAttr:
+                if not thirdInputAttr:
+                    return index
+
+        index += 1

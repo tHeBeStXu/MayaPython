@@ -443,11 +443,12 @@ class MainUI(QtWidgets.QDialog):
 
             lib.addFollicle(follicleShape=currentFollicle, hairShape=self.repHairComBox.currentText())
 
-            hairIndex = cmds.getAttr(self.repHairComBox.currentText() + '.hair', size=1)
-            targetNucleus = cmds.listConnections(self.repHairComBox.currentText() + '.startFrame',
-                                                 source=1, destination=0)[0]
+            # hairIndex = cmds.getAttr(self.repHairComBox.currentText() + '.hair', size=1)
+            hairIndex = lib.findSingleAvailableIndex(attr=self.repHairComBox.currentText() + '.hair')
+            targetNucleus = cmds.listConnections(self.repHairComBox.currentText() + '.currentState', source=0, destination=1)[0]
 
-            nucleusIndex = cmds.getAttr(targetNucleus + '.nucleus', size=1)
+            # nucleusIndex = cmds.getAttr(targetNucleus + '.nucleus', size=1)
+            nucleusIndex = lib.findSingleAvailableIndex(attr=targetNucleus + '.nucleus')
 
             cmds.connectAttr(self.currentSetGrp + '.hair',
                              self.repHairComBox.currentText() + '.hair[%s]' % (str(hairIndex)), f=1)
@@ -473,25 +474,35 @@ class MainUI(QtWidgets.QDialog):
                 for i in outHairConnections:
                     cmds.disconnectAttr(currentFollicle + '.outHair', i)
 
-            currentHairSystemAttr = cmds.listConnections(self.currentSetGrp + '.hair', source=0, destination=1, plugs=1)[0]
-            currentNucleus = cmds.listConnections(self.currentSetGrp + '.nucleus', source=0, destination=1)[0]
+            currentHairSystemAttr = cmds.listConnections(self.currentSetGrp + '.hair',
+                                                         source=0, destination=1, plugs=1)[0]
 
             cmds.disconnectAttr(self.currentSetGrp + '.hair', currentHairSystemAttr)
 
-            # create new hair system
-            hairNucleus = lib.createHairSys(prefixName='New', nucleus=currentNucleus)
+            currentNucleusAttr = cmds.listConnections(self.currentSetGrp + '.nucleus',
+                                                      source=0, destination=1, plugs=1)[0]
+            cmds.disconnectAttr(self.currentSetGrp + '.nucleus', currentNucleusAttr)
+
+            # create new hair system with new nucleus
+            hairNucleus = lib.createHairSys(prefixName='New')
 
             lib.addFollicle(follicleShape=currentFollicle, hairShape=hairNucleus['hairShape'])
 
-            hairIndex = cmds.getAttr(hairNucleus['hairShape'] + '.hair', size=1)
+            # hairIndex = cmds.getAttr(hairNucleus['hairShape'] + '.hair', size=1)
+            hairIndex = lib.findSingleAvailableIndex(attr=hairNucleus['hairShape'] + '.hair')
 
             cmds.connectAttr(self.currentSetGrp + '.hair',
                              hairNucleus['hairShape'] + '.hair[%s]' % (str(hairIndex)), f=1)
+
+            nucleusIndex = lib.findSingleAvailableIndex(attr=hairNucleus['nucleus'] + '.nucleus')
+            cmds.connectAttr(self.currentSetGrp + '.nucleus',
+                             hairNucleus['nucleus'] + '.nucleus[%s]' % (str(nucleusIndex)), f=1)
 
             # clean hierarchy
             follicleTransNode = cmds.listRelatives(currentFollicle, c=0, p=1, path=1)[0]
             targetParent = cmds.listRelatives(follicleTransNode, c=0, p=1, path=1)[0]
             cmds.parent(hairNucleus['hairTransNode'], targetParent)
+            cmds.parent(hairNucleus['nucleus'], targetParent)
 
             cmds.select(cl=1)
 
@@ -528,21 +539,25 @@ class MainUI(QtWidgets.QDialog):
             cmds.disconnectAttr(self.currentSetGrp + '.nucleus', currentNucleusAttr)
 
             # connect specified nucleus
-            inputActiveIndex = cmds.getAttr(self.repNecleusComBox.currentText() + '.inputActive', size=1)
-            inputActiveStartIndex = cmds.getAttr(self.repNecleusComBox.currentText() + '.inputActiveStart', size=1)
-            outputObjectIndex = cmds.getAttr(self.repNecleusComBox.currentText() + '.outputObjects', size=1)
+            index = lib.findTribleAvailableIndex(firstAttr=self.repNecleusComBox.currentText() + '.inputActive',
+                                                 secondAttr=self.repNecleusComBox.currentText() + '.inputActiveStart',
+                                                 thirdAttr=self.repNecleusComBox.currentText() + '.outputObjects')
+            # inputActiveIndex = cmds.getAttr(self.repNecleusComBox.currentText() + '.inputActive', size=1)
+            # inputActiveStartIndex = cmds.getAttr(self.repNecleusComBox.currentText() + '.inputActiveStart', size=1)
+            # outputObjectIndex = cmds.getAttr(self.repNecleusComBox.currentText() + '.outputObjects', size=1)
 
-            nucleusIndex = cmds.getAttr(self.repNecleusComBox.currentText() + '.nucleus', size=1)
+            # nucleusIndex = cmds.getAttr(self.repNecleusComBox.currentText() + '.nucleus', size=1)
+            nucleusIndex = lib.findSingleAvailableIndex(self.repNecleusComBox.currentText() + '.nucleus')
 
-            cmds.connectAttr(self.repNecleusComBox.currentText() + '.outputObjects[%s]' % (str(outputObjectIndex)),
+            cmds.connectAttr(self.repNecleusComBox.currentText() + '.outputObjects[%s]' % (str(index)),
                              currentHairSystem + '.nextState', f=1)
             cmds.connectAttr(self.repNecleusComBox.currentText() + '.startFrame',
                              currentHairSystem + '.startFrame', f=1)
 
             cmds.connectAttr(currentHairSystem + '.currentState',
-                             self.repNecleusComBox.currentText() + '.inputActive[%s]' % (str(inputActiveIndex)), f=1)
+                             self.repNecleusComBox.currentText() + '.inputActive[%s]' % (str(index)), f=1)
             cmds.connectAttr(currentHairSystem + '.startState',
-                             self.repNecleusComBox.currentText() + '.inputActiveStart[%s]' % (str(inputActiveStartIndex)),
+                             self.repNecleusComBox.currentText() + '.inputActiveStart[%s]' % (str(index)),
                              f=1)
 
             cmds.connectAttr(self.currentSetGrp + '.nucleus',

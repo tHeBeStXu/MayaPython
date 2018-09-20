@@ -15,6 +15,7 @@ logging.basicConfig()
 logger = logging.getLogger('DynamicChainRigTool')
 logger.setLevel(logging.DEBUG)
 
+
 def getMayaWindow():
     """
     get the mayaMainWindow as parent
@@ -438,14 +439,14 @@ class MainUI(QtWidgets.QDialog):
             cmds.disconnectAttr(self.currentSetGrp + '.hair', currentHairSystemAttr)
             cmds.disconnectAttr(self.currentSetGrp + '.nucleus', currentNucleusAttr)
 
-
             # add current follicle to specified hair system
 
             lib.addFollicle(follicleShape=currentFollicle, hairShape=self.repHairComBox.currentText())
 
             # hairIndex = cmds.getAttr(self.repHairComBox.currentText() + '.hair', size=1)
             hairIndex = lib.findSingleAvailableIndex(attr=self.repHairComBox.currentText() + '.hair')
-            targetNucleus = cmds.listConnections(self.repHairComBox.currentText() + '.currentState', source=0, destination=1)[0]
+            targetNucleus = cmds.listConnections(self.repHairComBox.currentText() + '.currentState',
+                                                 source=0, destination=1)[0]
 
             # nucleusIndex = cmds.getAttr(targetNucleus + '.nucleus', size=1)
             nucleusIndex = lib.findSingleAvailableIndex(attr=targetNucleus + '.nucleus')
@@ -583,8 +584,7 @@ class MainUI(QtWidgets.QDialog):
                                                       source=0, destination=1, plugs=1)[0]
             cmds.disconnectAttr(self.currentSetGrp + '.nucleus', currentNucleusAttr)
 
-            #create and connect
-
+            # create and connect
             createdNucleus = lib.createNucleus(prefixName='New')
 
             inputActiveIndex = cmds.getAttr(createdNucleus + '.inputActive', size=1)
@@ -607,7 +607,8 @@ class MainUI(QtWidgets.QDialog):
                              createdNucleus + '.nucleus[%s]' % (str(nucleusIndex)), f=1)
 
             # clean hierarchy
-            currentFollicle = cmds.listConnections(self.currentSetGrp + '.follicle', source=0, destination=1, shapes=1)[0]
+            currentFollicle = cmds.listConnections(self.currentSetGrp + '.follicle',
+                                                   source=0, destination=1, shapes=1)[0]
             follicleTransNode = cmds.listRelatives(currentFollicle, c=0, p=1, path=1)[0]
             targetParent = cmds.listRelatives(follicleTransNode, c=0, p=1, path=1)[0]
 

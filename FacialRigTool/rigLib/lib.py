@@ -21,10 +21,14 @@ def createJoint(prefixName,
         if not cmds.attributeQuery('slaveJoint', node=newJnt, exists=1):
             cmds.addAttr(newJnt, longName='slaveJoint', at='message')
 
+        if not cmds.attributeQuery(prefixName, node=newJnt, exists=1):
+            cmds.addAttr(newJnt, longName=prefixName, at='message')
+
     return newJnt
 
 
-def joint2Curve(prefixName,
+def joint2Curve(prefix,
+                partName,
                 curve,
                 numJnt=2,
                 addSlaveAttr=True):
@@ -41,9 +45,9 @@ def joint2Curve(prefixName,
 
     for i in range(numJnt):
 
-        newJnt = createJoint(prefixName=prefixName, jointNum=str(i), slaveAttr=addSlaveAttr)
+        newJnt = createJoint(prefixName=prefix + partName, jointNum=str(i), slaveAttr=addSlaveAttr)
 
-        motionPath = cmds.pathAnimation(curve, newJnt, n=prefixName + '_motionPath', fractionMode=1, follow=1,
+        motionPath = cmds.pathAnimation(curve, newJnt, n=prefix + partName + '_motionPath', fractionMode=1, follow=1,
                                         followAxis='x', upAxis='z', worldUpType='scene',
                                         inverseUp=0, inverseFront=0, bank=0)
         cmds.cutKey(motionPath + '.u', time=())

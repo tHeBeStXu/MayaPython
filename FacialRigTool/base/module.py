@@ -151,26 +151,21 @@ class Module():
         :return None
         """
         self.topGrp = cmds.group(n=prefix + rigPartName + 'Module_grp', em=1)
-        """
-
-        self.controlGrp = cmds.group(n=prefix + rigPartName + 'Controls_grp',
-                                     em=1, p=self.topGrp)
-        self.jointsGrp = cmds.group(n=prefix + rigPartName + 'Joints_grp',
-                                    em=1, p=self.topGrp)
-        self.partsGrp = cmds.group(n=prefix + rigPartName + 'Parts_grp',
-                                   em=1, p=self.topGrp)
-        """
         self.dontTouchGrp = cmds.group(n=prefix + rigPartName + 'Dont_Touch_Grp',
                                        em=1, p=self.topGrp)
 
-
-        # cmds.hide(self.partsGrp, self.partsNoTransGrp)
         cmds.hide(self.dontTouchGrp)
 
         cmds.setAttr(self.dontTouchGrp + '.it', 0, l=1)
 
-        # parent module
+        # query and add attribute
+        if not cmds.attributeQuery('slaveJoint', node=self.topGrp, exists=1):
+            cmds.addAttr(self.topGrp, longName='slaveJoint', at='message')
 
+        if not cmds.attributeQuery(prefix + rigPartName + '_Jnt', node=self.topGrp, exists=1):
+            cmds.addAttr(self.topGrp, longName=prefix + rigPartName + '_Jnt', at='message')
+
+        # parent module
         if baseObject:
 
             cmds.parent(self.topGrp, baseObject.Master_Ctrl.C)

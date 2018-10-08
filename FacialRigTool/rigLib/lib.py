@@ -65,3 +65,4 @@ def joint2Curve(prefix,
         jointList.append(newJnt)
 
     return jointList
+

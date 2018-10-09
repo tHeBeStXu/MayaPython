@@ -1,8 +1,7 @@
 import maya.cmds as cmds
 
 
-def createShape(prefix='',
-                scale=1.0):
+def createShape(prefix=''):
     """
     create a unit slider for blend operation
     :param prefix: str, prefix of the control
@@ -17,7 +16,6 @@ def createShape(prefix='',
     cmds.setAttr(parentCrvShape[0] + '.template', 1)
 
     cmds.parent(Ctrl, CtrlBox)
-    cmds.setAttr(CtrlBox + '.s', scale, scale, scale)
     cmds.makeIdentity(CtrlBox, apply=1, t=1, r=1, s=1, n=0)
     cmds.select(cl=1)
 

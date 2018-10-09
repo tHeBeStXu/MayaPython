@@ -13,3 +13,8 @@ import SliderControl
 import SpikeCrossControl
 import unitSliderControl
 import squareControl
+import verticalSliderControl
+import horizontalSliderControl
+import planeSliderControl
+
+

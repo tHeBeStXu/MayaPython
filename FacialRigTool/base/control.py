@@ -97,6 +97,21 @@ class Control():
             ctrlObject = cmds.listRelatives(ctrlBox, children=1, parent=0, s=0)
             ctrlObject = ctrlObject[1]
 
+        elif shape == 'verticalSliderControl':
+            ctrlList = controlShape.verticalSliderControl.createShape(prefix=prefix + rigPartName)
+            ctrlBox = ctrlList[1]
+            ctrlObject = cmds.listRelatives(ctrlList[0], children=1, parent=0, s=0, type='transform')[0]
+
+        elif shape == 'horizontalSliderControl':
+            ctrlList = controlShape.horizontalSliderControl.createShape(prefix=prefix + rigPartName)
+            ctrlBox = ctrlList[1]
+            ctrlObject = cmds.listRelatives(ctrlList[0], c=1, p=0, s=0, type='transform')[0]
+
+        elif shape == 'planeSliderControl':
+            ctrlList = controlShape.planeSliderControl.createShape(prefix=prefix + rigPartName)
+            ctrlBox=ctrlList[1]
+            ctrlObject = cmds.listRelatives(ctrlList[0], c=1, p=0, s=0, type='transform')[0]
+
         elif shape == 'squareControl':
             ctrlObject = controlShape.squareControl.createShape(prefix=prefix + rigPartName + '_Ctrl')
 
@@ -105,14 +120,15 @@ class Control():
                                      normal=circleNormal, radius=1.0)[0]
 
         # rotate the ctrlObject
-        if shape in ['circle', 'circleX', 'circleY', 'circleZ']:
+        if shape in ['circle', 'circleX', 'circleY', 'circleZ', 'verticalSliderControl', 'horizontalSliderControl',
+                     'planeSliderControl']:
             pass
         else:
             self.rotate_Ctrl(ctrlObject=ctrlObject, shape=shape, axis=axis)
 
         # ctrl offset group
         ctrlOffset = cmds.group(n=prefix + rigPartName + '_CtrlGrp', em=1)
-        if shape in ['unitSliderControl']:
+        if shape in ['unitSliderControl', 'verticalSliderControl', 'horizontalSliderControl', 'planeSliderControl']:
             cmds.parent(ctrlBox, ctrlOffset)
         else:
             cmds.parent(ctrlObject, ctrlOffset)
@@ -121,6 +137,7 @@ class Control():
         cmds.setAttr(ctrlOffset + '.s', scale, scale, scale)
 
         # color control
+        print ctrlObject
         ctrlShapes = cmds.listRelatives(ctrlObject, s=1)
 
         [cmds.setAttr(s + '.ove', 1) for s in ctrlShapes]

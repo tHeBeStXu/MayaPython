@@ -66,3 +66,44 @@ def joint2Curve(prefix,
 
     return jointList
 
+
+def createCurve(curveList,
+                rebuild=True,
+                spans=4):
+    """
+    Create a fine curve from selection
+    :param curveList:
+    :param rebuild: bool, whether rebu
+    :return:
+    """
+    # create each line
+    curves = []
+    if curveList and len(curveList) >= 2:
+        for crv in curveList:
+            curve = cmds.polyToCurve(crv, form=0, degree=1, ch=0)[0]
+            curves.append(curve)
+
+    else:
+        cmds.error('Please select at least 2 lines!')
+        return
+    # attach each line and clean the trash lines
+    outputCurve = []
+    if curves:
+        outputCurve = cmds.attachCurve(curves[:], ch=0, method=0, kmk=0)
+        print outputCurve
+
+    trashGrp = cmds.group(em=1)
+    for i in xrange(len(outputCurve) - 1):
+        cmds.parent(outputCurve[i+1], trashGrp)
+
+    cmds.delete(trashGrp)
+
+    # if needed, rebuild the attached line
+    finalCurve = None
+
+    if rebuild and spans:
+        finalCurve = cmds.rebuildCurve(outputCurve[0], ch=0, degree=3, spans=spans, end=1, rebuildType=0)
+    else:
+        finalCurve = outputCurve[0]
+
+    return finalCurve

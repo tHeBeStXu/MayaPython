@@ -9,13 +9,14 @@ def createJoint(prefixName,
                 jointNum,
                 slaveAttr=True):
     """
-    create
-    :param prefixName:
-    :param jointNum:
-    :param slaveAttr:
-    :return:
+    create new joint and add extra attributes.
+    :param prefixName: str, prefix name of the joint
+    :param jointNum: str, joint suffix number
+    :param slaveAttr: bool, whether create slaver attr(for generate and connect to the slave joint) and prefix attr(for
+                            connecting to the module group)
+    :return: created new joint
     """
-    newJnt = cmds.joint(n=prefixName + '_Jnt_' + jointNum)
+    newJnt = cmds.joint(n=prefixName + '_Jnt_' + jointNum, radius=0.2)
 
     if slaveAttr:
         if not cmds.attributeQuery('slaveJoint', node=newJnt, exists=1):
@@ -31,7 +32,18 @@ def joint2Curve(prefix,
                 partName,
                 curve,
                 numJnt=2,
-                addSlaveAttr=True):
+                addSlaveAttr=True,
+                zeroRot=True):
+    """
+    create joints along the curve
+    :param prefix: str, prefix of the joint
+    :param partName: str, rig part name of the joint
+    :param curve: str, along the curve
+    :param numJnt: int, number of the joints
+    :param addSlaveAttr: bool, whether add slave joint attr
+    :param zeroRot: bool, whether zero the rotation of the joint
+    :return: list(str), return the create joint list
+    """
 
     if numJnt < 2:
         cmds.error('The numJnt must be larger than 2!')
@@ -64,6 +76,9 @@ def joint2Curve(prefix,
 
         jointList.append(newJnt)
 
+        if zeroRot:
+            cmds.setAttr(newJnt + '.r', 0, 0, 0)
+
     return jointList
 
 
@@ -72,9 +87,10 @@ def createCurve(curveList,
                 spans=4):
     """
     Create a fine curve from selection
-    :param curveList:
-    :param rebuild: bool, whether rebu
-    :return:
+    :param curveList: list(str), curve list to created new curve.
+    :param rebuild: bool, whether rebuild the created line or not.
+    :param spans: int, if rebuild the created line, spans of the rebuilded curve.
+    :return: str, new curve.
     """
     # create each line
     curves = []
@@ -90,7 +106,6 @@ def createCurve(curveList,
     outputCurve = []
     if curves:
         outputCurve = cmds.attachCurve(curves[:], ch=0, method=0, kmk=0)
-        print outputCurve
 
     trashGrp = cmds.group(em=1)
     for i in xrange(len(outputCurve) - 1):

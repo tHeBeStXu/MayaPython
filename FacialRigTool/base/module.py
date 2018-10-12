@@ -150,7 +150,7 @@ class Module():
         :param baseObject:instance of base.module.Base() class
         :return None
         """
-        self.topGrp = cmds.group(n=prefix + rigPartName + 'Module_grp', em=1)
+        self.topGrp = cmds.group(n=prefix + rigPartName + 'Module_Grp', em=1)
         self.dontTouchGrp = cmds.group(n=prefix + rigPartName + 'Dont_Touch_Grp',
                                        em=1, p=self.topGrp)
 

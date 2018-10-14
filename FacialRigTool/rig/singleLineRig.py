@@ -12,11 +12,13 @@ def createRig(selectedLines,
               prefix='L_',
               rigPartName='',
               numJnt = 3,
-              rigScale=1.0):
+              rigScale=1.0,
+              addSliderCtrls=True,
+              ):
 
     cmds.select(cl=1)
 
-    # create mouth module
+    # create module
     rigModule = module.Module(prefix=prefix,
                               rigPartName=rigPartName)
 
@@ -51,6 +53,16 @@ def createRig(selectedLines,
                          i + '.' + prefix + rigPartName, f=1)
 
     # for each joint create the slide control
+    slideCtrlGrpList = []
+    if addSliderCtrls:
+        for i in xrange(len(jointList)):
+            sliderCtrl = control.Control(prefix=prefix,
+                                         rigPartName=rigPartName + '_Jnt_' + str(i) + '_SLD',
+                                         scale=rigScale,
+                                         shape='verticalSliderControl',
+                                         lockChannels=['tx', 'ty', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz', 'v'])
+
+            slideCtrlGrpList.append(sliderCtrl.Off)
 
     # create a main Control for
 

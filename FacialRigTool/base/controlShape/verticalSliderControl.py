@@ -1,4 +1,6 @@
 import maya.cmds as cmds
+from ...utils import name
+reload(name)
 
 
 def createShape(prefix=''):
@@ -20,7 +22,7 @@ def createShape(prefix=''):
     cmds.select(cl=1)
 
     # create text
-    textCrv = cmds.textCurves(n=prefix + '_text', font='Times-Roman', t=prefix)[0]
+    textCrv = cmds.textCurves(n=prefix + '_text', font='Times-Roman', t=name.removeSuffix(prefix))[0]
 
     cmds.setAttr(textCrv + '.overrideEnabled', 1)
     cmds.setAttr(textCrv + '.overrideDisplayType', 2)

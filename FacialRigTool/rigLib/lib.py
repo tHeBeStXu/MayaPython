@@ -122,3 +122,24 @@ def createCurve(curveList,
         finalCurve = outputCurve[0]
 
     return finalCurve
+
+def vertex2Joints(vertexList,
+                  prefix,
+                  rigPartName,
+                  addSlaveAttr=True):
+
+    jointList = []
+
+    cmds.select(cl=1)
+
+    for i in xrange(len(vertexList)):
+        # create new joint
+        newJnt = createJoint(prefixName=prefix + rigPartName, jointNum=str(i), slaveAttr=addSlaveAttr)
+
+        # translate the new joint
+        transform = cmds.xform(vertexList[i], ws=1, absolute=1, t=1, q=1)
+        cmds.xform(newJnt, t=transform, ws=1, absolute=1)
+
+        jointList.append(newJnt)
+
+    return jointList

@@ -137,7 +137,6 @@ class Control():
         cmds.setAttr(ctrlOffset + '.s', scale, scale, scale)
 
         # color control
-        print ctrlObject
         ctrlShapes = cmds.listRelatives(ctrlObject, s=1)
 
         [cmds.setAttr(s + '.ove', 1) for s in ctrlShapes]

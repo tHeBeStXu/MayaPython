@@ -82,20 +82,26 @@ def joint2Curve(prefix,
     return jointList
 
 
-def createCurve(curveList,
+def createCurve(edgeList,
                 rebuild=True,
                 spans=4):
     """
     Create a fine curve from selection
-    :param curveList: list(str), curve list to created new curve.
+    :param edgeList: list(str), flattened edge list to created new curve.
     :param rebuild: bool, whether rebuild the created line or not.
     :param spans: int, if rebuild the created line, spans of the rebuilded curve.
     :return: str, new curve.
     """
+    # check the edge list
+    for i in edgeList:
+        if getComponentType(i) != 'e':
+            cmds.error('Please select edges')
+            return
+
     # create each line
     curves = []
-    if curveList and len(curveList) >= 2:
-        for crv in curveList:
+    if edgeList and len(edgeList) >= 2:
+        for crv in edgeList:
             curve = cmds.polyToCurve(crv, form=0, degree=1, ch=0)[0]
             curves.append(curve)
 
@@ -123,10 +129,24 @@ def createCurve(curveList,
 
     return finalCurve
 
+
 def vertex2Joints(vertexList,
                   prefix,
                   rigPartName,
                   addSlaveAttr=True):
+    """
+    create joint on each selected vertex
+    :param vertexList: list(str), select vertex list
+    :param prefix: str, prefix of the joint
+    :param rigPartName: str, rig part name of the module
+    :param addSlaveAttr: bool, whether add slave attr for generating slave joint
+    :return: list(str), list of the joints
+    """
+    # check the vertex List
+    for i in vertexList:
+        if getComponentType(i) != 'vtx':
+            cmds.error('Please select vertex')
+            return
 
     jointList = []
 
@@ -135,6 +155,7 @@ def vertex2Joints(vertexList,
     for i in xrange(len(vertexList)):
         # create new joint
         newJnt = createJoint(prefixName=prefix + rigPartName, jointNum=str(i), slaveAttr=addSlaveAttr)
+        cmds.select(cl=1)
 
         # translate the new joint
         transform = cmds.xform(vertexList[i], ws=1, absolute=1, t=1, q=1)
@@ -143,3 +164,15 @@ def vertex2Joints(vertexList,
         jointList.append(newJnt)
 
     return jointList
+
+
+def getComponentType(input):
+    """
+    get the component type by string
+    :param input: str, input component string
+    :return: str, ouput component type string for checking.
+    """
+    firstStr = input.split('[')[0]
+    outputStr = firstStr.split('.')[-1]
+
+    return outputStr

@@ -23,7 +23,7 @@ def createRig(selectedLines,
                               rigPartName=rigPartName)
 
     # create line
-    targetLine = lib.createCurve(curveList=selectedLines)
+    targetLine = lib.createCurve(edgeList=selectedLines)
 
     # create joint along the curve
     jointList = lib.joint2Curve(prefix=prefix,

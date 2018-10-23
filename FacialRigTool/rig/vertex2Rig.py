@@ -7,6 +7,7 @@ reload(control)
 reload(module)
 reload(lib)
 
+
 def createRig(vertexList,
               prefix='L_',
               rigPartName='',
@@ -71,25 +72,15 @@ def createRig(vertexList,
             slideCtrlList.append(slideCtrl.C)
             slideCtrlGrpList.append(slideCtrl.Off)
 
-        # add main slider control
-            mainSlideCtrl = control.Control(prefix=prefix,
-                                            rigPartName=rigPartName + '_Jnt_Main_SLD',
-                                            scale=rigScale,
-                                            shape='planeSliderControl',
-                                            lockChannels=['ty', 'rx', 'ry', 'rz', 'sx', 'sy', 'sz', 'v'])
-
     # cleanHierarchy
     for i in jointCtrlGrpList:
         cmds.parent(i, rigModule.topGrp)
-
-    cmds.parent(mainSlideCtrl.Off, rigModule.topGrp)
 
     if addSliderCtrls:
         rigModuleSliderGrp = cmds.group(n=prefix + rigPartName + '_SLD_Grp', em=1)
         for i in slideCtrlGrpList:
             cmds.parent(i, rigModuleSliderGrp)
 
-        cmds.parent(mainSlideCtrl.Off, rigModuleSliderGrp)
         cmds.parent(rigModuleSliderGrp, rigModule.topGrp)
 
         # set default keyframe

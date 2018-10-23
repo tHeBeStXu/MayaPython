@@ -1,4 +1,5 @@
 import maya.cmds as cmds
+import maya.OpenMaya as om
 from ..base import control
 from ..base import module
 reload(control)
@@ -176,3 +177,38 @@ def getComponentType(input):
     outputStr = firstStr.split('.')[-1]
 
     return outputStr
+
+
+def getUParam(pnt=[], crv=None):
+    point = om.MPoint(pnt[0], pnt[1], pnt[2])
+    curveFn = om.MFnNurbsCurve(getDagPath(crv))
+    paramUtill = om.MScriptUtil()
+    paramPtr = paramUtill.asDoublePtr()
+    isOnCurve = curveFn.isPointOnCurve(point)
+    if isOnCurve == True:
+
+        curveFn.getParamAtPoint(point, paramPtr, 0.001, om.MSpace.kObject)
+    else:
+        point = curveFn.closestPoint(point, paramPtr, 0.001, om.MSpace.kObject)
+        curveFn.getParamAtPoint(point, paramPtr, 0.001, om.MSpace.kObject)
+
+    param = paramUtill.getDouble(paramPtr)
+    return param
+
+
+def getDagPath(objectName):
+    if isinstance(objectName, list) == True:
+        oNodeList = []
+        for o in objectName:
+            selectionList = om.MSelectionList()
+            selectionList.add(o)
+            oNode = om.MDagPath()
+            selectionList.getDagPath(0, oNode)
+            oNodeList.append(oNode)
+        return oNodeList
+    else:
+        selectionList = om.MSelectionList()
+        selectionList.add(objectName)
+        oNode = om.MDagPath()
+        selectionList.getDagPath(0, oNode)
+        return oNode

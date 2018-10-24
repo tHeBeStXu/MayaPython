@@ -8,6 +8,7 @@ reload(module)
 
 def createJoint(prefixName,
                 jointNum,
+                radius=0.2,
                 slaveAttr=True):
     """
     create new joint and add extra attributes.
@@ -17,7 +18,7 @@ def createJoint(prefixName,
                             connecting to the module group)
     :return: created new joint
     """
-    newJnt = cmds.joint(n=prefixName + '_Jnt_' + jointNum, radius=0.2)
+    newJnt = cmds.joint(n=prefixName + '_Jnt_' + jointNum, radius=radius)
 
     if slaveAttr:
         if not cmds.attributeQuery('slaveJoint', node=newJnt, exists=1):
@@ -134,6 +135,7 @@ def createCurve(edgeList,
 def vertex2Joints(vertexList,
                   prefix,
                   rigPartName,
+                  radius=0.5,
                   addSlaveAttr=True):
     """
     create joint on each selected vertex
@@ -155,7 +157,7 @@ def vertex2Joints(vertexList,
 
     for i in xrange(len(vertexList)):
         # create new joint
-        newJnt = createJoint(prefixName=prefix + rigPartName, jointNum=str(i), slaveAttr=addSlaveAttr)
+        newJnt = createJoint(prefixName=prefix + rigPartName, jointNum=str(i), slaveAttr=addSlaveAttr, radius=radius)
         cmds.select(cl=1)
 
         # translate the new joint

@@ -180,19 +180,18 @@ def getComponentType(input):
 
 
 def getUParam(pnt=[], crv=None):
-    point = om.MPoint(pnt[0], pnt[1], pnt[2])
+
     curveFn = om.MFnNurbsCurve(getDagPath(crv))
-    paramUtill = om.MScriptUtil()
-    paramPtr = paramUtill.asDoublePtr()
-    isOnCurve = curveFn.isPointOnCurve(point)
-    if isOnCurve == True:
 
-        curveFn.getParamAtPoint(point, paramPtr, 0.001, om.MSpace.kObject)
-    else:
-        point = curveFn.closestPoint(point, paramPtr, 0.001, om.MSpace.kObject)
-        curveFn.getParamAtPoint(point, paramPtr, 0.001, om.MSpace.kObject)
+    mPos = om.MPoint(pnt[0], pnt[1], pnt[2])
 
-    param = paramUtill.getDouble(paramPtr)
+    scriptU = om.MScriptUtil()
+
+    paramPtr = scriptU.asDoublePtr()
+
+    curveFn.getParamAtPoint(mPos, paramPtr, om.MSpace.kWorld)
+
+    param = scriptU.getDouble(paramPtr)
     return param
 
 

@@ -28,14 +28,14 @@ def createRig(vertexList,
     rigModule = module.Module(prefix=prefix, rigPartName=rigPartName)
 
     # create eyelid joint for each vertex
-    eyeLidJointList = lib.vertex2Joints(vertexList=vertexList, prefix=prefix, rigPartName=rigPartName)
+    eyeLidJointList = lib.vertex2Joints(vertexList=vertexList, prefix=prefix, rigPartName=rigPartName, radius=0.05)
 
     # create eyelid parent joint for each eyelid joint
     eyeLidParentJntList = []
     for i in eyeLidJointList:
         cmds.select(cl=1)
 
-        parentJoint = cmds.joint(n=i + '_Parent')
+        parentJoint = cmds.joint(n=i + '_Parent', radius=0.05)
 
         cmds.delete(cmds.pointConstraint(eyeJoint, parentJoint, mo=0))
 
@@ -61,11 +61,18 @@ def createRig(vertexList,
 
         ikHandle = cmds.ikHandle(n=eyelidJoint + '_IK', sj=i, ee=eyelidJoint, sol='ikSCsolver')
 
-        eyelidLoc = cmds.spaceLocator(n=eyelidJoint + '_LOC')
+        eyelidLoc = cmds.spaceLocator(n=eyelidJoint + '_LOC')[0]
 
         cmds.delete(cmds.parentConstraint(eyelidJoint, eyelidLoc, mo=0))
 
         cmds.select(cl=1)
+
+        cmds.setAttr(ikHandle[0] + '.v', 0)
+        LOCShape = cmds.listRelatives(eyelidLoc, p=0, c=1, s=1)[0]
+        cmds.setAttr(LOCShape + '.localScaleX', 0.1)
+        cmds.setAttr(LOCShape + '.localScaleY', 0.1)
+        cmds.setAttr(LOCShape + '.localScaleZ', 0.1)
+
         cmds.parent(ikHandle[0], eyelidLoc)
 
         eyelidLocList.append(eyelidLoc)
@@ -103,13 +110,14 @@ def createRig(vertexList,
         cmds.connectAttr(PCI + '.position', i + '.t')
 
         cmds.select(cl=1)
-"""
+
     # make HD curve deformed by LD curve
     lowDefCurve = cmds.rebuildCurve(lowDefCurve, ch=0, rpo=1, rt=0, end=1, kr=0, kcp=0, kep=1, kt=0, s=3, d=3)
     cmds.select(cl=1)
 
     wireDefomer = cmds.wire(highDefCurve, gw=0, en=1, ce=0, li=0, w=lowDefCurve)
-    print wireDefomer
+    wireTransNode = cmds.listConnections(wireDefomer[0] + '.baseWire[0]', source=1, destination=0)
+
     cmds.select(cl=1)
 
     # create control joint and controls for the LD curve
@@ -118,7 +126,7 @@ def createRig(vertexList,
     eachADD = 1.0 / (numCtrl - 1)
 
     for i in xrange(numCtrl):
-        newJnt = cmds.joint(n=prefix + rigPartName + '_CtrlJnt_' + str(i))
+        newJnt = cmds.joint(n=prefix + rigPartName + '_CtrlJnt_' + str(i), radius=0.1)
         cmds.select(cl=1)
         motionPath = cmds.pathAnimation(lowDefCurve, newJnt, n=prefix + rigPartName + '_MP_' + str(i), fractionMode=1,
                                         follow=1, followAxis='x', upAxis='z', worldUpType='scene',
@@ -130,7 +138,7 @@ def createRig(vertexList,
 
         for attr in ['t', 'r']:
             for axis in ['x', 'y', 'z']:
-                cmds.delete(newJnt + '%s%s' % (attr, axis), icn=1)
+                cmds.delete(newJnt + '.%s%s' % (attr, axis), icn=1)
 
         cmds.delete(motionPath)
         cmds.select(cl=1)
@@ -155,9 +163,9 @@ def createRig(vertexList,
 
     jntCtrlGrpList = []
     for i in xrange(len(controlJointList)):
-        ctrl = control.Control(prefix=prefix,
-                               rigPartName=rigPartName,
-                               scale=rigScale * 0.1,
+        ctrl = control.Control(prefix=controlJointList[i],
+                               rigPartName='',
+                               scale=rigScale * 0.5,
                                shape='circleY',
                                translateTo=controlJointList[i],
                                rotateTo=controlJointList[i])
@@ -184,6 +192,7 @@ def createRig(vertexList,
 
     cmds.parent(lowDefCurve, curveGrp)
     cmds.parent(highDefCurve, curveGrp)
+    cmds.parent(wireTransNode, curveGrp)
 
     for i in controlJointList:
         cmds.parent(i, ctrlJntGrp)
@@ -191,10 +200,12 @@ def createRig(vertexList,
     for i in jntCtrlGrpList:
         cmds.parent(i, ctrlGrp)
 
+    cmds.setAttr(locGrp + '.v', 0)
+    cmds.setAttr(curveGrp + '.v', 0)
+    cmds.setAttr(ctrlJntGrp + '.v', 0)
+
     cmds.parent(parentJntGrp, rigModule.topGrp)
     cmds.parent(locGrp, rigModule.topGrp)
     cmds.parent(curveGrp, rigModule.topGrp)
     cmds.parent(ctrlJntGrp, rigModule.topGrp)
     cmds.parent(ctrlGrp, rigModule.topGrp)
-    
-    """

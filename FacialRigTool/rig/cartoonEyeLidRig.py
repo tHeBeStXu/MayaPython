@@ -165,7 +165,7 @@ def createRig(vertexList,
     for i in xrange(len(controlJointList)):
         ctrl = control.Control(prefix=controlJointList[i],
                                rigPartName='',
-                               scale=rigScale * 0.5,
+                               scale=rigScale,
                                shape='circleY',
                                translateTo=controlJointList[i],
                                rotateTo=controlJointList[i])

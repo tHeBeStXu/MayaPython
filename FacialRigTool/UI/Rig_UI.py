@@ -1,5 +1,13 @@
 from PySide2 import QtWidgets, QtCore, QtGui
+import logging
+import Edit_UI
+from ..rig import *
 
+reload(Edit_UI)
+
+logging.basicConfig()
+logger = logging.getLogger('FacialRiggingTool')
+logger.setLevel(logging.INFO)
 
 class RigWidget(QtWidgets.QFrame):
 
@@ -43,16 +51,17 @@ class RigWidget(QtWidgets.QFrame):
         self.closeBtn.setFixedWidth(25)
 
         font = QtGui.QFont()
-        font.setPointSize(8)
+        font.setPointSize(10)
         font.setBold(1)
-        self.rigTypeLable = QtWidgets.QLabel('%s' % self.rigTypeName)
+        self.rigTypeLable = QtWidgets.QLabel('Type: %s' % self.rigTypeName)
         self.rigTypeLable.setFont(font)
 
         self.closeBtnLayout.addWidget(self.rigTypeLable)
         self.closeBtnLayout.addWidget(self.closeBtn)
 
-        label = QtWidgets.QLabel('Rig part Name:  ')
+        label = QtWidgets.QLabel('Part Name:  ')
         self.rigPartLineEdit = QtWidgets.QLineEdit()
+        self.rigPartLineEdit.setPlaceholderText('Enter a name')
         self.editLineLayout.addWidget(label)
         self.editLineLayout.addWidget(self.rigPartLineEdit)
 
@@ -67,5 +76,20 @@ class RigWidget(QtWidgets.QFrame):
         self.deleteLater()
 
     def editRigPart(self):
-        pass
+        """
+        Set the rig part info
+        :return: None
+        """
+        if self.rigTypeName == 'vertex2Rig':
+            Edit_UI.EditWidget(self, self.rigTypeName, vertex2Rig.createRig)
 
+        elif self.rigTypeName == 'singleLineRig':
+            Edit_UI.EditWidget(self, self.rigTypeName, singleLineRig.createRig)
+
+        elif self.rigTypeName == 'cartoonEyeLidRig':
+            Edit_UI.EditWidget(self, self.rigTypeName, cartoonEyeLidRig.createRig)
+
+        else:
+            logger.info('Unknow rig type: %s' % self.rigTypeName)
+
+        logger.info('Edit %s Rig Part... (Type: %s)' % (self.rigPartLineEdit.text(), self.rigTypeName))

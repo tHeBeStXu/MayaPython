@@ -1,30 +1,30 @@
 from PySide2 import QtWidgets, QtCore
-from functools import partial
 import maya.OpenMayaUI as omui
 import os
 import time
 import json
 import Splitter_UI
 import Rig_UI
-reload(Splitter_UI)
-reload(Rig_UI)
-
 from shiboken2 import wrapInstance
 import maya.cmds as cmds
 
 from ..rig import *
 
 import logging
-import Edit_UI
 
-reload(Edit_UI)
+reload(cartoonEyeLidRig)
+reload(singleLineRig)
+reload(vertex2Rig)
+
+reload(Splitter_UI)
+reload(Rig_UI)
 reload(cartoonEyeLidRig)
 reload(singleLineRig)
 reload(vertex2Rig)
 
 logging.basicConfig()
 logger = logging.getLogger('FacialRiggingTool')
-logger.setLevel(logging.DEBUG)
+logger.setLevel(logging.INFO)
 
 
 def getMayaMainWindow():
@@ -65,7 +65,7 @@ def getDock(name='FacialRiggingTool'):
 
 class RiggingMainUI(QtWidgets.QWidget):
 
-    rigTypes = {'vertexRig': '',
+    rigTypes = {'vertex2Rig': '',
                 'singleLineRig': '',
                 'cartoonEyeLidRig': ''}
 
@@ -83,7 +83,7 @@ class RiggingMainUI(QtWidgets.QWidget):
             parent = QtWidgets.QDialog(parent=getMayaMainWindow())
             parent.setObjectName('FacialRiggingTool')
             parent.setWindowTitle('Facial Rigging Tool')
-            parent.setFixedSize(270, 750)
+            parent.setFixedSize(270, 780)
             layout = QtWidgets.QVBoxLayout(parent)
 
         super(RiggingMainUI, self).__init__(parent=parent)
@@ -97,7 +97,7 @@ class RiggingMainUI(QtWidgets.QWidget):
 
     def build(self):
         self.setFixedWidth(250)
-        self.setFixedHeight(730)
+        self.setFixedHeight(750)
         self.mainLayout = QtWidgets.QVBoxLayout()
         self.setLayout(self.mainLayout)
 
@@ -117,9 +117,22 @@ class RiggingMainUI(QtWidgets.QWidget):
 
         self.layout().setContentsMargins(0, 0, 0, 0)
 
+        # Rig File Name
+        self.proSplitter = Splitter_UI.Splitter(text='Facial Rigging Tool')
+        self.gridLayout.addWidget(self.proSplitter, 0, 0, 1, 3)
+
+        proNameLabel = QtWidgets.QLabel('Project Name:')
+        proNameLabel.setAlignment(QtCore.Qt.AlignCenter)
+
+        self.proNameLineEdit = QtWidgets.QLineEdit('')
+        self.proNameLineEdit.setPlaceholderText('Enter Facial Rig Name')
+
+        self.gridLayout.addWidget(proNameLabel, 1, 0)
+        self.gridLayout.addWidget(self.proNameLineEdit, 1, 1, 1, 2)
+
         # combo splitter
-        self.comboSplitter = Splitter_UI.Splitter(text='Select and Add')
-        self.gridLayout.addWidget(self.comboSplitter, 0, 0, 1, 3)
+        self.comboSplitter = Splitter_UI.Splitter(text='Select & Add')
+        self.gridLayout.addWidget(self.comboSplitter, 2, 0, 1, 3)
 
         # rig combo and add
         self.rigTypeCB = QtWidgets.QComboBox()
@@ -128,11 +141,11 @@ class RiggingMainUI(QtWidgets.QWidget):
         for rigType in sorted(self.rigTypes.keys()):
             self.rigTypeCB.addItem(rigType)
 
-        self.gridLayout.addWidget(self.rigTypeCB, 1, 0, 1, 2)
+        self.gridLayout.addWidget(self.rigTypeCB, 3, 0, 1, 2)
 
         self.addBtn = QtWidgets.QPushButton('Add')
         self.addBtn.clicked.connect(self.addRigWidget)
-        self.gridLayout.addWidget(self.addBtn, 1, 2, 1, 1)
+        self.gridLayout.addWidget(self.addBtn, 3, 2, 1, 1)
 
         # scroll widget
         self.scrollWidget = QtWidgets.QWidget()
@@ -142,17 +155,17 @@ class RiggingMainUI(QtWidgets.QWidget):
 
         self.scrollArea = QtWidgets.QScrollArea()
         self.scrollArea.setFixedWidth(230)
-        self.scrollArea.setFixedHeight(420)
+        self.scrollArea.setFixedHeight(390)
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setWidget(self.scrollWidget)
         self.scrollArea.setFocusPolicy(QtCore.Qt.NoFocus)
         self.scrollArea.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
 
-        self.gridLayout.addWidget(self.scrollArea, 2, 0, 1, 3)
+        self.gridLayout.addWidget(self.scrollArea, 4, 0, 1, 3)
 
         # utils splitter
         self.utilsSplitter = Splitter_UI.Splitter(text='Rig Utils')
-        self.gridLayout.addWidget(self.utilsSplitter, 3, 0, 1, 3)
+        self.gridLayout.addWidget(self.utilsSplitter, 5, 0, 1, 3)
 
         # action widget
         self.actionWidget = QtWidgets.QWidget()
@@ -160,7 +173,7 @@ class RiggingMainUI(QtWidgets.QWidget):
 
         self.actionWidget.setLayout(self.actionLayout)
 
-        self.gridLayout.addWidget(self.actionWidget, 4, 0, 1, 3)
+        self.gridLayout.addWidget(self.actionWidget, 6, 0, 1, 3)
 
         # save button
         self.saveBtn = QtWidgets.QPushButton('Save Rig')
@@ -179,7 +192,7 @@ class RiggingMainUI(QtWidgets.QWidget):
 
         # rig splitter
         self.rigSplitter = Splitter_UI.Splitter(text='Rig Action')
-        self.gridLayout.addWidget(self.rigSplitter, 5, 0, 1, 3)
+        self.gridLayout.addWidget(self.rigSplitter, 7, 0, 1, 3)
 
         # rig widget
         self.rigWidget = QtWidgets.QWidget()
@@ -194,7 +207,7 @@ class RiggingMainUI(QtWidgets.QWidget):
         # self.createBtn.clicked.connect(self.createRig)
         self.rigLayout.addWidget(self.createBtn)
 
-        self.gridLayout.addWidget(self.rigWidget, 6, 0, 1, 3)
+        self.gridLayout.addWidget(self.rigWidget, 8, 0, 1, 3)
 
         # helper joints widget
         self.secondWidget = QtWidgets.QWidget()
@@ -217,7 +230,11 @@ class RiggingMainUI(QtWidgets.QWidget):
         self.skinLayout.addWidget(self.exportSkinBtn)
 
     def addRigWidget(self, rigType=None):
-
+        """
+        Add rig widget to the scroll Layout with specified rigType
+        :param rigType: rigType of the rig widget
+        :return: None
+        """
         if not rigType:
             rigType = self.rigTypeCB.currentText()
 
@@ -244,20 +261,105 @@ class RiggingMainUI(QtWidgets.QWidget):
 
                 if not properties:
                     raise RuntimeError('Rig Part name not enter, please check the rig file')
+                else:
+                    # Set the rig project name first
+                    self.proNameLineEdit.setText(str(properties['Procedural Rig Name']))
+                    del properties['Procedural Rig Name']
 
+                # set the info
                 for key in properties.keys():
+                    # Set the rig project name first
                     self.addRigWidget(properties[key]['rigType'])
                     self.widget.rigArgs = properties[key]['rigArgs']
                     self.widget.rigPartLineEdit.setText(str(key))
+                    # Be sural to set the rig Part Name of each widget
+                    self.widget.setRigPartName()
 
+            logger.info('import %s rig log file.' % fileName[0])
 
+    def saveRig(self):
+        """
+        Save the rig info to a .json file at the specified directory
+        :return: None
+        """
+        properties = {}
+        properties['Procedural Rig Name'] = self.proNameLineEdit.text()
+
+        for rig in self.findChildren(Rig_UI.RigWidget):
+            if str(rig.rigPartLineEdit.text()) in properties.keys():
+                logger.info('Rig file save FAILED, you have already had the same name of rig part!!!')
+                break
+
+            properties[str(rig.rigPartLineEdit.text())] = {}
+            properties[str(rig.rigPartLineEdit.text())]['rigType'] = rig.rigTypeName
+            properties[str(rig.rigPartLineEdit.text())]['rigArgs'] = rig.rigArgs
+
+        if len(properties.keys()) == len(self.findChildren(Rig_UI.RigWidget)) + 1:
+
+            rigLogDir = self.getDirectory()
+            rigLogFile = os.path.join(rigLogDir,
+                                      self.proNameLineEdit.text() + '_rigLogFile_%s.json' % time.strftime('%m%d_%H_%M'))
+
+            with open(rigLogFile, 'w') as f:
+                json.dump(properties, f, indent=4)
+
+            logger.info('Saving rig file to %s' % rigLogFile)
+
+    def clearRig(self):
+        for rig in self.findChildren(Rig_UI.RigWidget):
+            rig.deleteRigPart()
+
+    def createRig(self):
+        """
+        Use the info to create the Rig
+        :return:
+        """
+        if not self.proNameLineEdit.text():
+            logger.error('No Facial Rig Name Found, Please Input A Facial Rig Name!!!')
+            return None
+        # Before create the rig, save the rig first!
+        self.saveRig()
+
+        for rig in self.findChildren(Rig_UI.RigWidget):
+            if rig.rigTypeName == 'vertex2Rig' and rig.rigArgs:
+                vertex2Rig.createRig(vertexList=eval(rig.rigArgs['vertexList']),
+                                     prefix=rig.rigArgs['prefix'],
+                                     rigPartName=rig.rigArgs['rigPartName'],
+                                     rigScale=eval(rig.rigArgs['rigScale']),
+                                     addSliderCtrls=eval(rig.rigArgs['addSliderCtrls']),
+                                     jointParent=rig.rigArgs['jointParent'])
+                logger.info('Type:vertex2Rig, %s build complete!' % rig.rigPartLineEdit.text())
+                continue
+
+            elif rig.rigTypeName == 'singleLineRig' and rig.rigArgs:
+                singleLineRig.createRig(selectedLines=eval(rig.rigArgs['selectedLines']),
+                                        prefix=rig.rigArgs['prefix'],
+                                        rigScale=eval(rig.rigArgs['rigScale']),
+                                        rigPartName=rig.rigArgs['rigPartName'],
+                                        numJnt=eval(rig.rigArgs['numJnt']),
+                                        addSliderCtrls=eval(rig.rigArgs['addSliderCtrls']),
+                                        jointParent=rig.rigArgs['jointParent'])
+
+            elif rig.rigTypeName == 'cartoonEyeLidRig' and rig.rigArgs:
+                cartoonEyeLidRig.createRig(vertexList=eval(rig.rigArgs['vertexList']),
+                                           prefix=rig.rigArgs['prefix'],
+                                           rigPartName=rig.rigArgs['rigPartName'],
+                                           rigScale=eval(rig.rigArgs['rigScale']),
+                                           eyeJoint=rig.rigArgs['eyeJoint'],
+                                           numCtrl=rig.rigArgs['numCtrl'],
+                                           insertJnt=eval(rig.rigArgs['insertJnt']))
+
+            else:
+                logger.info('Can not find the Type: %s rig part, please check again!' % str(rig.rigTypeName))
+
+        logger.info('Project: %s create rig complete!' % str(self.proNameLineEdit.text()))
 
     def getDirectory(self):
         """
         set and get the rig Log directory
         :return: rig log directory
         """
-        rigLogDir = os.path.join(cmds.internalVar(userAppDir=1), 'rigLogFiles')
+        rigLogDir = os.path.join(cmds.internalVar(userAppDir=1), 'FacialRigLogFiles')
 
         if not os.path.exists(rigLogDir):
             os.mkdir(rigLogDir)

@@ -177,14 +177,6 @@ class RiggingMainUI(QtWidgets.QWidget):
         skinLayout.addWidget(skinImportBtn)
         skinImportBtn.clicked.connect(skinLib.SkinCluster.createAndImport)
 
-    def setLineEditText(self):
-        """
-        Set the Rig project name and store it in self.projectName
-        :return: None
-        """
-        # self.projectName = self.proNameLineEdit.text()
-        pass
-
     def clearRig(self):
         for rig in self.findChildren(rigWidget):
             rig.deleteRigPart()

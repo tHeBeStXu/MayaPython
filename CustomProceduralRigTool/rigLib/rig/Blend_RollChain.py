@@ -3,8 +3,6 @@ from maya import cmds
 
 def build(rollStart,
           rollEnd,
-          roll_Parent,
-          IK_Parent,
           numRollJoints=1,
           rollWithSameDir=True
           ):
@@ -13,20 +11,30 @@ def build(rollStart,
     :param rollStart: str, create roll joints from rollStart joint
     :param rollEnd: str, create roll joints ends at rollEnd joint
     :param roll_Parent: str, parent ik_roll_joints to roll_Parent joint.
-                        If rollWithSameDir is True, rollParent is the joint above rollStart joint by 1 step
+                        If rollWithSameDir is True, roll_Parent is the joint above rollStart joint by 1 step
                         example: upper arm: Clavical; hip: body_pivot or c_spine_0
-                        If rollWithSameDir is False, rollParent is the rollStart joint
+                        If rollWithSameDir is False, roll_Parent is the rollStart joint
                         example: lower arm: Elbow
     :param IK_Parent: str, parent ik handle to the IK_Parent joints
-                        If rollWithSameDir is True, rollParent is the joint above rollStart joint by 1 step
+                        If rollWithSameDir is True, IK_Parent is the joint above rollStart joint by 1 step
                         example: upper arm: Clavical; hip: body_pivot or c_spine_0
-                        If rollWithSameDir is False, rollParent is the rollStart joint
+                        If rollWithSameDir is False, IK_Parent is the rollStart joint
                         example: lower arm: Wrist
     :param numRollJoints: int, number of roll joints between rollStart joint and rollEnd joint
     :param rollWithSameDir: bool, whether the roll joints are the same generation direction
                             with the original joints chain direction
     :return: None
     """
+    if numRollJoints < 1:
+        raise RuntimeError('Param: numRollJoints must larger than 1, please input correct int number again!')
+
+    if rollWithSameDir:
+        roll_Parent = cmds.listRelatives(rollStart, p=1, c=0, s=0, type='joint')[0]
+        IK_Parent = cmds.listRelatives(rollStart, p=1, c=0, s=0, type='joint')[0]
+    else:
+        roll_Parent = rollStart
+        IK_Parent = rollStart
+
     # create the start and end roll joints
     rollStart_Jnt = cmds.joint(n=rollStart + '_Roll_Start')
     cmds.select(cl=1)
@@ -80,7 +88,7 @@ def build(rollStart,
             cmds.setAttr(oc[0] + '.' + rollStart + 'W1', (len(range(0, numRollJoints)) - int(i)))
             cmds.setAttr(oc[0] + '.' + rollOrient + 'W0', (int(i) + 1))
 
-    # parent the
+    # parent
     cmds.parent(rollStart_Jnt, roll_Parent)
 
     cmds.select(cl=1)

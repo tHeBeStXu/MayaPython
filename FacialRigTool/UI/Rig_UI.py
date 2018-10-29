@@ -9,6 +9,7 @@ logging.basicConfig()
 logger = logging.getLogger('FacialRiggingTool')
 logger.setLevel(logging.INFO)
 
+
 class RigWidget(QtWidgets.QFrame):
 
     def __init__(self, rigTypeName):

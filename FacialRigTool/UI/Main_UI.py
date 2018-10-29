@@ -7,6 +7,7 @@ import Splitter_UI
 import Rig_UI
 from shiboken2 import wrapInstance
 import maya.cmds as cmds
+from ..skinLib import skinLib
 
 from ..rig import *
 
@@ -21,6 +22,8 @@ reload(Rig_UI)
 reload(cartoonEyeLidRig)
 reload(singleLineRig)
 reload(vertex2Rig)
+
+reload(skinLib)
 
 logging.basicConfig()
 logger = logging.getLogger('FacialRiggingTool')
@@ -104,35 +107,35 @@ class RiggingMainUI(QtWidgets.QWidget):
         # tabWidget
         self.mainWidget = QtWidgets.QTabWidget()
 
-        self.mainWidget.setFixedWidth(250)
+        self.mainWidget.setFixedSize(250, 680)
         self.layout().addWidget(self.mainWidget)
 
         # rig tab
-        self.firstWidget = QtWidgets.QWidget()
+        self.rigTabWidget = QtWidgets.QWidget()
 
-        self.mainWidget.addTab(self.firstWidget, 'Rig')
+        self.mainWidget.addTab(self.rigTabWidget, 'Rig')
 
-        self.gridLayout = QtWidgets.QGridLayout()
-        self.firstWidget.setLayout(self.gridLayout)
+        self.rigTabLayout = QtWidgets.QGridLayout()
+        self.rigTabWidget.setLayout(self.rigTabLayout)
 
         self.layout().setContentsMargins(0, 0, 0, 0)
 
         # Rig File Name
-        self.proSplitter = Splitter_UI.Splitter(text='Facial Rigging Tool')
-        self.gridLayout.addWidget(self.proSplitter, 0, 0, 1, 3)
+        self.rigProSplitter = Splitter_UI.Splitter(text='Facial Rigging Tool')
+        self.rigTabLayout.addWidget(self.rigProSplitter, 0, 0, 1, 3)
 
-        proNameLabel = QtWidgets.QLabel('Project Name:')
-        proNameLabel.setAlignment(QtCore.Qt.AlignCenter)
+        rigProLabel = QtWidgets.QLabel('Rig Project Name:')
+        rigProLabel.setAlignment(QtCore.Qt.AlignCenter)
 
-        self.proNameLineEdit = QtWidgets.QLineEdit('')
-        self.proNameLineEdit.setPlaceholderText('Enter Facial Rig Name')
+        self.rigProNameLineEdit = QtWidgets.QLineEdit('')
+        self.rigProNameLineEdit.setPlaceholderText('Enter Facial Rig Name')
 
-        self.gridLayout.addWidget(proNameLabel, 1, 0)
-        self.gridLayout.addWidget(self.proNameLineEdit, 1, 1, 1, 2)
+        self.rigTabLayout.addWidget(rigProLabel, 1, 0)
+        self.rigTabLayout.addWidget(self.rigProNameLineEdit, 1, 1, 1, 2)
 
         # combo splitter
-        self.comboSplitter = Splitter_UI.Splitter(text='Select & Add')
-        self.gridLayout.addWidget(self.comboSplitter, 2, 0, 1, 3)
+        self.rigCBSpllter = Splitter_UI.Splitter(text='Select & Add')
+        self.rigTabLayout.addWidget(self.rigCBSpllter, 2, 0, 1, 3)
 
         # rig combo and add
         self.rigTypeCB = QtWidgets.QComboBox()
@@ -141,31 +144,31 @@ class RiggingMainUI(QtWidgets.QWidget):
         for rigType in sorted(self.rigTypes.keys()):
             self.rigTypeCB.addItem(rigType)
 
-        self.gridLayout.addWidget(self.rigTypeCB, 3, 0, 1, 2)
+        self.rigTabLayout.addWidget(self.rigTypeCB, 3, 0, 1, 2)
 
-        self.addBtn = QtWidgets.QPushButton('Add')
-        self.addBtn.clicked.connect(self.addRigWidget)
-        self.gridLayout.addWidget(self.addBtn, 3, 2, 1, 1)
+        self.rigAddBtn = QtWidgets.QPushButton('Add')
+        self.rigAddBtn.clicked.connect(self.addRigWidget)
+        self.rigTabLayout.addWidget(self.rigAddBtn, 3, 2, 1, 1)
 
         # scroll widget
-        self.scrollWidget = QtWidgets.QWidget()
+        self.rigScrollWidget = QtWidgets.QWidget()
         self.scrollLayout = QtWidgets.QVBoxLayout()
         self.scrollLayout.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
-        self.scrollWidget.setLayout(self.scrollLayout)
+        self.rigScrollWidget.setLayout(self.scrollLayout)
 
         self.scrollArea = QtWidgets.QScrollArea()
         self.scrollArea.setFixedWidth(230)
         self.scrollArea.setFixedHeight(390)
         self.scrollArea.setWidgetResizable(True)
-        self.scrollArea.setWidget(self.scrollWidget)
+        self.scrollArea.setWidget(self.rigScrollWidget)
         self.scrollArea.setFocusPolicy(QtCore.Qt.NoFocus)
         self.scrollArea.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
 
-        self.gridLayout.addWidget(self.scrollArea, 4, 0, 1, 3)
+        self.rigTabLayout.addWidget(self.scrollArea, 4, 0, 1, 3)
 
         # utils splitter
-        self.utilsSplitter = Splitter_UI.Splitter(text='Rig Utils')
-        self.gridLayout.addWidget(self.utilsSplitter, 5, 0, 1, 3)
+        self.rigUtilsSplitter = Splitter_UI.Splitter(text='Rig Utils')
+        self.rigTabLayout.addWidget(self.rigUtilsSplitter, 5, 0, 1, 3)
 
         # action widget
         self.actionWidget = QtWidgets.QWidget()
@@ -173,11 +176,11 @@ class RiggingMainUI(QtWidgets.QWidget):
 
         self.actionWidget.setLayout(self.actionLayout)
 
-        self.gridLayout.addWidget(self.actionWidget, 6, 0, 1, 3)
+        self.rigTabLayout.addWidget(self.actionWidget, 6, 0, 1, 3)
 
         # save button
         self.saveBtn = QtWidgets.QPushButton('Save Rig')
-        # self.saveBtn.clicked.connect(self.saveRig)
+        self.saveBtn.clicked.connect(self.saveRig)
         self.actionLayout.addWidget(self.saveBtn)
 
         # import button
@@ -187,12 +190,12 @@ class RiggingMainUI(QtWidgets.QWidget):
 
         # clear button
         self.clearBtn = QtWidgets.QPushButton('Clear Rig')
-        # self.clearBtn.clicked.connect(self.clearRig)
+        self.clearBtn.clicked.connect(self.clearRig)
         self.actionLayout.addWidget(self.clearBtn)
 
         # rig splitter
         self.rigSplitter = Splitter_UI.Splitter(text='Rig Action')
-        self.gridLayout.addWidget(self.rigSplitter, 7, 0, 1, 3)
+        self.rigTabLayout.addWidget(self.rigSplitter, 7, 0, 1, 3)
 
         # rig widget
         self.rigWidget = QtWidgets.QWidget()
@@ -202,12 +205,12 @@ class RiggingMainUI(QtWidgets.QWidget):
 
         self.rigLayout.setAlignment(QtCore.Qt.AlignCenter)
 
-        self.createBtn = QtWidgets.QPushButton('Create RIG!')
-        self.createBtn.setFixedWidth(120)
-        # self.createBtn.clicked.connect(self.createRig)
-        self.rigLayout.addWidget(self.createBtn)
+        self.rigCreateBtn = QtWidgets.QPushButton('Create RIG')
+        self.rigCreateBtn.setFixedWidth(120)
+        self.rigCreateBtn.clicked.connect(self.createRig)
+        self.rigLayout.addWidget(self.rigCreateBtn)
 
-        self.gridLayout.addWidget(self.rigWidget, 8, 0, 1, 3)
+        self.rigTabLayout.addWidget(self.rigWidget, 8, 0, 1, 3)
 
         # helper joints widget
         self.secondWidget = QtWidgets.QWidget()
@@ -228,6 +231,9 @@ class RiggingMainUI(QtWidgets.QWidget):
 
         self.skinLayout.addWidget(self.importSkinBtn)
         self.skinLayout.addWidget(self.exportSkinBtn)
+
+        self.importSkinBtn.clicked.connect(skinLib.SkinCluster.createAndImport)
+        self.exportSkinBtn.clicked.connect(skinLib.SkinCluster.export)
 
     def addRigWidget(self, rigType=None):
         """
@@ -263,7 +269,7 @@ class RiggingMainUI(QtWidgets.QWidget):
                     raise RuntimeError('Rig Part name not enter, please check the rig file')
                 else:
                     # Set the rig project name first
-                    self.proNameLineEdit.setText(str(properties['Procedural Rig Name']))
+                    self.rigProNameLineEdit.setText(str(properties['Procedural Rig Name']))
                     del properties['Procedural Rig Name']
 
                 # set the info
@@ -283,7 +289,7 @@ class RiggingMainUI(QtWidgets.QWidget):
         :return: None
         """
         properties = {}
-        properties['Procedural Rig Name'] = self.proNameLineEdit.text()
+        properties['Procedural Rig Name'] = self.rigProNameLineEdit.text()
 
         for rig in self.findChildren(Rig_UI.RigWidget):
             if str(rig.rigPartLineEdit.text()) in properties.keys():
@@ -298,7 +304,7 @@ class RiggingMainUI(QtWidgets.QWidget):
 
             rigLogDir = self.getDirectory()
             rigLogFile = os.path.join(rigLogDir,
-                                      self.proNameLineEdit.text() + '_rigLogFile_%s.json' % time.strftime('%m%d_%H_%M'))
+                                      self.rigProNameLineEdit.text() + '_rigLogFile_%s.json' % time.strftime('%m%d_%H_%M'))
 
             with open(rigLogFile, 'w') as f:
                 json.dump(properties, f, indent=4)
@@ -307,14 +313,14 @@ class RiggingMainUI(QtWidgets.QWidget):
 
     def clearRig(self):
         for rig in self.findChildren(Rig_UI.RigWidget):
-            rig.deleteRigPart()
+            rig.deleteWidget()
 
     def createRig(self):
         """
         Use the info to create the Rig
         :return:
         """
-        if not self.proNameLineEdit.text():
+        if not self.rigProNameLineEdit.text():
             logger.error('No Facial Rig Name Found, Please Input A Facial Rig Name!!!')
             return None
         # Before create the rig, save the rig first!
@@ -339,6 +345,8 @@ class RiggingMainUI(QtWidgets.QWidget):
                                         numJnt=eval(rig.rigArgs['numJnt']),
                                         addSliderCtrls=eval(rig.rigArgs['addSliderCtrls']),
                                         jointParent=rig.rigArgs['jointParent'])
+                logger.info('Type:singleLineRig, %s build complete!' % rig.rigPartLineEdit.text())
+                continue
 
             elif rig.rigTypeName == 'cartoonEyeLidRig' and rig.rigArgs:
                 cartoonEyeLidRig.createRig(vertexList=eval(rig.rigArgs['vertexList']),
@@ -348,11 +356,13 @@ class RiggingMainUI(QtWidgets.QWidget):
                                            eyeJoint=rig.rigArgs['eyeJoint'],
                                            numCtrl=rig.rigArgs['numCtrl'],
                                            insertJnt=eval(rig.rigArgs['insertJnt']))
+                logger.info('Type:cartoonEyeLidRig, %s build complete!' % rig.rigPartLineEdit.text())
+                continue
 
             else:
                 logger.info('Can not find the Type: %s rig part, please check again!' % str(rig.rigTypeName))
 
-        logger.info('Project: %s create rig complete!' % str(self.proNameLineEdit.text()))
+        logger.info('Project: %s create rig complete!' % str(self.rigProNameLineEdit.text()))
 
     def getDirectory(self):
         """

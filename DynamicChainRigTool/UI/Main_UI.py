@@ -123,7 +123,7 @@ class MainUI(QtWidgets.QDialog):
         self.firstLayout.addWidget(formWidget)
 
         # selection splitter
-        self.listSplitter = splitter()
+        self.listSplitter = Splitter()
         self.firstLayout.addWidget(self.listSplitter)
 
         # selection widget
@@ -158,7 +158,7 @@ class MainUI(QtWidgets.QDialog):
         selectionLayout.addWidget(self.listWidget)
 
         # create rig splitter
-        self.createRigSplitter = splitter()
+        self.createRigSplitter = Splitter()
         self.firstLayout.addWidget(self.createRigSplitter)
 
         # create rig button
@@ -173,7 +173,7 @@ class MainUI(QtWidgets.QDialog):
         self.secondWidget.setLayout(self.secondLayout)
 
         # setting group splitter
-        self.settingSplitter = splitter(text='SETTING GROUPS')
+        self.settingSplitter = Splitter(text='SETTING GROUPS')
         self.secondLayout.addWidget(self.settingSplitter)
 
         # setting group comboBox
@@ -182,7 +182,7 @@ class MainUI(QtWidgets.QDialog):
         self.secondLayout.addWidget(self.setGrpComboBox)
 
         # selection splitter
-        self.selSplitter = splitter(text='SELECTION')
+        self.selSplitter = Splitter(text='SELECTION')
         self.secondLayout.addWidget(self.selSplitter)
 
         # seleciton buttons
@@ -227,7 +227,7 @@ class MainUI(QtWidgets.QDialog):
         self.secondLayout.addLayout(self.selGridLayout)
 
         # bake splitter
-        self.bakeSplitter = splitter(text='BAKE')
+        self.bakeSplitter = Splitter(text='BAKE')
         self.secondLayout.addWidget(self.bakeSplitter)
 
         # bake button
@@ -239,7 +239,7 @@ class MainUI(QtWidgets.QDialog):
         self.secondLayout.addLayout(self.bakeBtnLayout)
 
         # replace splitter
-        self.replaceSplitter = splitter(text='REPLACE')
+        self.replaceSplitter = Splitter(text='REPLACE')
         self.secondLayout.addWidget(self.replaceSplitter)
 
         # replace layout
@@ -260,7 +260,7 @@ class MainUI(QtWidgets.QDialog):
         self.secondLayout.addLayout(self.replaceLayout)
 
         # to be continued... splitter
-        self.toBeContinuedSplitter = splitter(text='TO BE CONTINUED...')
+        self.toBeContinuedSplitter = Splitter(text='TO BE CONTINUED...')
         self.secondLayout.addWidget(self.toBeContinuedSplitter)
 
     def setEditLine(self, editLine):
@@ -619,13 +619,13 @@ class MainUI(QtWidgets.QDialog):
         self.setCurrentSetGrp()
 
 
-class splitter(QtWidgets.QWidget):
+class Splitter(QtWidgets.QWidget):
     def __init__(self, text=None):
         """
         Splitter class for create splitter widget
         :param text: text between splitter lines
         """
-        super(splitter, self).__init__()
+        super(Splitter, self).__init__()
 
         self.setMinimumHeight(2)
         self.mainLayout = QtWidgets.QHBoxLayout()

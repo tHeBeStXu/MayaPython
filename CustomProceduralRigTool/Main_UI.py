@@ -1,10 +1,11 @@
-from PySide2 import QtWidgets, QtCore
+from PySide2 import QtWidgets, QtCore, QtGui
 from functools import partial
 import maya.OpenMayaUI as omui
 import pymel.core as pm
 import json
 import time
 import os
+import Splitter_UI
 from shiboken2 import wrapInstance
 
 import rigLib
@@ -18,6 +19,7 @@ reload(Edit_UI)
 reload(rigLib.rig)
 reload(module)
 reload(skinLib)
+reload(Splitter_UI)
 
 
 logging.basicConfig()
@@ -69,6 +71,8 @@ class RiggingMainUI(QtWidgets.QWidget):
                 'IK_FK_Head_Neck': '',
                 'FK_Tail': ''}
 
+    twistTypes = {'Blend_RollChain': ''}
+
     def __init__(self, dock=1):
         """
         Initialize and show the main window.
@@ -81,11 +85,12 @@ class RiggingMainUI(QtWidgets.QWidget):
             try:
                 pm.deleteUI('ProceduralRiggingTool')
             except:
-                logger.debug('No previous UI exists!')
+                logger.info('No previous UI exists!')
 
             parent = QtWidgets.QDialog(parent=getMayaMainWindow())
             parent.setObjectName('ProceduralRiggingTool')
             parent.setWindowTitle('Procedural Rigging Tool')
+            parent.setFixedSize(270, 780)
             layout = QtWidgets.QVBoxLayout(parent)
 
         super(RiggingMainUI, self).__init__(parent=parent)
@@ -100,85 +105,239 @@ class RiggingMainUI(QtWidgets.QWidget):
         # self.projectName = ''
 
         if not dock:
-            parent.show()
+            self.parent().show()
 
     def buildUI(self):
         """
         Build the Main UI
         :return: None
         """
+        self.setFixedSize(250, 750)
+        self.mainLayout = QtWidgets.QVBoxLayout()
+        self.setLayout(self.mainLayout)
+
+        # tabWidget
+        self.mainWidget = QtWidgets.QTabWidget()
+
+        self.mainWidget.setFixedSize(250, 680)
+        self.layout().addWidget(self.mainWidget)
+        # rigTab
+        self.firstWidget = QtWidgets.QWidget()
+        self.mainWidget.addTab(self.firstWidget, 'Rig')
+
         gridLayout = QtWidgets.QGridLayout(self)
+        self.firstWidget.setLayout(gridLayout)
+
+        self.layout().setContentsMargins(0, 0, 0, 0)
+
+        # Rig File Name
+        self.proSplitter = Splitter_UI.Splitter(text='Procedural Rigging Tool')
+        gridLayout.addWidget(self.proSplitter, 0, 0, 1, 3)
+
+        proNameLabel = QtWidgets.QLabel('Rig Name: ')
+        proNameLabel.setAlignment(QtCore.Qt.AlignCenter)
+
+        self.rigProNameLineEdit = QtWidgets.QLineEdit('')
+        self.rigProNameLineEdit.setPlaceholderText('Enter a Project Name')
+
+        gridLayout.addWidget(proNameLabel, 1, 0, 1, 1)
+        gridLayout.addWidget(self.rigProNameLineEdit, 1, 1, 1, 2)
+
+        # combo part
+        self.comboSplitter = Splitter_UI.Splitter(text='Select & Add')
+        gridLayout.addWidget(self.comboSplitter, 2, 0, 1, 3)
 
         self.rigTypeCB = QtWidgets.QComboBox()
 
         for rigType in sorted(self.rigTypes.keys()):
             self.rigTypeCB.addItem(rigType)
-        gridLayout.addWidget(self.rigTypeCB, 0, 0, 1, 2)
+        gridLayout.addWidget(self.rigTypeCB, 3, 0, 1, 2)
 
         addBtn = QtWidgets.QPushButton('Add')
         addBtn.clicked.connect(self.addRigWidget)
-        gridLayout.addWidget(addBtn, 0, 2)
-
-        # Rig File Name
-        proNameLabel = QtWidgets.QLabel('Rig Name: ')
-        proNameLabel.setAlignment(QtCore.Qt.AlignCenter)
-
-        self.proNameLineEdit = QtWidgets.QLineEdit('Procedural Rig')
-        self.proNameLineEdit.textEdited.connect(self.setLineEditText)
-
-        gridLayout.addWidget(proNameLabel, 1, 0)
-        gridLayout.addWidget(self.proNameLineEdit, 1, 1, 1, 2)
+        gridLayout.addWidget(addBtn, 3, 2, 1, 1)
 
         # Scroll Widget
-        scrollWidget = QtWidgets.QWidget()
-        scrollWidget.setSizePolicy(QtWidgets.QSizePolicy.Maximum, QtWidgets.QSizePolicy.Maximum)
-        self.scrollLayout = QtWidgets.QVBoxLayout()
-        scrollWidget.setLayout(self.scrollLayout)
+        self.rigScrollWidget = QtWidgets.QWidget()
+        self.rigScrollLayout = QtWidgets.QVBoxLayout()
+        self.rigScrollLayout.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        self.rigScrollWidget.setLayout(self.rigScrollLayout)
 
         scrollArea = QtWidgets.QScrollArea()
+        scrollArea.setFixedSize(230, 390)
         scrollArea.setWidgetResizable(True)
-        scrollArea.setWidget(scrollWidget)
+        scrollArea.setWidget(self.rigScrollWidget)
+        scrollArea.setFocusPolicy(QtCore.Qt.NoFocus)
+        scrollArea.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
 
-        gridLayout.addWidget(scrollArea, 2, 0, 1, 3)
+        gridLayout.addWidget(scrollArea, 4, 0, 1, 3)
 
+        # utils splitter
+        self.utilsSplitter = Splitter_UI.Splitter(text='Rig Utils')
+        gridLayout.addWidget(self.utilsSplitter, 5, 0, 1, 3)
+
+        self.actionWidget = QtWidgets.QWidget()
+        self.actionLayout = QtWidgets.QHBoxLayout()
+        self.actionWidget.setLayout(self.actionLayout)
+
+        gridLayout.addWidget(self.actionWidget, 6, 0, 1, 3)
         # Save Button
         saveBtn = QtWidgets.QPushButton('Save Rig')
         saveBtn.clicked.connect(self.saveRig)
-        gridLayout.addWidget(saveBtn, 3, 0)
+        self.actionLayout.addWidget(saveBtn)
 
         # Import Button
         importBtn = QtWidgets.QPushButton('Import Rig')
         importBtn.clicked.connect(self.importRig)
-        gridLayout.addWidget(importBtn, 3, 1)
+        self.actionLayout.addWidget(importBtn)
 
         # Clear Button
         clearBtn = QtWidgets.QPushButton('Clear Rig')
         clearBtn.clicked.connect(self.clearRig)
-        gridLayout.addWidget(clearBtn, 3, 2)
+        self.actionLayout.addWidget(clearBtn)
+
+        # rig splitter
+        self.rigSplitter = Splitter_UI.Splitter(text='Rig Action')
+        gridLayout.addWidget(self.rigSplitter, 7, 0, 1, 3)
 
         # Create Rig Button
-        createBtn = QtWidgets.QPushButton('Create Rig!')
-        createBtn.clicked.connect(self.createRig)
-        gridLayout.addWidget(createBtn, 4, 1, 1, 1)
+        self.rigWidget = QtWidgets.QWidget()
+        self.rigLayout = QtWidgets.QHBoxLayout()
 
-        # Skin row
+        self.rigWidget.setLayout(self.rigLayout)
+
+        self.rigLayout.setAlignment(QtCore.Qt.AlignCenter)
+
+        createBtn = QtWidgets.QPushButton('Create Rig!')
+        createBtn.setFixedWidth(120)
+        createBtn.clicked.connect(self.createRig)
+        self.rigLayout.addWidget(createBtn)
+
+        gridLayout.addWidget(self.rigWidget, 8, 0, 1, 3)
+
+        ########################################################################
+        # twist joints widget
+        self.twistTabWidget = QtWidgets.QWidget()
+        self.mainWidget.addTab(self.twistTabWidget, 'Twist')
+
+        self.twistTabLayout = QtWidgets.QGridLayout()
+        self.twistTabWidget.setLayout(self.twistTabLayout)
+
+        self.layout().setContentsMargins(0, 0, 0, 0)
+
+        # Rig File Name
+        self.twistProSplitter = Splitter_UI.Splitter(text='Twist Module')
+        self.twistTabLayout.addWidget(self.twistProSplitter, 0, 0, 1, 3)
+
+        twistProLabel = QtWidgets.QLabel('Twist Name:')
+        twistProLabel.setAlignment(QtCore.Qt.AlignCenter)
+
+        self.twistProNameLineEdit = QtWidgets.QLineEdit('')
+        self.twistProNameLineEdit.setPlaceholderText('Enter Twist Rig Name')
+
+        self.twistTabLayout.addWidget(twistProLabel, 1, 0, 1, 1)
+        self.twistTabLayout.addWidget(self.twistProNameLineEdit, 1, 1, 1, 2)
+
+        # combo splitter
+        self.twistCBSplitter = Splitter_UI.Splitter(text='Select & Add')
+        self.twistTabLayout.addWidget(self.twistCBSplitter, 2, 0, 1, 3)
+
+        self.twistTypeCB = QtWidgets.QComboBox()
+
+        self.twistTypeCB.clear()
+
+        for twistType in sorted(self.twistTypes.keys()):
+            self.twistTypeCB.addItem(twistType)
+
+        self.twistTabLayout.addWidget(self.twistTypeCB, 3, 0, 1, 2)
+
+        self.twistAddBtn = QtWidgets.QPushButton('Add')
+        self.twistAddBtn.clicked.connect(self.addTwistWidget)
+        self.twistTabLayout.addWidget(self.twistAddBtn, 3, 2, 1, 1)
+
+        # rigScrollWidget
+        self.twistScrollWidget = QtWidgets.QWidget()
+        self.twistScrollLayout = QtWidgets.QVBoxLayout()
+        self.twistScrollLayout.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        self.twistScrollWidget.setLayout(self.twistScrollLayout)
+
+        self.twistScrollArea = QtWidgets.QScrollArea()
+        self.twistScrollArea.setFixedSize(230, 390)
+        self.twistScrollArea.setWidgetResizable(True)
+        self.twistScrollArea.setWidget(self.twistScrollWidget)
+        self.twistScrollArea.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.twistScrollArea.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+
+        self.twistTabLayout.addWidget(self.twistScrollArea, 4, 0, 1, 3)
+
+        # utils part
+        self.twistUtilsSplitter = Splitter_UI.Splitter(text='Twist Utils')
+        self.twistTabLayout.addWidget(self.twistUtilsSplitter, 5, 0, 1, 3)
+
+        # action Widget
+        self.twistActionWidget = QtWidgets.QWidget()
+        self.twistActionLayout = QtWidgets.QHBoxLayout()
+
+        self.twistActionWidget.setLayout(self.twistActionLayout)
+
+        self.twistTabLayout.addWidget(self.twistActionWidget, 6, 0, 1, 3)
+
+        # save button
+        self.twistSaveBtn = QtWidgets.QPushButton('Save Twist')
+        # self.twistSaveBtn.clicked.connect(self.saveTwist)
+        self.twistActionLayout.addWidget(self.twistSaveBtn)
+
+        # import button
+        self.twistImportBtn = QtWidgets.QPushButton('Import Twist')
+        # self.twistImportBtn.clicked.connect(self.importTwist)
+        self.twistActionLayout.addWidget(self.twistImportBtn)
+
+        # clear button
+        self.twistClearBtn = QtWidgets.QPushButton('Clear Twist')
+        self.twistClearBtn.clicked.connect(self.clearTwist)
+        self.twistActionLayout.addWidget(self.twistClearBtn)
+
+        # twist action
+        self.twistActionSplitter = Splitter_UI.Splitter(text='Twist Action')
+        self.twistTabLayout.addWidget(self.twistActionSplitter, 7, 0, 1, 3)
+
+        self.twistWidget = QtWidgets.QWidget()
+        self.twistLayout = QtWidgets.QHBoxLayout()
+
+        self.twistWidget.setLayout(self.twistLayout)
+
+        self.twistLayout.setAlignment(QtCore.Qt.AlignCenter)
+
+        self.twistCreateBtn = QtWidgets.QPushButton('Create TWIST')
+        self.twistCreateBtn.setFixedWidth(120)
+        # self.twistCreateBtn.clicked.connect(self.createTwist)
+        self.twistLayout.addWidget(self.twistCreateBtn)
+
+        self.twistTabLayout.addWidget(self.twistWidget, 8, 0, 1, 3)
+
+########################################################################################################################
+        # Skin Splitter
+        self.skinSplitter = Splitter_UI.Splitter(text='Skin Action')
+        self.layout().addWidget(self.skinSplitter)
+
         skinWidget = QtWidgets.QWidget()
+
+        self.layout().addWidget(skinWidget)
         skinLayout = QtWidgets.QHBoxLayout()
         skinWidget.setLayout(skinLayout)
-        gridLayout.addWidget(skinWidget, 5, 0, 1, 3)
 
         # export skin weights btn
-        skinExportBtn = QtWidgets.QPushButton('Export Weights')
+        skinExportBtn = QtWidgets.QPushButton('Export Skin')
         skinLayout.addWidget(skinExportBtn)
         skinExportBtn.clicked.connect(skinLib.SkinCluster.export)
 
         # import skin weights btn
-        skinImportBtn = QtWidgets.QPushButton('Import Weights')
+        skinImportBtn = QtWidgets.QPushButton('Import Skin')
         skinLayout.addWidget(skinImportBtn)
         skinImportBtn.clicked.connect(skinLib.SkinCluster.createAndImport)
 
     def clearRig(self):
-        for rig in self.findChildren(rigWidget):
+        for rig in self.rigScrollWidget.findChildren(rigWidget):
             rig.deleteRigPart()
 
     def createRig(self):
@@ -186,13 +345,13 @@ class RiggingMainUI(QtWidgets.QWidget):
         Use the info to create the Rig
         :return:
         """
-        if not self.proNameLineEdit.text():
+        if not self.rigProNameLineEdit.text():
             logger.error('No rig name found , please input a rig name!')
             return None
         # Before create the rig, save the rig first!
         self.saveRig()
 
-        project = module.Base(characterName=self.proNameLineEdit.text())
+        project = module.Base(characterName=self.rigProNameLineEdit.text())
         # Spine parts
         for rig in self.findChildren(rigWidget):
             if rig.rigTypeName == 'IK_FK_Spine' and not rig.rigArgs['mainSpineAttach']:
@@ -310,7 +469,7 @@ class RiggingMainUI(QtWidgets.QWidget):
         fileName = QtWidgets.QFileDialog.getOpenFileName(self, 'Rig File Browser', directory)
 
         if not fileName[0]:
-            logger.debug('You have selected a null file, please check and select again.')
+            logger.info('You have selected a null file, please check and select again.')
             return
         else:
             with open(fileName[0], 'r') as f:
@@ -321,7 +480,7 @@ class RiggingMainUI(QtWidgets.QWidget):
                     raise RuntimeError('Procedural Rig Name not found, please check the rig file')
                 else:
                     # Set the rig project name first
-                    self.proNameLineEdit.setText(str(properties['Procedural Rig Name']))
+                    self.rigProNameLineEdit.setText(str(properties['Procedural Rig Name']))
                     # Delete the key and info to get the other info in a for loop
                     del properties['Procedural Rig Name']
 
@@ -333,7 +492,7 @@ class RiggingMainUI(QtWidgets.QWidget):
                     # Be sure to set the rigPartName of each widget
                     self.widget.setRigPartName()
 
-            logger.info('import %s rig log file.' % fileName[0])
+            logger.info('Import %s rig log file.' % fileName[0])
 
     def saveRig(self):
         """
@@ -341,9 +500,9 @@ class RiggingMainUI(QtWidgets.QWidget):
         :return: None
         """
         properties = {}
-        properties['Procedural Rig Name'] = self.proNameLineEdit.text()
+        properties['Procedural Rig Name'] = self.rigProNameLineEdit.text()
 
-        for rig in self.findChildren(rigWidget):
+        for rig in self.rigScrollWidget.findChildren(rigWidget):
             if str(rig.rigPartLineEdit.text()) in properties.keys():
                 # raise RuntimeError("Rig file save failed, you have already same name rig part name!")
                 logger.debug("Rig file save failed, you have already same name rig part!!!")
@@ -352,11 +511,11 @@ class RiggingMainUI(QtWidgets.QWidget):
             properties[str(rig.rigPartLineEdit.text())]['rigType'] = rig.rigTypeName
             properties[str(rig.rigPartLineEdit.text())]['rigArgs'] = rig.rigArgs
 
-        if len(properties.keys()) == len(self.findChildren(rigWidget)) + 1:
+        if len(properties.keys()) == len(self.rigScrollWidget.findChildren(rigWidget)) + 1:
 
-            rigLogDir = self.getDirectory()
+            rigLogDir = self.getDirectory(type='rig')
             rigLogFile = os.path.join(rigLogDir,
-                                      self.proNameLineEdit.text() + '_rigLogFile_%s.json' % time.strftime('%m%d_%H_%M'))
+                                      self.rigProNameLineEdit.text() + '_rigLogFile_%s.json' % time.strftime('%m%d_%H_%M'))
             with open(rigLogFile, 'w') as f:
                 json.dump(properties, f, indent=4)
 
@@ -371,32 +530,117 @@ class RiggingMainUI(QtWidgets.QWidget):
         if not rigType:
             rigType = self.rigTypeCB.currentText()
 
-        self.widget = rigWidget(rigType)
-        self.scrollLayout.addWidget(self.widget)
+        widget = rigWidget(rigType)
+        self.rigScrollLayout.addWidget(widget)
 
-        logger.debug('Add a %s Rig Part' % rigType)
+        logger.info('Add a %s Rig Part' % rigType)
 
-    def getDirectory(self):
+    def addTwistWidget(self, twistType=None):
+        """
+        Add Twist widget to the scroll Layout with specified twistType
+        :param twistType: twistType of the rig widget
+        :return: None
+        """
+        if not twistType:
+            twistType = self.twistTypeCB.currentText()
+
+        self.widget = rigWidget(twistType)
+        self.twistScrollLayout.addWidget(self.widget)
+
+        logger.info('Add a %s Twist Part' % twistType)
+
+    def getDirectory(self, type):
         """
         set and get the rig Log directory
         :return: rig log directory
         """
-        rigLogDir = os.path.join(pm.internalVar(userAppDir=1), 'rigLogFiles')
-        if not os.path.exists(rigLogDir):
-            os.mkdir(rigLogDir)
-        return rigLogDir
+        if type == 'rig':
+            fileName = 'rigLogFiles'
+        elif type == 'twist':
+            fileName = 'twistLogFiles'
+        else:
+            logger.info('Unknow directory type name, please check again!')
+            return
+
+        logDir = os.path.join(pm.internalVar(userAppDir=1), fileName)
+        if not os.path.exists(logDir):
+            os.mkdir(logDir)
+        return logDir
+
+    def clearTwist(self):
+        for rig in self.twistScrollWidget.findChildren(rigWidget):
+            rig.deleteRigPart()
+
+    def saveTwist(self):
+        """
+        Save the twist info to a .json file at the specified directory
+        :return: None
+        """
+        properties = {}
+        properties['Twist Name'] = self.twistProNameLineEdit.text()
+
+        for twist in self.twistScrollWidget.findChildren(rigWidget):
+            if str(twist.rigPartLineEdit.Text()) in properties.keys():
+                logger.debug('Twist file save failed, you have already same name twist part!!!')
+                break
+            properties[str(twist.rigPartLineEdit.text())] = {}
+            properties[str(twist.rigPartLineEdit.text())]['twistType'] = twist.rigTypeName
+            properties[str(twist.rigPartLineEdit.text())]['twistArgs'] = twist.rigArgs
+
+        if len(properties.keys()) == len(self.twistScrollWidget.findChildren(rigWidget)) + 1:
+            twistLogDir = self.getDirectory(type='twist')
+            twistLogFile = os.path.join(twistLogDir,
+                                        self.twistProNameLineEdit.text() + '_twistLogFile_%s.json' % time.strftime('%m%d_%H_%M'))
+
+            with open(twistLogFile, 'w') as f:
+                json.dump(properties, f, indent=4)
+
+            logger.info('Savng twist file to %s' % twistLogFile)
+
+    def importTwist(self):
+        """
+        Get the twistLog file from the specified directory and set the twist
+        :return: None
+        """
+        directory = self.getDirectory(type='twist')
+        fileName = QtWidgets.QFileDialog.getOpenFileName(self, 'Twist File Browser', directory)
+
+        if not fileName[0]:
+            logger.info('You have selected a null file, please check and select again.')
+            return
+
+        else:
+            with open(fileName[0], 'r') as f:
+                properties = json.load(f)
+
+                # check the properties is None or not
+                if not properties:
+                    raise RuntimeError('Twist Name not found, please check the twist file')
+                else:
+                    self.twistProNameLineEdit.setText(str(properties['Twist Name']))
+                    del properties['Twist Name']
+
+                for key in properties.keys():
+                    self.addTwistWidget(properties[key]['rigType'])
+                    self.widget.rigArgs = properties[key]['rigArgs']
+                    self.widget.rigPartLineEdit.setText(str(key))
+
+            logger.info('Import %s twist log file.' % fileName[0])
 
 
-class rigWidget(QtWidgets.QWidget):
+class rigWidget(QtWidgets.QFrame):
 
     def __init__(self, rigTypeName):
         super(rigWidget, self).__init__()
 
-        self.setMinimumWidth(250)
+        self.setFrameStyle(QtWidgets.QFrame.Panel)
+        self.setFrameShadow(QtWidgets.QFrame.Raised)
+
+        self.setFixedSize(200, 100)
 
         self.rigArgs = {}
 
-        self.rigTypeName = rigTypeName
+        self.typeName = rigTypeName
 
         # self.rigPartName = None
         self.rigPartLineEdit = None
@@ -408,38 +652,44 @@ class rigWidget(QtWidgets.QWidget):
         build the Rig UI
         :return: None
         """
-
         editWidgetLayout = QtWidgets.QVBoxLayout()
         self.setLayout(editWidgetLayout)
 
-        editWidgetLayout.setAlignment(QtCore.Qt.AlignTop)
-        editWidgetLayout.setSpacing(5)
+        editWidgetLayout.setSpacing(2)
 
-        closeBtnLayout = QtWidgets.QHBoxLayout()
-        editLineLayout = QtWidgets.QHBoxLayout()
-        editBtnLayout = QtWidgets.QHBoxLayout()
+        self.closeBtnLayout = QtWidgets.QHBoxLayout()
+        self.editLineLayout = QtWidgets.QHBoxLayout()
+        self.editBtnLayout = QtWidgets.QHBoxLayout()
 
-        editWidgetLayout.addLayout(closeBtnLayout)
-        editWidgetLayout.addLayout(editLineLayout)
-        editWidgetLayout.addLayout(editBtnLayout)
+        editWidgetLayout.addLayout(self.closeBtnLayout)
+        editWidgetLayout.addLayout(self.editLineLayout)
+        editWidgetLayout.addLayout(self.editBtnLayout)
 
         closeBtn = QtWidgets.QPushButton('X')
         closeBtn.clicked.connect(self.deleteRigPart)
-        closeBtn.setMaximumWidth(20)
-        closeBtnLayout.addWidget(closeBtn)
-        closeBtnLayout.setAlignment(QtCore.Qt.AlignLeft)
+        closeBtn.setFixedWidth(25)
 
-        label = QtWidgets.QLabel('Rig part: ')
-        label.setAlignment(QtCore.Qt.AlignRight)
-        self.rigPartLineEdit = QtWidgets.QLineEdit(str(self.rigTypeName))
-        # self.rigPartLineEdit.textEdited.connect(self.setRigPartName)
-        editLineLayout.addWidget(label)
-        editLineLayout.addWidget(self.rigPartLineEdit)
+        font = QtGui.QFont()
+        font.setPointSize(10)
+        font.setBold(1)
+        self.TypeLabel = QtWidgets.QLabel('Type: %s' % self.typeName)
+        self.TypeLabel.setFont(font)
+
+        self.closeBtnLayout.addWidget(self.TypeLabel)
+        self.closeBtnLayout.addWidget(closeBtn)
+
+        label = QtWidgets.QLabel('Part Name:  ')
+        self.partLineEdit = QtWidgets.QLineEdit()
+        self.partLineEdit.setPlaceholderText('Enter a name')
+
+        self.editLineLayout.addWidget(label)
+        self.editLineLayout.addWidget(self.partLineEdit)
 
         self.editBtn = QtWidgets.QPushButton('Edit...')
-        self.editBtn.setMaximumWidth(80)
-        self.editBtn.clicked.connect(self.editRigPart)
-        editBtnLayout.addWidget(self.editBtn)
+        self.editBtn.setFixedWidth(80)
+
+        self.editBtn.clicked.connect(self.editPart)
+        self.editBtnLayout.addWidget(self.editBtn)
 
     def deleteRigPart(self):
         """
@@ -450,30 +700,30 @@ class rigWidget(QtWidgets.QWidget):
         self.setVisible(False)
         self.deleteLater()
 
-    def editRigPart(self):
+    def editPart(self):
         """
         Set the rig part info
         :return: None
         """
-        if self.rigTypeName == 'IK_FK_Spine':
-            Edit_UI.EditUI(self, self.rigTypeName, rigLib.rig.IK_FK_Spine.build)
-            # Edit_UI.IK_FK_Spine_EditUI(self, self.rigTypeName)
-        elif self.rigTypeName == 'IK_FK_Arm':
-            Edit_UI.EditUI(self, self.rigTypeName, rigLib.rig.IK_FK_HumanArm.build)
-            # Edit_UI.IK_FK_Arm_EditUI(self, self.rigTypeName)
-        elif self.rigTypeName == 'IK_AnimalLeg':
-            Edit_UI.EditUI(self, self.rigTypeName, rigLib.rig.IK_AnimalLeg.build)
-            # Edit_UI.IK_AnimalLeg_EditUI(self, self.rigTypeName)
-        elif self.rigTypeName == 'FK_Tail':
-            Edit_UI.EditUI(self, self.rigTypeName, rigLib.rig.FK_Tail.build)
-            # Edit_UI.FK_Tail_EditUI(self, self.rigTypeName)
-        elif self.rigTypeName == 'IK_FK_Head_Neck':
-            Edit_UI.EditUI(self, self.rigTypeName, rigLib.rig.IK_FK_Head_Neck.build)
-            # Edit_UI.IK_FK_Head_Neck_EditUI(self, self.rigTypeName)
+        if self.typeName == 'IK_FK_Spine':
+            Edit_UI.EditUI(self, self.typeName, rigLib.rig.IK_FK_Spine.build)
+            # Edit_UI.IK_FK_Spine_EditUI(self, self.typeName)
+        elif self.typeName == 'IK_FK_Arm':
+            Edit_UI.EditUI(self, self.typeName, rigLib.rig.IK_FK_HumanArm.build)
+            # Edit_UI.IK_FK_Arm_EditUI(self, self.typeName)
+        elif self.typeName == 'IK_AnimalLeg':
+            Edit_UI.EditUI(self, self.typeName, rigLib.rig.IK_AnimalLeg.build)
+            # Edit_UI.IK_AnimalLeg_EditUI(self, self.typeName)
+        elif self.typeName == 'FK_Tail':
+            Edit_UI.EditUI(self, self.typeName, rigLib.rig.FK_Tail.build)
+            # Edit_UI.FK_Tail_EditUI(self, self.typeName)
+        elif self.typeName == 'IK_FK_Head_Neck':
+            Edit_UI.EditUI(self, self.typeName, rigLib.rig.IK_FK_Head_Neck.build)
+            # Edit_UI.IK_FK_Head_Neck_EditUI(self, self.typeName)
         else:
             logger.debug('Unknown rig type...')
 
-        logger.info('Edit %s Rig Part...' % self.rigTypeName)
+        logger.info('Edit %s Rig Part...' % self.typeName)
 
     def setRigPartName(self):
         """

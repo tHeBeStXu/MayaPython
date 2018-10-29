@@ -530,8 +530,9 @@ class RiggingMainUI(QtWidgets.QWidget):
         if not rigType:
             rigType = self.rigTypeCB.currentText()
 
-        widget = rigWidget(rigType)
-        self.rigScrollLayout.addWidget(widget)
+        self.widget = rigWidget(rigType)
+
+        self.rigScrollLayout.addWidget(self.widget)
 
         logger.info('Add a %s Rig Part' % rigType)
 
@@ -630,6 +631,13 @@ class RiggingMainUI(QtWidgets.QWidget):
 
 class rigWidget(QtWidgets.QFrame):
 
+    types = {'IK_AnimalLeg': rigLib.rig.IK_AnimalLeg.build,
+             'IK_FK_Arm': rigLib.rig.IK_FK_HumanArm.build,
+             'IK_FK_Spine': rigLib.rig.IK_FK_Spine.build,
+             'IK_FK_Head_Neck': rigLib.rig.IK_FK_Head_Neck.build,
+             'FK_Tail': rigLib.rig.FK_Tail.build,
+             'Blend_RollChain': rigLib.rig.Blend_RollChain.build}
+
     def __init__(self, rigTypeName):
         super(rigWidget, self).__init__()
 
@@ -705,21 +713,8 @@ class rigWidget(QtWidgets.QFrame):
         Set the rig part info
         :return: None
         """
-        if self.typeName == 'IK_FK_Spine':
-            Edit_UI.EditUI(self, self.typeName, rigLib.rig.IK_FK_Spine.build)
-            # Edit_UI.IK_FK_Spine_EditUI(self, self.typeName)
-        elif self.typeName == 'IK_FK_Arm':
-            Edit_UI.EditUI(self, self.typeName, rigLib.rig.IK_FK_HumanArm.build)
-            # Edit_UI.IK_FK_Arm_EditUI(self, self.typeName)
-        elif self.typeName == 'IK_AnimalLeg':
-            Edit_UI.EditUI(self, self.typeName, rigLib.rig.IK_AnimalLeg.build)
-            # Edit_UI.IK_AnimalLeg_EditUI(self, self.typeName)
-        elif self.typeName == 'FK_Tail':
-            Edit_UI.EditUI(self, self.typeName, rigLib.rig.FK_Tail.build)
-            # Edit_UI.FK_Tail_EditUI(self, self.typeName)
-        elif self.typeName == 'IK_FK_Head_Neck':
-            Edit_UI.EditUI(self, self.typeName, rigLib.rig.IK_FK_Head_Neck.build)
-            # Edit_UI.IK_FK_Head_Neck_EditUI(self, self.typeName)
+        if self.typeName in self.types.keys():
+            Edit_UI.EditWidget(self, self.typeName, self.types[self.typeName])
         else:
             logger.debug('Unknown rig type...')
 

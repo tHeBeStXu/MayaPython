@@ -13,10 +13,6 @@ from ..rig import *
 
 import logging
 
-reload(cartoonEyeLidRig)
-reload(singleLineRig)
-reload(vertex2Rig)
-
 reload(Splitter_UI)
 reload(Rig_UI)
 reload(cartoonEyeLidRig)
@@ -349,13 +345,13 @@ class RiggingMainUI(QtWidgets.QWidget):
                 continue
 
             elif rig.rigTypeName == 'cartoonEyeLidRig' and rig.rigArgs:
-                cartoonEyeLidRig.createRig(vertexList=eval(rig.rigArgs['vertexList']),
+                cartoonEyeLidRig.createRig(upperVertexList=eval(rig.rigArgs['upperVertexList']),
+                                           lowerVertexList=eval(rig.rigArgs['lowerVertexList']),
                                            prefix=rig.rigArgs['prefix'],
                                            rigPartName=rig.rigArgs['rigPartName'],
                                            rigScale=eval(rig.rigArgs['rigScale']),
                                            eyeJoint=rig.rigArgs['eyeJoint'],
-                                           numCtrl=rig.rigArgs['numCtrl'],
-                                           insertJnt=eval(rig.rigArgs['insertJnt']))
+                                           numCtrl=eval(rig.rigArgs['numCtrl']))
                 logger.info('Type:cartoonEyeLidRig, %s build complete!' % rig.rigPartLineEdit.text())
                 continue
 

@@ -284,12 +284,12 @@ class RiggingMainUI(QtWidgets.QWidget):
 
         # save button
         self.twistSaveBtn = QtWidgets.QPushButton('Save Twist')
-        # self.twistSaveBtn.clicked.connect(self.saveTwist)
+        self.twistSaveBtn.clicked.connect(self.saveTwist)
         self.twistActionLayout.addWidget(self.twistSaveBtn)
 
         # import button
         self.twistImportBtn = QtWidgets.QPushButton('Import Twist')
-        # self.twistImportBtn.clicked.connect(self.importTwist)
+        self.twistImportBtn.clicked.connect(self.importTwist)
         self.twistActionLayout.addWidget(self.twistImportBtn)
 
         # clear button
@@ -310,7 +310,7 @@ class RiggingMainUI(QtWidgets.QWidget):
 
         self.twistCreateBtn = QtWidgets.QPushButton('Create TWIST')
         self.twistCreateBtn.setFixedWidth(120)
-        # self.twistCreateBtn.clicked.connect(self.createTwist)
+        self.twistCreateBtn.clicked.connect(self.createTwist)
         self.twistLayout.addWidget(self.twistCreateBtn)
 
         self.twistTabLayout.addWidget(self.twistWidget, 8, 0, 1, 3)
@@ -353,17 +353,17 @@ class RiggingMainUI(QtWidgets.QWidget):
 
         project = module.Base(characterName=self.rigProNameLineEdit.text())
         # Spine parts
-        for rig in self.findChildren(rigWidget):
-            if rig.rigTypeName == 'IK_FK_Spine' and not rig.rigArgs['mainSpineAttach']:
+        for rig in self.rigScrollWidget.findChildren(rigWidget):
+            if rig.typeName == 'IK_FK_Spine' and not rig.rigArgs['mainSpineAttach']:
                 self.mainSpine = IK_FK_Spine.build(spineJoints=eval(rig.rigArgs['spineJoints']),
                                                    prefix=rig.rigArgs['prefix'],
                                                    rigScale=eval(rig.rigArgs['rigScale']),
                                                    numFK_Jnt=eval(rig.rigArgs['numFK_Jnt']),
                                                    spineBackUpAxis=rig.rigArgs['spineBackUpAxis'],
                                                    baseRig=project)
-                logger.debug('%s IK_FK_MainSpine finished!' % rig.rigPartLineEdit.text())
+                logger.debug('%s IK_FK_MainSpine finished!' % rig.partLineEdit.text())
                 continue
-            elif rig.rigTypeName == 'IK_FK_Spine' and rig.rigArgs['mainSpineAttach']:
+            elif rig.typeName == 'IK_FK_Spine' and rig.rigArgs['mainSpineAttach']:
                 self.attachSpine = IK_FK_Spine.build(spineJoints=eval(rig.rigArgs['spineJoints']),
                                                      prefix=rig.rigArgs['prefix'],
                                                      rigScale=eval(rig.rigArgs['rigScale']),
@@ -371,7 +371,7 @@ class RiggingMainUI(QtWidgets.QWidget):
                                                      spineBackUpAxis=rig.rigArgs['spineBackUpAxis'],
                                                      mainSpineAttach=rig.rigArgs['mainSpineAttach'],
                                                      baseRig=project)
-                logger.debug('%s IK_FK_AttachSpine finished!' % rig.rigPartLineEdit.text())
+                logger.debug('%s IK_FK_AttachSpine finished!' % rig.partLineEdit.text())
                 continue
             else:
                 logger.debug("Can't find Spine part, please check your joints.")
@@ -379,56 +379,56 @@ class RiggingMainUI(QtWidgets.QWidget):
 
         # Other parts
         if self.mainSpine or self.attachSpine:
-            for rig in self.findChildren(rigWidget):
-                if rig.rigTypeName == 'IK_FK_Arm' and rig.rigArgs:
+            for rig in self.rigScrollWidget.findChildren(rigWidget):
+                if rig.typeName == 'IK_FK_Arm' and rig.rigArgs:
                     IK_FK_HumanArm.build(armJoints=eval(rig.rigArgs['armJoints']),
                                          prefix=rig.rigArgs['prefix'],
                                          rigScale=eval(rig.rigArgs['rigScale']),
                                          FK_Parent=rig.rigArgs['FK_Parent'],
                                          switchCtrlPos=rig.rigArgs['switchCtrlPos'],
                                          baseRig=project)
-                    logger.info('%s IK_FK_Arm build complete!' % rig.rigPartLineEdit.text())
+                    logger.info('%s IK_FK_Arm build complete!' % rig.partLineEdit.text())
                     continue
 
-                elif rig.rigTypeName == 'IK_AnimalLeg' and rig.rigArgs:
+                elif rig.typeName == 'IK_AnimalLeg' and rig.rigArgs:
                     IK_AnimalLeg.build(legJoints=eval(rig.rigArgs['legJoints']),
                                        revJntlocList=eval(rig.rigArgs['revJntlocList']),
                                        ankleRollLoc=rig.rigArgs['ankleRollLoc'],
                                        prefix=rig.rigArgs['prefix'],
                                        rigScale=eval(rig.rigArgs['rigScale']),
                                        baseRig=project)
-                    logger.info('%s IK_AnimalLeg build complete!' % rig.rigPartLineEdit.text())
+                    logger.info('%s IK_AnimalLeg build complete!' % rig.partLineEdit.text())
                     continue
-                elif rig.rigTypeName == 'IK_FK_Head_Neck' and rig.rigArgs:
+                elif rig.typeName == 'IK_FK_Head_Neck' and rig.rigArgs:
                     IK_FK_Head_Neck.build(neckJoints=eval(rig.rigArgs['neckJoints']),
                                           rigScale=eval(rig.rigArgs['rigScale']),
                                           prefix=rig.rigArgs['prefix'],
                                           blendCtrl_Pos=rig.rigArgs['blendCtrl_Pos'],
                                           baseRig=project)
-                    logger.info('%s IK_FK_Head_Neck build complete!' % rig.rigPartLineEdit.text())
+                    logger.info('%s IK_FK_Head_Neck build complete!' % rig.partLineEdit.text())
                     continue
-                elif rig.rigTypeName == 'FK_Tail' and rig.rigArgs:
+                elif rig.typeName == 'FK_Tail' and rig.rigArgs:
                     FK_Tail.build(tailJoints=eval(rig.rigArgs['tailJoints']),
                                   FK_Parent=rig.rigArgs['FK_Parent'],
                                   rigScale=1.0,
                                   prefix=rig.rigArgs['prefix'],
                                   baseRig=project)
-                    logger.info('%s FK_Tail build complete!' % rig.rigPartLineEdit.text())
+                    logger.info('%s FK_Tail build complete!' % rig.partLineEdit.text())
                     continue
                 else:
                     logger.debug("Can't find the specified part, please check your rig type.")
         else:
-            for rig in self.findChildren(rigWidget):
-                if rig.rigTypeName == 'IK_FK_Arm' and rig.rigArgs:
+            for rig in self.rigScrollWidget.findChildren(rigWidget):
+                if rig.typeName == 'IK_FK_Arm' and rig.rigArgs:
                     IK_FK_HumanArm.build(armJoints=eval(rig.rigArgs['armJoints']),
                                          prefix=rig.rigArgs['prefix'],
                                          rigScale=eval(rig.rigArgs['rigScale']),
                                          switchCtrlPos=rig.rigArgs['switchCtrlPos'],
                                          baseRig=project)
-                    logger.info('%s IK_FK_Arm build complete!' % rig.rigPartLineEdit.text())
+                    logger.info('%s IK_FK_Arm build complete!' % rig.partLineEdit.text())
                     continue
 
-                elif rig.rigTypeName == 'IK_AnimalLeg' and rig.rigArgs:
+                elif rig.typeName == 'IK_AnimalLeg' and rig.rigArgs:
                     IK_AnimalLeg.build(legJoints=eval(rig.rigArgs['legJoints']),
                                        revJntlocList=eval(rig.rigArgs['revJntlocList']),
                                        ankleRollLoc=rig.rigArgs['ankleRollLoc'],
@@ -436,23 +436,23 @@ class RiggingMainUI(QtWidgets.QWidget):
                                        prefix=rig.rigArgs['prefix'],
                                        rigScale=eval(rig.rigArgs['rigScale']),
                                        baseRig=project)
-                    logger.info('%s IK_Leg build complete!' % rig.rigPartLineEdit.text())
+                    logger.info('%s IK_Leg build complete!' % rig.partLineEdit.text())
                     continue
-                elif rig.rigTypeName == 'IK_FK_Head_Neck' and rig.rigArgs:
+                elif rig.typeName == 'IK_FK_Head_Neck' and rig.rigArgs:
                     IK_FK_Head_Neck.build(neckJoints=eval(rig.rigArgs['neckJoints']),
                                           Neck_Parent=rig.rigArgs['Neck_Parent'],
                                           rigScale=eval(rig.rigArgs['rigScale']),
                                           prefix=rig.rigArgs['prefix'],
                                           blendCtrl_Pos=rig.rigArgs['blendCtrl_Pos'],
                                           baseRig=project)
-                    logger.info('%s IK_FK_Head_Neck build complete!' % rig.rigPartLineEdit.text())
+                    logger.info('%s IK_FK_Head_Neck build complete!' % rig.partLineEdit.text())
                     continue
-                elif rig.rigTypeName == 'FK_Tail' and rig.rigArgs:
+                elif rig.typeName == 'FK_Tail' and rig.rigArgs:
                     FK_Tail.build(tailJoints=eval(rig.rigArgs['tailJoints']),
                                   rigScale=1.0,
                                   prefix=rig.rigArgs['prefix'],
                                   baseRig=project)
-                    logger.info('%s FK_Tail build complete!' % rig.rigPartLineEdit.text())
+                    logger.info('%s FK_Tail build complete!' % rig.partLineEdit.text())
                     continue
                 else:
                     logger.debug("Can't find the specified part, please check your rig type.")
@@ -464,7 +464,7 @@ class RiggingMainUI(QtWidgets.QWidget):
         Get the rigLog file from the specified directory and set the rig
         :return: None
         """
-        directory = self.getDirectory()
+        directory = self.getDirectory(type='rig')
         # fileName = ['','']
         fileName = QtWidgets.QFileDialog.getOpenFileName(self, 'Rig File Browser', directory)
 
@@ -488,7 +488,7 @@ class RiggingMainUI(QtWidgets.QWidget):
                 for key in properties.keys():
                     self.addRigWidget(properties[key]['rigType'])
                     self.widget.rigArgs = properties[key]['rigArgs']
-                    self.widget.rigPartLineEdit.setText(str(key))
+                    self.widget.partLineEdit.setText(str(key))
                     # Be sure to set the rigPartName of each widget
                     self.widget.setRigPartName()
 
@@ -503,13 +503,13 @@ class RiggingMainUI(QtWidgets.QWidget):
         properties['Procedural Rig Name'] = self.rigProNameLineEdit.text()
 
         for rig in self.rigScrollWidget.findChildren(rigWidget):
-            if str(rig.rigPartLineEdit.text()) in properties.keys():
+            if str(rig.partLineEdit.text()) in properties.keys():
                 # raise RuntimeError("Rig file save failed, you have already same name rig part name!")
                 logger.debug("Rig file save failed, you have already same name rig part!!!")
                 break
-            properties[str(rig.rigPartLineEdit.text())] = {}
-            properties[str(rig.rigPartLineEdit.text())]['rigType'] = rig.rigTypeName
-            properties[str(rig.rigPartLineEdit.text())]['rigArgs'] = rig.rigArgs
+            properties[str(rig.partLineEdit.text())] = {}
+            properties[str(rig.partLineEdit.text())]['rigType'] = rig.typeName
+            properties[str(rig.partLineEdit.text())]['rigArgs'] = rig.rigArgs
 
         if len(properties.keys()) == len(self.rigScrollWidget.findChildren(rigWidget)) + 1:
 
@@ -581,12 +581,12 @@ class RiggingMainUI(QtWidgets.QWidget):
         properties['Twist Name'] = self.twistProNameLineEdit.text()
 
         for twist in self.twistScrollWidget.findChildren(rigWidget):
-            if str(twist.rigPartLineEdit.Text()) in properties.keys():
+            if str(twist.partLineEdit.text()) in properties.keys():
                 logger.debug('Twist file save failed, you have already same name twist part!!!')
                 break
-            properties[str(twist.rigPartLineEdit.text())] = {}
-            properties[str(twist.rigPartLineEdit.text())]['twistType'] = twist.rigTypeName
-            properties[str(twist.rigPartLineEdit.text())]['twistArgs'] = twist.rigArgs
+            properties[str(twist.partLineEdit.text())] = {}
+            properties[str(twist.partLineEdit.text())]['twistType'] = twist.typeName
+            properties[str(twist.partLineEdit.text())]['twistArgs'] = twist.rigArgs
 
         if len(properties.keys()) == len(self.twistScrollWidget.findChildren(rigWidget)) + 1:
             twistLogDir = self.getDirectory(type='twist')
@@ -622,11 +622,33 @@ class RiggingMainUI(QtWidgets.QWidget):
                     del properties['Twist Name']
 
                 for key in properties.keys():
-                    self.addTwistWidget(properties[key]['rigType'])
-                    self.widget.rigArgs = properties[key]['rigArgs']
-                    self.widget.rigPartLineEdit.setText(str(key))
+                    self.addTwistWidget(properties[key]['twistType'])
+                    self.widget.rigArgs = properties[key]['twistArgs']
+                    self.widget.partLineEdit.setText(str(key))
 
             logger.info('Import %s twist log file.' % fileName[0])
+
+    def createTwist(self):
+        """
+        Use the info to create the twist
+        :return:
+        """
+        if not self.twistProNameLineEdit.text():
+            logger.error('No rig name found , please input a rig name!')
+            return None
+        # Before create the rig, save the rig first!
+        self.saveTwist()
+
+        for twist in self.twistScrollWidget.findChildren(rigWidget):
+            if twist.typeName in self.twistTypes.keys() and twist.rigArgs:
+                Blend_RollChain.build(rollStart=twist.rigArgs['rollStart'],
+                                      rollEnd=twist.rigArgs['rollEnd'],
+                                      numRollJoints=eval(twist.rigArgs['numRollJoints']),
+                                      rollWithSameDir=eval(twist.rigArgs['rollWithSameDir']))
+                logger.info('%s Blend_RollChain build complete!' % twist.partLineEdit.text())
+                continue
+            else:
+                logger.info("Can't find the specified part, please check your rig type.")
 
 
 class rigWidget(QtWidgets.QFrame):
@@ -651,7 +673,7 @@ class rigWidget(QtWidgets.QFrame):
         self.typeName = rigTypeName
 
         # self.rigPartName = None
-        self.rigPartLineEdit = None
+        self.partLineEdit = None
         self.editBtn = None
         self.buildUI()
 

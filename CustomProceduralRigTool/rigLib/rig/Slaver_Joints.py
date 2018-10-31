@@ -26,7 +26,7 @@ def build(joints=None):
             cmds.select(cl=1)
             slvJnt = cmds.joint(n='Slave_' + i)
 
-            pc = cmds.parent(i, slvJnt, mo=0)
+            pc = cmds.parentConstraint(i, slvJnt, mo=0)
             cmds.delete(pc)
 
             cmds.makeIdentity(slvJnt, apply=1)

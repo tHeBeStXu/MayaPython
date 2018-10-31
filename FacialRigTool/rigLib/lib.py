@@ -182,7 +182,12 @@ def getComponentType(input):
 
 
 def getUParam(pnt=[], crv=None):
-
+    """
+    get u parameter of the given position to a curve
+    :param pnt: list, position list
+    :param crv: str, curve shape
+    :return: float, u parameter value
+    """
     curveFn = om.MFnNurbsCurve(getDagPath(crv))
 
     mPos = om.MPoint(pnt[0], pnt[1], pnt[2])
@@ -198,6 +203,11 @@ def getUParam(pnt=[], crv=None):
 
 
 def getDagPath(objectName):
+    """
+    get dagPath of the given object
+    :param objectName: str, given object name
+    :return: dagPath of the object
+    """
     if isinstance(objectName, list) == True:
         oNodeList = []
         for o in objectName:

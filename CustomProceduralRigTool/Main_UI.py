@@ -1,5 +1,4 @@
 from PySide2 import QtWidgets, QtCore, QtGui
-from functools import partial
 import maya.OpenMayaUI as omui
 import pymel.core as pm
 import json

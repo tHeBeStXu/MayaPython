@@ -38,7 +38,8 @@ def build(spineJoints,
     # fk skeleton chain
     # create FK crv
     ik_part_list = []
-    ik_part_list = cmds.ikHandle(sj=spineJoints[0], ee=spineJoints[-1], parentCurve=0, sol='ikSplineSolver', numSpans=3)
+    ik_part_list = cmds.ikHandle(sj=spineJoints[0], ee=spineJoints[-1], parentCurve=1, sol='ikSplineSolver', numSpans=4,
+                                 simplifyCurve=0)
 
     cmds.delete(ik_part_list[0])
 

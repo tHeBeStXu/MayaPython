@@ -80,6 +80,8 @@ class MainUI(QtWidgets.QDialog):
         Build the main UI
         :return: None
         """
+        self.setFixedSize(380, 480)
+
         self.mainLayout = QtWidgets.QVBoxLayout()
         self.setLayout(self.mainLayout)
 

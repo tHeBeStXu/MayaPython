@@ -1,4 +1,5 @@
 from PySide2 import QtWidgets, QtCore, QtGui
+import maya.cmds as cmds
 import maya.OpenMayaUI as omui
 import pymel.core as pm
 import json
@@ -415,7 +416,15 @@ class RiggingMainUI(QtWidgets.QWidget):
                     logger.info('%s FK_Tail build complete!' % rig.partLineEdit.text())
                     continue
                 else:
-                    logger.debug("Can't find the specified part, please check your rig type.")
+                    logger.info("Can't find the SPINE part, please check out your rig type.")
+
+            # connect attr
+            if self.mainSpine['rootJnt']:
+                cmds.connectAttr(project.Move_Ctrl.C + '.rootJoint', self.mainSpine['rootJnt'] + '.rootJoint', f=1)
+                cmds.select(cl=1)
+                cmds.parent(self.mainSpine['rootJnt'], project.Move_Ctrl.C)
+                cmds.select(cl=1)
+
         else:
             for rig in self.rigScrollWidget.findChildren(rigWidget):
                 if rig.typeName == 'IK_FK_Arm' and rig.rigArgs:
@@ -454,7 +463,7 @@ class RiggingMainUI(QtWidgets.QWidget):
                     logger.info('%s FK_Tail build complete!' % rig.partLineEdit.text())
                     continue
                 else:
-                    logger.debug("Can't find the specified part, please check your rig type.")
+                    logger.debug("Can't find the %s part, please check out your rig type." % str(rig.typeName))
 
         logger.info("Create rig complete!")
 

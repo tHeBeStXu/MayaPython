@@ -1,0 +1,82 @@
+{
+    "R_Leg": {
+        "rigArgs": {
+            "legJoints": "[u'R_Hip', u'R_Knee', u'R_Ankle', u'R_Ball', u'R_Toe', u'R_ToeEnd']", 
+            "baseRig": "", 
+            "spineJnt": "C_Spine_0", 
+            "prefix": "R_", 
+            "revJntlocList": "[u'R_CBank', u'R_EBank', u'R_Heel', u'R_Pivot']", 
+            "ankleRollLoc": "R_Roll_Loc", 
+            "rigScale": "1"
+        }, 
+        "rigType": "IK_AnimalLeg"
+    }, 
+    "C_Neck2Head": {
+        "rigArgs": {
+            "baseRig": "", 
+            "neckJoints": "[u'C_Neck_0', u'C_Neck_1', u'C_Neck_2', u'C_Neck_3', u'C_Head', u'C_HeadEnd']", 
+            "prefix": "C_", 
+            "blendCtrl_Pos": "C_Neck_Head_Switch_Loc", 
+            "rigScale": "4", 
+            "Neck_Parent": "C_Spine_3"
+        }, 
+        "rigType": "IK_FK_Head_Neck"
+    }, 
+    "C_Spine": {
+        "rigArgs": {
+            "baseRig": "", 
+            "numFK_Jnt": "3", 
+            "spineJoints": "[u'C_Spine_0', u'C_Spine_1', u'C_Spine_2', u'C_Spine_3']", 
+            "prefix": "C_", 
+            "mainSpineAttach": "", 
+            "spineBackUpAxis": "y", 
+            "rigScale": "2"
+        }, 
+        "rigType": "IK_FK_Spine"
+    }, 
+    "C_Tail": {
+        "rigArgs": {
+            "baseRig": "", 
+            "prefix": "C_", 
+            "rigScale": "1.0", 
+            "FK_Parent": "C_Spine_0", 
+            "tailJoints": "[u'C_Tail_0', u'C_Tail_1', u'C_Tail_2', u'C_Tail_3', u'C_Tail_4', u'C_Tail_5', u'C_Tail_6', u'C_Tail_7']"
+        }, 
+        "rigType": "FK_Tail"
+    }, 
+    "Procedural Rig Name": "Monster_Test", 
+    "L_Arm": {
+        "rigArgs": {
+            "baseRig": "", 
+            "armJoints": "[u'L_Clav', u'L_Shoulder', u'L_Elbow', u'L_Wrist']", 
+            "switchCtrlPos": "L_Arm_Switch_Loc", 
+            "prefix": "L_", 
+            "FK_Parent": "C_Spine_3", 
+            "rigScale": "3"
+        }, 
+        "rigType": "IK_FK_Arm"
+    }, 
+    "L_Leg": {
+        "rigArgs": {
+            "legJoints": "[u'L_Hip', u'L_Knee', u'L_Ankle', u'L_Ball', u'L_Toe', u'L_ToeEnd']", 
+            "baseRig": "", 
+            "spineJnt": "C_Spine_0", 
+            "prefix": "L_", 
+            "revJntlocList": "[u'L_CBank', u'L_EBank', u'L_Heel', u'L_Pivot']", 
+            "ankleRollLoc": "L_Roll_Loc", 
+            "rigScale": "1"
+        }, 
+        "rigType": "IK_AnimalLeg"
+    }, 
+    "R_Arm": {
+        "rigArgs": {
+            "baseRig": "", 
+            "armJoints": "[u'R_Clav', u'R_Shoulder', u'R_Elbow', u'R_Wrist']", 
+            "switchCtrlPos": "R_Arm_Switch_Loc", 
+            "prefix": "R_", 
+            "FK_Parent": "C_Spine_3", 
+            "rigScale": "3"
+        }, 
+        "rigType": "IK_FK_Arm"
+    }
+}

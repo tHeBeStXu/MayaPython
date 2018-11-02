@@ -1,0 +1,57 @@
+{
+    "Twist Name": "Monster_Twist_Test", 
+    "R_Upper_Arm": {
+        "twistType": "Blend_RollChain", 
+        "twistArgs": {
+            "rollStart": "R_Shoulder", 
+            "numRollJoints": "3", 
+            "rollWithSameDir": "1", 
+            "rollEnd": "R_Elbow"
+        }
+    }, 
+    "R_Hip": {
+        "twistType": "Blend_RollChain", 
+        "twistArgs": {
+            "rollStart": "R_Hip", 
+            "numRollJoints": "3", 
+            "rollWithSameDir": "1", 
+            "rollEnd": "R_Knee"
+        }
+    }, 
+    "L_Lower_Arm": {
+        "twistType": "Blend_RollChain", 
+        "twistArgs": {
+            "rollStart": "L_Wrist", 
+            "numRollJoints": "3", 
+            "rollWithSameDir": "0", 
+            "rollEnd": "L_Elbow"
+        }
+    }, 
+    "R_Lower_Arm": {
+        "twistType": "Blend_RollChain", 
+        "twistArgs": {
+            "rollStart": "R_Wrist", 
+            "numRollJoints": "3", 
+            "rollWithSameDir": "0", 
+            "rollEnd": "R_Elbow"
+        }
+    }, 
+    "L_Hip": {
+        "twistType": "Blend_RollChain", 
+        "twistArgs": {
+            "rollStart": "L_Hip", 
+            "numRollJoints": "3", 
+            "rollWithSameDir": "1", 
+            "rollEnd": "L_Knee"
+        }
+    }, 
+    "L_Upper_Arm": {
+        "twistType": "Blend_RollChain", 
+        "twistArgs": {
+            "rollStart": "L_Shoulder", 
+            "numRollJoints": "3", 
+            "rollWithSameDir": "1", 
+            "rollEnd": "L_Elbow"
+        }
+    }
+}

@@ -16,13 +16,16 @@ def build(tailJoints,
     Build the FK_Tail rig.
     :param tailJoints: list(str), tailJoints to the end. i.e.[tail_1, tail_2, tail_3, ... tail_x, tail_end]
     :param rigScale: float, rig scale of the FK_Tail rig module, 1.0 is used.
-    :param FK_Parent: str, name of a spine joint is used.
+    :param FK_Parent: str, the joint which tailJoint[0] connects to.
     :param prefix: str, prefix of the tail rig.
     :param baseRig: str, base atttach of the rig, Base Class instance is used.
     :return: None
     """
+    rigPartName = 'Tail'
+
     cmds.select(cl=1)
-    rigmodule = module.Module(prefix=prefix + 'Tail_',
+    rigmodule = module.Module(prefix=prefix,
+                              rigPartName=rigPartName,
                               baseObject=baseRig)
 
     ##########
@@ -39,7 +42,7 @@ def build(tailJoints,
     # FK Ctrl
     for i in xrange(len(validTailJoints)):
         FK_tailCtrl = control.Control(prefix=prefix + 'FK_',
-                                      rigPartName='Tail_' + str(i),
+                                      rigPartName=rigPartName + '_' + str(i),
                                       scale=rigScale * (len(validTailJoints) - i),
                                       translateTo=validTailJoints[i],
                                       rotateTo=validTailJoints[i],
@@ -95,5 +98,21 @@ def build(tailJoints,
     else:
         cmds.parent(FK_tailCtrlGrp_List[0], rigmodule.topGrp)
         cmds.warning('Warning: FK_Parent is None!')
+
+    cmds.select(cl=1)
+
+    # add attr
+    for joint in tailJoints[:-1]:
+        if not cmds.attributeQuery('slaveJoint', node=joint, exists=1):
+            cmds.addAttr(joint, longName='slaveJoint', at='message')
+
+        if not cmds.attributeQuery('rigModule', node=joint, exists=1):
+            cmds.addAttr(joint, longName='rigModule', at='message')
+
+    # connect attr
+    for joint in tailJoints[:-1]:
+        if cmds.attributeQuery('rigModule', node=joint, exists=1):
+            cmds.connectAttr(rigmodule.topGrp + '.' + prefix + 'Tail_Jnt',
+                             joint + '.rigModule', f=1)
 
     cmds.select(cl=1)

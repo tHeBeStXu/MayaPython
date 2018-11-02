@@ -26,8 +26,16 @@ def build(spineJoints,
     :param baseRig: str, base atttach of the rig. Base Class instance is used.
     :return: dictionary, rigModule, chest_ctrl (used for upper body parts rig, IK_FK_Arm .etc)and pelvis_ctrl (used for FK_Tail rig)
     """
+    # param check
+    if numFK_Jnt < 3:
+        raise RuntimeError('Param: numFK_Jnt must larger than 3!')
+        return
+
+    # local rigPartName
+    rigPartName = 'Spine'
+
     rigModule = module.Module(prefix=prefix,
-                              rigPartName='Spine',
+                              rigPartName=rigPartName,
                               baseObject=baseRig)
 
     if spineBackUpAxis in ['y', 'Y']:
@@ -49,7 +57,7 @@ def build(spineJoints,
     eachADD = 1.0 / (len(range(numFK_Jnt)) - 1)
 
     for i in range(numFK_Jnt):
-        fkJnt = cmds.joint(n='FK_' + prefix + 'Spine_' + str(i))
+        fkJnt = cmds.joint(n='FK_' + prefix + rigPartName + '_' + str(i))
         pc = cmds.parentConstraint(spineJoints[0], fkJnt, mo=0)
         cmds.delete(pc)
 
@@ -115,8 +123,8 @@ def build(spineJoints,
     FK_Ctrl_List = []
 
     for i in xrange(len(fkJntList)-2):
-        FK_C_Spine_Ctrl = control.Control(prefix='FK_' + prefix,
-                                          rigPartName='Spine_' + str(i),
+        FK_C_Spine_Ctrl = control.Control(prefix=prefix + 'FK_',
+                                          rigPartName=rigPartName + '_' + str(i),
                                           scale=rigScale,
                                           translateTo=fkJntList[i+1],
                                           rotateTo=fkJntList[i+1],
@@ -149,7 +157,7 @@ def build(spineJoints,
                                     translateTo=spineJoints[0],
                                     axis='z')
     else:
-        body_Loc = cmds.spaceLocator(n=prefix + 'Spine_Loc')
+        body_Loc = cmds.spaceLocator(n=prefix + rigPartName + '_Loc')
         body_LocShape = cmds.listRelatives(body_Loc, s=1)
         cmds.setAttr(body_LocShape[0] + '.localScaleX', 0)
         cmds.setAttr(body_LocShape[0] + '.localScaleY', 0)
@@ -192,7 +200,7 @@ def build(spineJoints,
     # IK rig #
     ##########
 
-    IK_Part_List = cmds.ikHandle(n=prefix + 'Spine_IK',
+    IK_Part_List = cmds.ikHandle(n=prefix + rigPartName + '_IK',
                                  sj=spineJoints[0],
                                  ee=spineJoints[-1],
                                  parentCurve=0,
@@ -211,6 +219,20 @@ def build(spineJoints,
     cmds.setAttr(IK_Part_List[0] + '.dWorldUpType', 4)
     cmds.connectAttr(C_Pelvis_Ctrl.C + '.worldMatrix[0]', IK_Part_List[0] + '.dWorldUpMatrix')
     cmds.connectAttr(C_Chest_Ctrl.C + '.worldMatrix[0]', IK_Part_List[0] + '.dWorldUpMatrixEnd')
+
+    # add attr
+    for joint in spineJoints:
+        if not cmds.attributeQuery('slaveJoint', node=joint, exists=1):
+            cmds.addAttr(joint, ln='slaveJoint', at='message')
+
+        if not cmds.attributeQuery('rigModule', node=joint, exists=1):
+            cmds.addAttr(joint, ln='rigModule', at='message')
+
+    # connect attr
+    for joint in spineJoints:
+        if cmds.attributeQuery('rigModule', node=joint, exists=1):
+            cmds.connectAttr(rigModule.topGrp + '.' + prefix + rigPartName + "_Jnt",
+                             joint + '.rigModule', f=1)
 
     # clean up the hierarchy
     cmds.parent(pelvis_Jnt, C_Pelvis_Ctrl.C)
@@ -240,5 +262,17 @@ def build(spineJoints,
 
     cmds.select(cl=1)
 
+    # rootJoint
+    rootJnt = ''
+    if not mainSpineAttach:
+        rootJnt = cmds.listRelatives(spineJoints[0], p=1, c=0, s=0, type='joint')[0]
+
+        if not cmds.attributeQuery('slaveJoint', node=rootJnt, exists=1):
+            cmds.addAttr(rootJnt, ln='slaveJoint', at='message')
+
+        if not cmds.attributeQuery('rootJoint', node=rootJnt, exists=1):
+            cmds.addAttr(rootJnt, ln='rootJoint', at='message')
+
+
     # return
-    return {'chest_Ctrl': C_Chest_Ctrl.C, 'pelvis_Ctrl': C_Pelvis_Ctrl.C}
+    return {'chest_Ctrl': C_Chest_Ctrl.C, 'pelvis_Ctrl': C_Pelvis_Ctrl.C, 'rootJnt': rootJnt}

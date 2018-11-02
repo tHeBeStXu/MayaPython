@@ -37,6 +37,11 @@ def createRig(upperVertexList,
     upperEyeLidJointList = lib.vertex2Joints(vertexList=upperVertexList, prefix=prefix,
                                              rigPartName='upper_' + rigPartName, radius=0.05)
 
+    # connect attr
+    for joint in upperEyeLidJointList:
+        if cmds.attributeQuery('slaveJoint', node=joint, exists=1):
+            cmds.connectAttr(upperLidRigModule.topGrp + '.slaveJoint', joint + '.slaveJoint', f=1)
+
     # create eyelid parent joint for each eyelid joint
     upperEyeLidParentJntList = []
     for i in upperEyeLidJointList:
@@ -220,6 +225,11 @@ def createRig(upperVertexList,
     # create eyelid joint for each vertex
     lowerEyeLidJointList = lib.vertex2Joints(vertexList=lowerVertexList, prefix=prefix,
                                              rigPartName='lower_' + rigPartName, radius=0.05)
+
+    # connect attr
+    for joint in lowerEyeLidJointList:
+        if cmds.attributeQuery('slaveJoint', node=joint, exists=1):
+            cmds.connectAttr(lowerLidRigModule.topGrp + '.slaveJoint', joint + '.slaveJoint', f=1)
 
     # create eyelid parent joint for each eyelid joint
     lowerEyeLidParentJntList = []

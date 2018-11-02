@@ -28,6 +28,8 @@ def build(legJoints,
     :param baseRig: instance, base attach of the rig. Base Class instance is used.
     :return: None.
     """
+    rigPartName = 'AnimLeg'
+
     if spineJnt:
         try:
             cmds.objectType(spineJnt) == 'joint'
@@ -43,7 +45,7 @@ def build(legJoints,
     cmds.select(cl=1)
 
     rigmodule = module.Module(prefix=prefix,
-                              rigPartName='Leg',
+                              rigPartName=rigPartName,
                               baseObject=baseRig)
 
     hintFirstLength = cmds.getAttr(legJoints[2] + '.tx')
@@ -54,7 +56,7 @@ def build(legJoints,
     # create IK_HintLeg
     hintJnt_List = []
     for i in xrange(3):
-        hintJnt = cmds.joint(n=prefix + 'Hint_Jnt' + str(i))
+        hintJnt = cmds.joint(n=prefix + rigPartName + 'Hint_Jnt' + str(i))
         cmds.setAttr(hintJnt + '.drawStyle', 2)
         cmds.select(cl=1)
         hintJnt_List.append(hintJnt)
@@ -75,7 +77,7 @@ def build(legJoints,
     cmds.makeIdentity(hintJnt_List[0], apply=1, t=1, r=1, s=1, n=0, pn=1)
 
     # hint leg ik
-    IK_Hint_Part_List = cmds.ikHandle(n=prefix + 'hintLeg_IK', sj=hintJnt_List[0],
+    IK_Hint_Part_List = cmds.ikHandle(n=prefix + rigPartName + 'hintLeg_IK', sj=hintJnt_List[0],
                                       ee=hintJnt_List[-1], sol='ikRPsolver')
 
     pc1 = cmds.pointConstraint(legJoints[0], hintJnt_List[0], mo=0)
@@ -85,7 +87,7 @@ def build(legJoints,
 
     # create footCtrl and rev joints
     Foot_IK_Ctrl = control.Control(prefix=prefix,
-                                   rigPartName='Leg',
+                                   rigPartName=rigPartName,
                                    scale=rigScale*5,
                                    translateTo=legJoints[-2],
                                    rotateTo=legJoints[-2],
@@ -213,10 +215,10 @@ def build(legJoints,
     cmds.select(cl=1)
 
     # Create IK for legJoints
-    IK_Hip_Part_List = cmds.ikHandle(n=prefix + 'Hip_IK', sj=legJoints[0], ee=legJoints[2], sol='ikRPsolver')
-    IK_Ball_List = cmds.ikHandle(n=prefix + 'Ball_IK', sj=legJoints[2], ee=legJoints[3], sol='ikSCsolver')
-    IK_Toe_List = cmds.ikHandle(n=prefix + 'Toe_IK', sj=legJoints[3], ee=legJoints[4], sol='ikSCsolver')
-    IK_ToeEnd_List = cmds.ikHandle(n=prefix + 'ToeEnd_IK', sj=legJoints[-2], ee=legJoints[-1], sol='ikSCsolver')
+    IK_Hip_Part_List = cmds.ikHandle(n=prefix + rigPartName + 'Hip_IK', sj=legJoints[0], ee=legJoints[2], sol='ikRPsolver')
+    IK_Ball_List = cmds.ikHandle(n=prefix + rigPartName + 'Ball_IK', sj=legJoints[2], ee=legJoints[3], sol='ikSCsolver')
+    IK_Toe_List = cmds.ikHandle(n=prefix + rigPartName + 'Toe_IK', sj=legJoints[3], ee=legJoints[4], sol='ikSCsolver')
+    IK_ToeEnd_List = cmds.ikHandle(n=prefix + rigPartName + 'ToeEnd_IK', sj=legJoints[-2], ee=legJoints[-1], sol='ikSCsolver')
     cmds.select(cl=1)
 
     # pole vector Ctrl
@@ -254,5 +256,19 @@ def build(legJoints,
 
     cmds.parent(PV_Ctrl.Off, rigmodule.topGrp)
     cmds.parent(Foot_IK_Ctrl.Off, rigmodule.topGrp)
+
+    # add Attr
+    for joint in legJoints:
+        if not cmds.attributeQuery('slaveJoint', node=joint, exists=1):
+            cmds.addAttr(joint, longName='slaveJoint', at='message')
+
+        if not cmds.attributeQuery('rigModule', node=joint, exists=1):
+            cmds.addAttr(joint, longName='rigModule', at='message')
+
+    # connect Attr
+    for joint in legJoints:
+        if cmds.attributeQuery('rigModule', node=joint, exists=1):
+            cmds.connectAttr(rigmodule.topGrp + '.' + prefix + rigPartName + '_Jnt',
+                             joint + '.rigModule', f=1)
 
     cmds.select(cl=1)

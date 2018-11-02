@@ -58,6 +58,14 @@ class Base():
                                          parent=self.Master_Ctrl.C,
                                          axis='z',
                                          lockChannels=['s', 'v'])
+
+        # add Attr
+        if not cmds.attributeQuery('slaveJoint', node=self.Move_Ctrl.C, exists=1):
+            cmds.addAttr(self.Move_Ctrl.C, ln='slaveJoint', at='message')
+
+        if not cmds.attributeQuery('rootJoint', node=self.Move_Ctrl.C, exists=1):
+            cmds.addAttr(self.Move_Ctrl.C, ln='rootJoint', at='message')
+
         # Z axis up rotate set
         # self._flattenGlobalCtrlShape(self.Master_Ctrl.C)
         # self._flattenGlobalCtrlShape(self.Move_Ctrl.C)
@@ -150,7 +158,7 @@ class Module():
         :param baseObject:instance of base.module.Base() class
         :return None
         """
-        self.topGrp = cmds.group(n=prefix + rigPartName + 'Module_grp', em=1)
+        self.topGrp = cmds.group(n=prefix + rigPartName + '_Module_grp', em=1)
         """
 
         self.controlGrp = cmds.group(n=prefix + rigPartName + 'Controls_grp',
@@ -160,7 +168,7 @@ class Module():
         self.partsGrp = cmds.group(n=prefix + rigPartName + 'Parts_grp',
                                    em=1, p=self.topGrp)
         """
-        self.dontTouchGrp = cmds.group(n=prefix + rigPartName + 'Dont_Touch_Grp',
+        self.dontTouchGrp = cmds.group(n=prefix + rigPartName + '_Dont_Touch_Grp',
                                        em=1, p=self.topGrp)
 
 
@@ -168,6 +176,13 @@ class Module():
         cmds.hide(self.dontTouchGrp)
 
         cmds.setAttr(self.dontTouchGrp + '.it', 0, l=1)
+
+        # query and add attribute
+        if not cmds.attributeQuery('slaveJoint', node=self.topGrp, exists=1):
+            cmds.addAttr(self.topGrp, longName='slaveJoint', at='message')
+
+        if not cmds.attributeQuery(prefix + rigPartName + '_Jnt', node=self.topGrp, exists=1):
+            cmds.addAttr(self.topGrp, longName=prefix + rigPartName + '_Jnt', at='message')
 
         # parent module
 

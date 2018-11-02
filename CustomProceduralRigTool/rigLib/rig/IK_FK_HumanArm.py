@@ -23,14 +23,16 @@ def build(armJoints,
     :param armJoints: list(str), armJoints list, [L_clavical, L_shoulder, L_elbow, L_wrist]
     :param prefix: str, prefix of the rig
     :param rigScale: float, rig scale of the IK_FK_Arm rig module.
-    :param FK_Parent: str, parent of the fk part rig, IK_FK_Spine['chest_Ctrl'] is used.
+    :param FK_Parent: str, the joint which armJoints[0] connects to.
     :param switchCtrlPos: str, position of the IK_FK_Blend_Ctrl position.
     :param baseRig: baseRig: str, base atttach of the rig. Base Class instance is used.
     :return: None
     """
 
+    rigPartName = 'Arm'
+
     rigmodule = module.Module(prefix=prefix,
-                              rigPartName='Arm',
+                              rigPartName=rigPartName,
                               baseObject=baseRig)
 
     # create FK joints chain
@@ -151,7 +153,7 @@ def build(armJoints,
     # Arm IK Rig #
     ##############
     IK_Arm_Ctrl = control.Control(prefix=prefix + 'IK_',
-                                  rigPartName='Arm',
+                                  rigPartName=rigPartName,
                                   scale=rigScale*3,
                                   translateTo=ik_Joint_List[-1],
                                   rotateTo=ik_Joint_List[-1],
@@ -160,13 +162,14 @@ def build(armJoints,
     cmds.orientConstraint(IK_Arm_Ctrl.C, ik_Joint_List[-1], mo=0)
 
     IK_Arm_PV_Ctrl = control.Control(prefix=prefix + 'IK_',
-                                     rigPartName='Arm_PV',
+                                     rigPartName=rigPartName + '_PV',
                                      scale=rigScale*3,
                                      translateTo=ik_Joint_List[1],
                                      shape='diamond',
                                      lockChannels=['r', 's', 'v'])
 
-    ik_Part_List = cmds.ikHandle(n=prefix + 'Arm_IK', sj=ik_Joint_List[0], ee=ik_Joint_List[-1], sol='ikRPsolver')
+    ik_Part_List = cmds.ikHandle(n=prefix + rigPartName + '_IK', sj=ik_Joint_List[0],
+                                 ee=ik_Joint_List[-1], sol='ikRPsolver')
 
     cmds.parent(ik_Part_List[0], IK_Arm_Ctrl.C)
     cmds.setAttr(ik_Part_List[0] + '.v', 0)
@@ -235,8 +238,8 @@ def build(armJoints,
     ###############
 
     IK_FK_Blend_Ctrl = control.Control(prefix=prefix,
-                                       rigPartName='Arm_Blend',
-                                       scale=rigScale*3,
+                                       rigPartName=rigPartName + '_Blend',
+                                       scale=rigScale * 3,
                                        translateTo=switchCtrlPos,
                                        shape='unitSliderControl',
                                        lockChannels=['tx', 'tz', 'r', 's', 'v'])
@@ -282,7 +285,7 @@ def build(armJoints,
     cmds.setAttr(switchCtrlPos_Shape[0] + '.localScaleY', 0)
     cmds.setAttr(switchCtrlPos_Shape[0] + '.localScaleZ', 0)
     cmds.setAttr(switchCtrlPos_Shape[0] + '.template', 1)
-    switchCtrlLoc = cmds.spaceLocator(n=prefix + 'BlendCtrl_Loc')
+    switchCtrlLoc = cmds.spaceLocator(n=prefix + rigPartName + 'BlendCtrl_Loc')
     switchCtrlLoc_Shape = cmds.listRelatives(switchCtrlLoc, s=1)
     cmds.setAttr(switchCtrlLoc_Shape[0] + '.localScaleX', 0)
     cmds.setAttr(switchCtrlLoc_Shape[0] + '.localScaleY', 0)
@@ -292,11 +295,39 @@ def build(armJoints,
     cmds.pointConstraint(armJoints[-1], switchCtrlLoc, mo=0)
     cmds.parent(switchCtrlPos, switchCtrlLoc)
 
+    # add attr
+    for joint in armJoints:
+        if not cmds.attributeQuery('rigModule', node=joint, exists=1):
+            cmds.addAttr(joint, ln='rigModule', at='message')
+
+        if not cmds.attributeQuery('slaveJoint', node=joint, exists=1):
+            cmds.addAttr(joint, ln='slaveJoint', at='message')
+
+    for key in clean_Finger_Joints_Dic.keys():
+        for joint in clean_Finger_Joints_Dic[key]:
+            if not cmds.attributeQuery(prefix + rigPartName + '_Jnt', node=joint, exists=1):
+                cmds.addAttr(joint, ln=prefix + rigPartName + '_Jnt', at='message')
+
+            if not cmds.attributeQuery('slaveJoint', node=joint, exists=1):
+                cmds.addAttr(joint, ln='slaveJoint', at='message')
+
+    # connect attr
+    for joint in armJoints:
+        if cmds.attributeQuery('rigModule', node=joint, exists=1):
+            cmds.connectAttr(rigmodule.topGrp + '.' + prefix + rigPartName + '_Jnt',
+                             joint + '.rigModule', f=1)
+
+    for key in clean_Finger_Joints_Dic.keys():
+        for joint in clean_Finger_Joints_Dic[key]:
+            if cmds.attributeQuery('rigModule', node=joint, exists=1):
+                cmds.connectAttr(rigmodule.topGrp + '.' + prefix + rigPartName + '_Jnt',
+                                 joint + '.rigModule', f=1)
+
     # final cleaning
     cmds.parent(FK_Arm_CtrlGrp_List[0], clavical_Ctrl.C)
 
     if FK_Parent:
-        FK_Loc = cmds.spaceLocator(n=prefix + 'Arm_Loc')
+        FK_Loc = cmds.spaceLocator(n=prefix + rigPartName + '_Loc')
         FK_LocShape = cmds.listRelatives(FK_Loc, s=1)
         cmds.setAttr(FK_LocShape[0] + '.localScaleX', 0)
         cmds.setAttr(FK_LocShape[0] + '.localScaleY', 0)

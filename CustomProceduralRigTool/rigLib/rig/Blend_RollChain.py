@@ -27,6 +27,7 @@ def build(rollStart,
     """
     if numRollJoints < 1:
         raise RuntimeError('Param: numRollJoints must larger than 1, please input correct int number again!')
+        return
 
     if rollWithSameDir:
         roll_Parent = cmds.listRelatives(rollStart, p=1, c=0, s=0, type='joint')[0]
@@ -34,6 +35,8 @@ def build(rollStart,
     else:
         roll_Parent = rollStart
         IK_Parent = rollStart
+
+    rollJointList = []
 
     # create the start and end roll joints
     rollStart_Jnt = cmds.joint(n=rollStart + '_Roll_Start')
@@ -59,9 +62,10 @@ def build(rollStart,
 
     # create IK Handle
     ikHandle = cmds.ikHandle(n=rollStart + '_Roll_IK', sj=rollStart_Jnt, ee=rollEnd_Jnt, s='sticky', sol='ikSCsolver')
-    print ikHandle
-    cmds.parent(ikHandle, IK_Parent)
+    cmds.parent(ikHandle[0], IK_Parent)
     cmds.pointConstraint(rollEnd, ikHandle[0], mo=0)
+
+    rollJointList.append(rollStart_Jnt)
 
     if rollWithSameDir:
         rollDir = rollStart
@@ -75,6 +79,9 @@ def build(rollStart,
             oc = cmds.orientConstraint(rollOrient, rollStart_Jnt, middleRoll_Jnt, mo=0)
             cmds.setAttr(oc[0] + '.' + rollStart_Jnt + 'W1', (len(range(0, numRollJoints)) - int(i)))
             cmds.setAttr(oc[0] + '.' + rollOrient + 'W0', (int(i) + 1))
+
+            rollJointList.append(middleRoll_Jnt[0])
+
     else:
         rollDir = rollEnd
         rollOrient = rollEnd
@@ -88,7 +95,25 @@ def build(rollStart,
             cmds.setAttr(oc[0] + '.' + rollStart + 'W1', (len(range(0, numRollJoints)) - int(i)))
             cmds.setAttr(oc[0] + '.' + rollOrient + 'W0', (int(i) + 1))
 
+            rollJointList.append(middleRoll_Jnt[0])
+
     # parent
     cmds.parent(rollStart_Jnt, roll_Parent)
+
+    # add attr
+    for joint in rollJointList:
+        if not cmds.attributeQuery('rigModule', node=joint, exists=1):
+            cmds.addAttr(joint, ln='rigModule', at='message')
+
+        if not cmds.attributeQuery('slaveJoint', node=joint, exists=1):
+            cmds.addAttr(joint, ln='slaveJoint', at='message')
+
+    rigModule = cmds.listConnections(rollStart + '.rigModule', source=1, destination=0, shapes=0)[0]
+
+    if not cmds.attributeQuery('rollJoint', node=rigModule, exists=1):
+        cmds.addAttr(rigModule, ln='rollJoint', at='message')
+
+        for joint in rollJointList:
+            cmds.connectAttr(rigModule + '.rollJoint', joint + '.rigModule', f=1)
 
     cmds.select(cl=1)

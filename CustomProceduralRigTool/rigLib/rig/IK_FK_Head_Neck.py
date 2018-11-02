@@ -38,7 +38,10 @@ def build(neckJoints,
 
     cmds.select(cl=1)
 
-    rigmodule = module.Module(prefix=prefix + 'Head_',
+    rigPartName = 'Head'
+
+    rigmodule = module.Module(prefix=prefix,
+                              rigPartName=rigPartName,
                               baseObject=baseRig)
 
     cmds.select(cl=1)
@@ -78,7 +81,7 @@ def build(neckJoints,
     FK_Neck_Ctrl_List = []
 
     for i in xrange(len(fk_Joints_List)-2):
-        FK_Neck_Ctrl = control.Control(prefix='FK_' + prefix,
+        FK_Neck_Ctrl = control.Control(prefix=prefix + 'FK_',
                                        rigPartName='Neck_' + str(i),
                                        scale=rigScale,
                                        translateTo=fk_Joints_List[i],
@@ -98,8 +101,8 @@ def build(neckJoints,
     for i in xrange(len(FK_Neck_Ctrl_List)-1):
         cmds.parent(FK_Neck_CtrlGrp_List[i+1], FK_Neck_Ctrl_List[i])
 
-    FK_Head_Ctrl = control.Control(prefix='FK_C_',
-                                   rigPartName='Head',
+    FK_Head_Ctrl = control.Control(prefix=prefix + 'FK_',
+                                   rigPartName=rigPartName,
                                    scale=rigScale,
                                    translateTo=fk_Joints_List[-2],
                                    rotateTo=fk_Joints_List[-2],
@@ -108,7 +111,7 @@ def build(neckJoints,
                                    lockChannels=['t', 's', 'v'])
 
     # Local LOC
-    fk_headLocal = cmds.spaceLocator(n='FK_' + prefix + 'HeadLocal')
+    fk_headLocal = cmds.spaceLocator(n='FK_' + prefix + rigPartName + '_Local')
     fk_headLocal_Shape = cmds.listRelatives(fk_headLocal, s=1)
     cmds.setAttr(fk_headLocal_Shape[0] + '.localScaleX', 0)
     cmds.setAttr(fk_headLocal_Shape[0] + '.localScaleY', 0)
@@ -116,7 +119,7 @@ def build(neckJoints,
     cmds.setAttr(fk_headLocal_Shape[0] + '.template', 1)
 
     # World LOC
-    fk_headWorld = cmds.spaceLocator(n='FK_' + prefix + 'HeadWorld')
+    fk_headWorld = cmds.spaceLocator(n='FK_' + prefix + rigPartName + '_World')
     fk_headWorld_Shape = cmds.listRelatives(fk_headWorld, s=1)
     cmds.setAttr(fk_headWorld_Shape[0] + '.localScaleX', 0)
     cmds.setAttr(fk_headWorld_Shape[0] + '.localScaleY', 0)
@@ -156,17 +159,17 @@ def build(neckJoints,
     ##########
     # IK Rig #
     ##########
-    IK_Head_Ctrl = control.Control(prefix='IK_' + prefix,
-                                   rigPartName='Head',
+    IK_Head_Ctrl = control.Control(prefix=prefix + 'IK_',
+                                   rigPartName=rigPartName,
                                    scale=rigScale,
                                    translateTo=ik_Joints_List[-2],
                                    rotateTo=ik_Joints_List[-2],
                                    shape='moveControl',
                                    axis='x')
 
-    IK_Start_Jnt = cmds.joint(n='IK_' + prefix + 'Head_StartJnt')
+    IK_Start_Jnt = cmds.joint(n='IK_' + prefix + rigPartName + '_StartJnt')
     cmds.select(cl=1)
-    IK_End_Jnt = cmds.joint(n='IK_' + prefix + 'Head_EndJnt')
+    IK_End_Jnt = cmds.joint(n='IK_' + prefix + rigPartName + '_EndJnt')
     cmds.select(cl=1)
     cmds.delete(cmds.parentConstraint(neckJoints[0], IK_Start_Jnt, mo=0))
     cmds.delete(cmds.parentConstraint(neckJoints[-2], IK_End_Jnt, mo=0))
@@ -186,7 +189,7 @@ def build(neckJoints,
     cmds.setAttr(IK_End_Jnt + '.v', 0)
 
     # ik handle
-    IK_Part_List = cmds.ikHandle(n=prefix + 'Head_IK',
+    IK_Part_List = cmds.ikHandle(n=prefix + rigPartName + '_IK',
                                  sj=ik_Joints_List[0],
                                  ee=ik_Joints_List[-2],
                                  sol='ikSplineSolver',
@@ -207,14 +210,14 @@ def build(neckJoints,
     cmds.connectAttr(IK_End_Jnt + '.worldMatrix[0]', IK_Part_List[0] + '.dWorldUpMatrixEnd')
 
     # create ik_head_local and ik_head_world
-    ik_headLocal = cmds.spaceLocator(n='IK_' + prefix + 'HeadLocal')
+    ik_headLocal = cmds.spaceLocator(n='IK_' + prefix + rigPartName + '_Local')
     ik_headLocal_Shape = cmds.listRelatives(ik_headLocal, s=1)
     cmds.setAttr(ik_headLocal_Shape[0] + '.localScaleX', 0)
     cmds.setAttr(ik_headLocal_Shape[0] + '.localScaleY', 0)
     cmds.setAttr(ik_headLocal_Shape[0] + '.localScaleZ', 0)
     cmds.setAttr(ik_headLocal_Shape[0] + '.template', 1)
 
-    ik_headWorld = cmds.spaceLocator(n='IK_' + prefix + 'HeadWorld')
+    ik_headWorld = cmds.spaceLocator(n='IK_' + prefix + rigPartName + '_World')
     ik_headWorld_Shape = cmds.listRelatives(ik_headWorld, s=1)
     cmds.setAttr(ik_headWorld_Shape[0] + '.localScaleX', 0)
     cmds.setAttr(ik_headWorld_Shape[0] + '.localScaleY', 0)
@@ -249,7 +252,7 @@ def build(neckJoints,
 
     # IK FK BLEND
     IK_FK_BlendCtrl = control.Control(prefix=prefix,
-                                      rigPartName='Head_Blend',
+                                      rigPartName=rigPartName + '_Blend',
                                       scale=rigScale*5,
                                       translateTo=blendCtrl_Pos,
                                       rotateTo=blendCtrl_Pos,
@@ -313,7 +316,7 @@ def build(neckJoints,
     cmds.setAttr(blendCtrl_Pos_Shape[0] + '.localScaleY', 0)
     cmds.setAttr(blendCtrl_Pos_Shape[0] + '.localScaleZ', 0)
     cmds.setAttr(blendCtrl_Pos_Shape[0] + '.template', 1)
-    headBlendLoc = cmds.spaceLocator(n=prefix + 'HeadBlend_Loc')
+    headBlendLoc = cmds.spaceLocator(n=prefix + rigPartName + '_Blend_Loc')
     headBlendLoc_Shape = cmds.listRelatives(headBlendLoc, s=1)
     cmds.setAttr(headBlendLoc_Shape[0] + '.localScaleX', 0)
     cmds.setAttr(headBlendLoc_Shape[0] + '.localScaleY', 0)
@@ -327,5 +330,19 @@ def build(neckJoints,
     # clean rigModule
     cmds.parent(FK_Head_Ctrl.Off, rigmodule.topGrp)
     cmds.parent(neckLoc, rigmodule.topGrp)
+
+    # add attr
+    for joint in neckJoints[:-1]:
+        if not cmds.attributeQuery('slaveJoint', node=joint, exists=1):
+            cmds.addAttr(joint, ln='slaveJoint', at='message')
+
+        if not cmds.attributeQuery('rigModule', node=joint, exists=1):
+            cmds.addAttr(joint, ln='rigModule', at='message')
+
+    # connect attr
+    for joint in neckJoints[:-1]:
+        if cmds.attributeQuery('rigModule', node=joint, exists=1):
+            cmds.connectAttr(rigmodule.topGrp + '.' + prefix + rigPartName + '_Jnt',
+                             joint + '.rigModule', f=1)
 
     cmds.select(cl=1)

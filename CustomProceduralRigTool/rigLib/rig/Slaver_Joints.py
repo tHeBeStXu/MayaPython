@@ -97,7 +97,6 @@ def build(inputJoints=None):
 
     ##################################################################################
     # place and parenting the joint hierarchy correctly
-    # TODO
     for joint in specialJoints:
 
         pass

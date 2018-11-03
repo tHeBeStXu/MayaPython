@@ -1,44 +1,107 @@
 import maya.cmds as cmds
 
 
-def build(joints=None):
+def build(inputJoints=None):
     """
     create Slave joints for given joints list.
-    if joints = None, create slave joints for all joints in the scene without end joint in the joint chain
-    :param joints: str list, target joints list for create Slave joints
+    if inputJoints = None, create slave joints for all joints in the scene without end joint in the joint chain
+    :param inputJoints: str list, target joints list for create Slave joints
     :return: None
     """
 
-    if joints:
-        targetJoints=joints
+    if inputJoints:
+        targetJoints=inputJoints
     else:
         targetJoints = []
 
-        # list all selected joints without end joints
-        allJoints = cmds.ls(type='joint', long=1)
+        # list all selected inputJoints without end inputJoints
+        allJoints = cmds.ls(type='joint')
         for joint in allJoints:
-            if cmds.listRelatives(joint, children=1, s=0):
+            if cmds.attributeQuery('slaveJoint', node=joint, exists=1):
                 targetJoints.append(joint)
 
-    # create slave joints
+    cmds.select(cl=1)
+
+    # get roll Joints
+    rollJoints = []
     if targetJoints:
-        for i in targetJoints:
-            cmds.select(cl=1)
-            slvJnt = cmds.joint(n='Slave_' + i)
-
-            pc = cmds.parentConstraint(i, slvJnt, mo=0)
-            cmds.delete(pc)
-
-            cmds.makeIdentity(slvJnt, apply=1)
-
-            cmds.pointConstraint(i, slvJnt, mo=0)
-            cmds.orientConstraint(i, slvJnt, mo=0)
-            cmds.scaleConstraint(i, slvJnt, mo=0)
-
-            cmds.select(cl=1)
-    else:
-        cmds.error('No joints for create slave joints!\nPlease check your joints!')
+        for joint in targetJoints:
+            if cmds.attributeQuery('rollJoint', node=joint, exists=1):
+                if cmds.getAttr(joint + '.rollJoint'):
+                    rollJoints.append(joint)
 
     cmds.select(cl=1)
+
+    # get special inputJoints
+    specialJoints = []
+    if targetJoints:
+        for joint in targetJoints:
+            if cmds.attributeQuery('slaveParent', node=joint, exists=1) and\
+                    cmds.attributeQuery('slavePointConst', node=joint, exists=1):
+                specialJoints.append(joint)
+
+    #
+
+    # get normal inputJoints
+    normalJoints = []
+    for joint in targetJoints:
+        if joint not in rollJoints and joint not in specialJoints:
+            normalJoints.append(joint)
+
+    cmds.select(cl=1)
+
+    # create slave joints for special joints
+    slaveSpecialJoints = []
+    for joint in specialJoints:
+        slaveJoint = cmds.joint(n='Slave_' + joint)
+        cmds.select(cl=1)
+        cmds.delete(cmds.parentConstraint(joint, slaveJoint, mo=0))
+        slaveSpecialJoints.append(slaveJoint)
+
+        # add attr
+        if not cmds.attributeQuery('slaveJoint', node=slaveJoint, exists=1):
+            cmds.addAttr(slaveJoint, ln='slaveJoint', at='message')
+
+        cmds.connectAttr(joint + '.slaveJoint', slaveJoint + '.slaveJoint', f=1)
+        cmds.select(cl=1)
+
+    # create slaveJoints for roll joints
+    slaveRollJoints = []
+    for joint in rollJoints:
+        slaveJoint = cmds.joint(n='Slave_' + joint)
+        cmds.select(cl=1)
+        cmds.delete(cmds.parentConstraint(joint, slaveJoint, mo=0))
+        slaveRollJoints.append(slaveJoint)
+
+        # add attr
+        if not cmds.attributeQuery('slaveJoint', node=slaveJoint, exists=1):
+            cmds.addAttr(slaveJoint, ln='slaveJoint', at='message')
+
+        cmds.connectAttr(joint + '.slaveJoint', slaveJoint + '.slaveJoint', f=1)
+        cmds.select(cl=1)
+
+    # create slaveJoints for normal Joints
+    slaveNormalJoints = []
+    for joint in normalJoints:
+        slaveJoint = cmds.joint(n='Slave_' + joint)
+        cmds.select(cl=1)
+        cmds.delete(cmds.parentConstraint(joint, slaveJoint, mo=0))
+        slaveNormalJoints.append(slaveJoint)
+
+        # add attr
+        if not cmds.attributeQuery('slaveJoint', node=slaveJoint, exists=1):
+            cmds.addAttr(slaveJoint, ln='slaveJoint', at='message')
+
+        cmds.connectAttr(joint + '.slaveJoint', slaveJoint + '.slaveJoint', f=1)
+        cmds.select(cl=1)
+
+    ##################################################################################
+    # place and parenting the joint hierarchy correctly
+    # TODO
+    for joint in specialJoints:
+
+        pass
+
+
 
 

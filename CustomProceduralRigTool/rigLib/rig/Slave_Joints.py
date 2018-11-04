@@ -22,13 +22,15 @@ def build(inputJoints=None):
 
     cmds.select(cl=1)
 
-    # generate slave joint for each target joint
+    # 1. generate slave joint for each target joint
+
     if targetJoints:
         for joint in targetJoints:
             slaveJoint = cmds.joint(n='Slave_' + joint)
             cmds.select(cl=1)
 
             cmds.delete(cmds.parentConstraint(joint, slaveJoint, mo=0))
+            cmds.makeIdentity(slaveJoint, apply=1, t=1, r=1, s=1)
 
             if not cmds.attributeQuery('slaveJoint', node=slaveJoint, exists=1):
                 cmds.addAttr(slaveJoint, ln='slaveJoint', at='message')
@@ -37,26 +39,7 @@ def build(inputJoints=None):
 
     cmds.select(cl=1)
 
-    # Constraint slave joint
-
-    if targetJoints:
-        for joint in targetJoints:
-            slaveJoint = cmds.listConnections(joint + '.slaveJoint', destination=1, source=0, type='joint')[0]
-
-            if cmds.attributeQuery('slavePointConst', node=joint, exists=1):
-                pointConst = cmds.getAttr(joint + '.slavePointConst')
-
-                if pointConst:
-                    cmds.pointConstraint(pointConst, slaveJoint, mo=0)
-            else:
-                cmds.pointConstraint(joint, slaveJoint, mo=0)
-
-            cmds.orientConstraint(joint, slaveJoint, mo=0)
-            cmds.scaleConstraint(joint, slaveJoint, mo=0)
-
-    cmds.select(cl=1)
-
-    # parenting
+    # 2. parenting
 
     if targetJoints:
         for joint in targetJoints:
@@ -82,3 +65,23 @@ def build(inputJoints=None):
                             cmds.parent(slaveJoint, parentSlave)
 
     cmds.select(cl=1)
+
+    # 3. Constraint slave joint
+
+    if targetJoints:
+        for joint in targetJoints:
+            slaveJoint = cmds.listConnections(joint + '.slaveJoint', destination=1, source=0, type='joint')[0]
+
+            if cmds.attributeQuery('slavePointConst', node=joint, exists=1):
+                pointConst = cmds.getAttr(joint + '.slavePointConst')
+
+                if pointConst:
+                    cmds.pointConstraint(pointConst, slaveJoint, mo=0)
+            else:
+                cmds.pointConstraint(joint, slaveJoint, mo=0)
+
+            cmds.orientConstraint(joint, slaveJoint, mo=0)
+            cmds.scaleConstraint(joint, slaveJoint, mo=0)
+
+    cmds.select(cl=1)
+

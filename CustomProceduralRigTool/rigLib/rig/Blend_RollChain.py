@@ -108,30 +108,30 @@ def build(rollStart,
         if not cmds.attributeQuery('slavePointConst', node=rollStart, exists=1):
             cmds.addAttr(rollStart, ln='slavePointConst', dt='string')
 
-            cmds.setAttr(rollStart + '.slavePointConst', cmds.ls(rollEnd, l=1)[0], type='string', l=1)
+            cmds.setAttr(rollStart + '.slavePointConst', cmds.ls(rollEnd, long=1)[0], type='string', lock=1)
 
         if not cmds.attributeQuery('slaveParent', node=rollStart, exists=1):
             cmds.addAttr(rollStart, ln='slaveParent', dt='string')
 
-            cmds.setAttr(rollStart + '.slaveParent', cmds.ls(rollJointList[-1], l=1)[0], type='string', l=1)
+            cmds.setAttr(rollStart + '.slaveParent', cmds.ls(rollJointList[-1], long=1)[0], type='string', lock=1)
 
         # slave parent attr
         for i in xrange(len(rollJointList) - 1):
             if not cmds.attributeQuery('slaveParent', node=rollJointList[i + 1], exists=1):
                 cmds.addAttr(rollJointList[i + 1], ln='slaveParent', dt='string')
-                cmds.setAttr(rollJointList[i + 1] + '.slaveParent', cmds.ls(rollJointList[i], l=1)[0], type='string',
-                             l=1)
+                cmds.setAttr(rollJointList[i + 1] + '.slaveParent', cmds.ls(rollJointList[i], long=1)[0], type='string',
+                             lock=1)
     else:
         # add and set attr
         if not cmds.attributeQuery('slaveParent', node=rollStart, exists=1):
             cmds.addAttr(rollStart, ln='slaveParent', dt='string')
-            cmds.setAttr(rollStart + '.slaveParent', cmds.ls(rollStart_Jnt, l=1)[0], type='string', l=1)
+            cmds.setAttr(rollStart + '.slaveParent', cmds.ls(rollStart_Jnt, long=1)[0], type='string', lock=1)
 
         for i in xrange(len(rollJointList) - 1):
             if not cmds.attributeQuery('slaveParent', node=rollJointList[i], exists=1):
                 cmds.addAttr(rollJointList[i], ln='slaveParent', dt='string')
-                cmds.setAttr(rollJointList[i] + '.slaveParent', cmds.ls(rollJointList[i + 1], l=1)[0], type='string',
-                             l=1)
+                cmds.setAttr(rollJointList[i] + '.slaveParent', cmds.ls(rollJointList[i+1], long=1)[0], type='string',
+                             lock=1)
 
     # add attr
     for joint in rollJointList:
@@ -143,7 +143,7 @@ def build(rollStart,
 
         if not cmds.attributeQuery('rollJoint', node=joint, exists=1):
             cmds.addAttr(joint, ln='rollJoint', at='bool')
-            cmds.setAttr(joint + '.rollJoint', 1, l=1)
+            cmds.setAttr(joint + '.rollJoint', 1, lock=1)
 
     rigModule = cmds.listConnections(rollStart + '.rigModule', source=1, destination=0, shapes=0)[0]
 

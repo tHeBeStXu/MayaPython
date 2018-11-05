@@ -31,7 +31,7 @@ def build(armJoints,
 
     rigPartName = 'Arm'
 
-    rigmodule = module.Module(prefix=prefix,
+    rigModule = module.Module(prefix=prefix,
                               rigPartName=rigPartName,
                               baseObject=baseRig)
 
@@ -147,7 +147,7 @@ def build(armJoints,
                            cd=clavical_Ctrl.C + '.Local2World')
 
     cmds.parent(clavical_Local, armJoints[0])
-    cmds.parent(clavical_World, rigmodule.topGrp)
+    cmds.parent(clavical_World, rigModule.topGrp)
 
     ##############
     # Arm IK Rig #
@@ -231,7 +231,7 @@ def build(armJoints,
     for key in finger_FK_CtrlGrp_Dic:
         cmds.parent(finger_FK_CtrlGrp_Dic[key][0], hand_Loc)
 
-    cmds.parent(hand_Loc, rigmodule.topGrp)
+    cmds.parent(hand_Loc, rigModule.topGrp)
 
     ###############
     # FK IK Blend #
@@ -314,13 +314,13 @@ def build(armJoints,
     # connect attr
     for joint in armJoints:
         if cmds.attributeQuery('rigModule', node=joint, exists=1):
-            cmds.connectAttr(rigmodule.topGrp + '.' + prefix + rigPartName + '_Jnt',
+            cmds.connectAttr(rigModule.topGrp + '.' + prefix + rigPartName + '_Jnt',
                              joint + '.rigModule', f=1)
 
     for key in clean_Finger_Joints_Dic.keys():
         for joint in clean_Finger_Joints_Dic[key]:
             if cmds.attributeQuery('rigModule', node=joint, exists=1):
-                cmds.connectAttr(rigmodule.topGrp + '.' + prefix + rigPartName + '_Jnt',
+                cmds.connectAttr(rigModule.topGrp + '.' + prefix + rigPartName + '_Jnt',
                                  joint + '.rigModule', f=1)
 
     # final cleaning
@@ -334,15 +334,15 @@ def build(armJoints,
         cmds.setAttr(FK_LocShape[0] + '.localScaleZ', 0)
         cmds.parentConstraint(FK_Parent, FK_Loc, mo=0)
         cmds.parent(clavical_Ctrl.Off, FK_Loc)
-        cmds.parent(FK_Loc, rigmodule.topGrp)
+        cmds.parent(FK_Loc, rigModule.topGrp)
     else:
         cmds.warning('FK_Parent is None')
-        cmds.parent(clavical_Ctrl.Off, rigmodule.topGrp)
+        cmds.parent(clavical_Ctrl.Off, rigModule.topGrp)
 
-    cmds.parent(IK_Arm_PV_Ctrl.Off, rigmodule.topGrp)
-    cmds.parent(IK_Arm_Ctrl.Off, rigmodule.topGrp)
-    cmds.parent(switchCtrlLoc, rigmodule.topGrp)
-    cmds.parent(IK_FK_Blend_Ctrl.Off, rigmodule.topGrp)
+    cmds.parent(IK_Arm_PV_Ctrl.Off, rigModule.topGrp)
+    cmds.parent(IK_Arm_Ctrl.Off, rigModule.topGrp)
+    cmds.parent(switchCtrlLoc, rigModule.topGrp)
+    cmds.parent(IK_FK_Blend_Ctrl.Off, rigModule.topGrp)
 
     cmds.select(cl=1)
 
@@ -355,3 +355,5 @@ def build(armJoints,
                               fkCtrlList=FK_Arm_Ctrl_List)
 
     cmds.select(cl=1)
+
+    return rigModule

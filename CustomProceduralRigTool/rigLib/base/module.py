@@ -14,6 +14,18 @@ class Base():
     class for building top rig structure
     """
 
+    @classmethod
+    def addAttr(cls, group):
+        if group:
+            if not cmds.attributeQuery('MasterCtrl', node=group, exists=1):
+                cmds.addAttr(group, ln='MasterCtrl', at='message')
+
+            if not cmds.attributeQuery('MoveCtrl', node=group, exists=1):
+                cmds.addAttr(group, ln='MoveCtrl', at='message')
+
+            if not cmds.attributeQuery('rigModule', node=group, exists=1):
+                cmds.addAttr(group, ln='rigModule', at='message')
+
     def __init__(self,
                  characterName='new',
                  scale=1.0,
@@ -26,8 +38,6 @@ class Base():
         """
 
         self.topGrp = cmds.group(n=characterName, em=1)
-        # self.rigGrp = cmds.group(n=characterName + 'rig_grp', em=1, p=self.topGrp)
-        # self.modelGrp = cmds.group(n=characterName + 'model_grp', em=1, p=self.topGrp)
 
         characterNameAttr = 'characterName'
         sceneObjectTypeAttr = 'sceneObjectType'
@@ -51,6 +61,9 @@ class Base():
                                            axis='z',
                                            lockChannels=['v'])
 
+        if not cmds.attributeQuery('MasterCtrl', node=self.Master_Ctrl.C, exists=1):
+            cmds.addAttr(self.Master_Ctrl.C, ln='MasterCtrl', at='message')
+
         self.Move_Ctrl = control.Control(prefix='C_',
                                          rigPartName='Move',
                                          shape='moveControl',
@@ -59,16 +72,15 @@ class Base():
                                          axis='z',
                                          lockChannels=['s', 'v'])
 
+        if not cmds.attributeQuery('MoveCtrl', node=self.Move_Ctrl.C, exists=1):
+            cmds.addAttr(self.Move_Ctrl.C, ln='MoveCtrl', at='message')
+
         # add Attr
         if not cmds.attributeQuery('slaveJoint', node=self.Move_Ctrl.C, exists=1):
             cmds.addAttr(self.Move_Ctrl.C, ln='slaveJoint', at='message')
 
         if not cmds.attributeQuery('rootJoint', node=self.Move_Ctrl.C, exists=1):
             cmds.addAttr(self.Move_Ctrl.C, ln='rootJoint', at='message')
-
-        # Z axis up rotate set
-        # self._flattenGlobalCtrlShape(self.Master_Ctrl.C)
-        # self._flattenGlobalCtrlShape(self.Move_Ctrl.C)
 
         for axis in ['y', 'z']:
 
@@ -77,75 +89,40 @@ class Base():
 
         cmds.aliasAttr('Global_Scale', self.Master_Ctrl.C + '.sx')
 
-        # make more groups
-
-        # self.jointGrp = cmds.group(n='joint_grp', em=1, p=Move_Ctrl.C)
-        # self.modulesGrp = cmds.group(n='modules_grp', em=1, p=Move_Ctrl.C)
-
         # create a grp for objects are not influenced by rig moving
-        # not moving
         self.dontTouchGrp = cmds.group(n='Dont_Touch_Grp', em=1, p=self.topGrp)
         # lock the inherits Transform attr
         cmds.setAttr(self.dontTouchGrp + '.it', 0, l=1)
 
         cmds.select(cl=1)
 
-        # make main control
-        # mainCtrl = control.Control(prefix='main', scale=scale*1, parent=Move_Ctrl.C, translateTo=mainCtrlAttachObj, lockChannels=['t', 'r', 's', 'v'])
+        # create setting group for further operation
+        self.settingGrp = cmds.group(n=characterName + '_SettingGrp', em=1, p=self.dontTouchGrp)
 
-        # self._adjustMainCtrlShape(mainCtrl, scale)
+        # add attrs to setting group
+        Base.addAttr(group=self.settingGrp)
 
-        #if cmds.objExists(mainCtrlAttachObj):
-        #    cmds.parentConstraint(mainCtrlAttachObj, mainCtrl.Off, mo=1)
+        # connect attr
+        cmds.connectAttr(self.settingGrp + '.MasterCtrl',
+                         self.Master_Ctrl.C + '.MasterCtrl', f=1)
 
-        #mainVisAts = ['modelVis', 'jointsVis']
-        #mainDispAts = ['modelDisp', 'jointDisp']
-        #mainObjList = [self.modelGrp, self.jointGrp]
-        #mainObjVisDvList = [1, 0]
-
-        # add rig visibility connections
-
-        #for at, obj, dfVal in zip(mainVisAts, mainObjList, mainObjVisDvList):
-        #    cmds.addAttr(mainCtrl.C, ln=at, at='enum', enumName='off:on', k=1, defaultValue=dfVal)
-        #    cmds.setAttr(mainCtrl.C + '.' + at, channelBox=1)
-        #    cmds.connectAttr(mainCtrl.C + '.' + at, obj + '.v')
-
-        # add rig display type connections
-        #for at, obj in zip(mainDispAts, mainObjList):
-        #    cmds.addAttr(mainCtrl.C, ln=at, at='enum', enumName='normal:template:reference', k=1, defaultValue=2)
-        #    cmds.setAttr(obj + '.ove', 1)
-        #    cmds.connectAttr(mainCtrl.C + '.' + at, obj + '.ovdt')
-
-    """
-    def _adjustMainCtrlShape(self, ctrl, scale):
-
-        # adjust shape of main control
-
-        ctrlShapes = cmds.listRelatives(ctrl.C, s=1, type='nurbsCurve')
-
-        # cluster()[1] will return the cluster handle name
-        cls = cmds.cluster(ctrlShapes)[1]
-        cmds.setAttr(cls + '.ry', 90)
-        cmds.delete(ctrlShapes, ch=1)
-
-        cmds.move(5 * scale, ctrl.Off, moveY=1, relative=True)
-    """
-
-    def _flattenGlobalCtrlShape(self, ctrlObject):
-
-        # flatten ctrl object shape
-
-        ctrlShapes = cmds.listRelatives(ctrlObject, s=1,
-                                        type='nurbsCurve')
-
-        cls = cmds.cluster(ctrlShapes)[1]
-        cmds.setAttr(cls + '.rx', 90)
-        cmds.delete(ctrlShapes, ch=1)
+        cmds.connectAttr(self.settingGrp + '.MoveCtrl',
+                         self.Move_Ctrl.C + '.MoveCtrl', f=1)
 
 
 class Module():
 
     """class for building module rig structure"""
+
+    @classmethod
+    def addAttr(cls, group):
+        # query and add attribute
+        if group:
+            if not cmds.attributeQuery('slaveJoint', node=group, exists=1):
+                cmds.addAttr(group, longName='slaveJoint', at='message')
+
+            if not cmds.attributeQuery('settingGrp', node=group, exists=1):
+                cmds.addAttr(group, longName='settingGrp', at='message')
 
     def __init__(self,
                  prefix='L_',
@@ -158,28 +135,16 @@ class Module():
         :param baseObject:instance of base.module.Base() class
         :return None
         """
-        self.topGrp = cmds.group(n=prefix + rigPartName + '_Module_grp', em=1)
-        """
+        self.topGrp = cmds.group(n=prefix + rigPartName + '_Module_Grp', em=1)
 
-        self.controlGrp = cmds.group(n=prefix + rigPartName + 'Controls_grp',
-                                     em=1, p=self.topGrp)
-        self.jointsGrp = cmds.group(n=prefix + rigPartName + 'Joints_grp',
-                                    em=1, p=self.topGrp)
-        self.partsGrp = cmds.group(n=prefix + rigPartName + 'Parts_grp',
-                                   em=1, p=self.topGrp)
-        """
         self.dontTouchGrp = cmds.group(n=prefix + rigPartName + '_Dont_Touch_Grp',
                                        em=1, p=self.topGrp)
 
-
-        # cmds.hide(self.partsGrp, self.partsNoTransGrp)
         cmds.hide(self.dontTouchGrp)
 
         cmds.setAttr(self.dontTouchGrp + '.it', 0, l=1)
 
-        # query and add attribute
-        if not cmds.attributeQuery('slaveJoint', node=self.topGrp, exists=1):
-            cmds.addAttr(self.topGrp, longName='slaveJoint', at='message')
+        Module.addAttr(group=self.topGrp)
 
         if not cmds.attributeQuery(prefix + rigPartName + '_Jnt', node=self.topGrp, exists=1):
             cmds.addAttr(self.topGrp, longName=prefix + rigPartName + '_Jnt', at='message')

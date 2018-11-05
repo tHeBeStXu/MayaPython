@@ -275,4 +275,7 @@ def build(spineJoints,
 
 
     # return
-    return {'chest_Ctrl': C_Chest_Ctrl.C, 'pelvis_Ctrl': C_Pelvis_Ctrl.C, 'rootJnt': rootJnt}
+    return {'chest_Ctrl': C_Chest_Ctrl.C,
+            'pelvis_Ctrl': C_Pelvis_Ctrl.C,
+            'rootJnt': rootJnt,
+            'rigModule': rigModule}

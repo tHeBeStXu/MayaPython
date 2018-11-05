@@ -122,11 +122,11 @@ class RiggingMainUI(QtWidgets.QWidget):
         self.mainWidget.setFixedSize(250, 680)
         self.layout().addWidget(self.mainWidget)
         # rigTab
-        self.firstWidget = QtWidgets.QWidget()
-        self.mainWidget.addTab(self.firstWidget, 'Rig')
+        self.rigTabWidget = QtWidgets.QWidget()
+        self.mainWidget.addTab(self.rigTabWidget, 'Rig')
 
         gridLayout = QtWidgets.QGridLayout(self)
-        self.firstWidget.setLayout(gridLayout)
+        self.rigTabWidget.setLayout(gridLayout)
 
         self.layout().setContentsMargins(0, 0, 0, 0)
 
@@ -316,6 +316,51 @@ class RiggingMainUI(QtWidgets.QWidget):
         self.twistTabLayout.addWidget(self.twistWidget, 8, 0, 1, 3)
 
 ########################################################################################################################
+        self.slaveTabWidget = QtWidgets.QWidget()
+        self.mainWidget.addTab(self.slaveTabWidget, 'Slave')
+
+        self.slaveTabLayout = QtWidgets.QGridLayout()
+        self.slaveTabWidget.setLayout(self.slaveTabLayout)
+
+        # create filter and selection
+        self.selSplitterWidget = Splitter_UI.Splitter('Check & Select')
+
+        selectionWidget = QtWidgets.QFrame()
+        selectionWidget.setFrameStyle(QtWidgets.QFrame.StyledPanel)
+        selectionWidget.setFrameShadow(QtWidgets.QFrame.Plain)
+
+        selectionLayout = QtWidgets.QVBoxLayout()
+        selectionWidget.setLayout(selectionLayout)
+
+        selectionLayout.addWidget(self.selSplitterWidget)
+
+        slaveFilterWidget = QtWidgets.QWidget()
+        slaveFilterLayout = QtWidgets.QHBoxLayout()
+        slaveFilterLabel = QtWidgets.QLabel('Filter:    ')
+        self.jointCheck = QtWidgets.QCheckBox('joint')
+        slaveFilterWidget.setLayout(slaveFilterLayout)
+
+        slaveFilterLayout.addWidget(slaveFilterLabel)
+        slaveFilterLayout.addWidget(self.jointCheck)
+
+        self.jointListWidget = QtWidgets.QListWidget()
+        self.jointListWidget.setSelectionMode(QtWidgets.QAbstractItemView.ExtendedSelection)
+
+        selectionLayout.addWidget(slaveFilterWidget)
+        selectionLayout.addWidget(self.jointListWidget)
+
+        self.jointCheck.stateChanged.connect(self.refreshListWidget)
+
+        self.slaveTabLayout.addWidget(selectionWidget, 0, 0, 1, 3)
+
+        # create slave button
+        self.slaveJointBtn = QtWidgets.QPushButton('Slave Joint')
+        self.slaveTabLayout.addWidget(self.slaveJointBtn, 1, 0, 1, 3)
+        self.slaveJointBtn.clicked.connect(self.createSlave)
+
+
+
+########################################################################################################################
         # Skin Splitter
         self.skinSplitter = Splitter_UI.Splitter(text='Skin Action')
         self.layout().addWidget(self.skinSplitter)
@@ -361,6 +406,10 @@ class RiggingMainUI(QtWidgets.QWidget):
                                                    numFK_Jnt=eval(rig.rigArgs['numFK_Jnt']),
                                                    spineBackUpAxis=rig.rigArgs['spineBackUpAxis'],
                                                    baseRig=project)
+                #connect Attr
+                cmds.connectAttr(project.settingGrp + '.rigModule',
+                                 self.mainSpine['rigModule'].topGrp + '.settingGrp', f=1)
+
                 logger.debug('%s IK_FK_MainSpine finished!' % rig.partLineEdit.text())
                 continue
             elif rig.typeName == 'IK_FK_Spine' and rig.rigArgs['mainSpineAttach']:
@@ -371,6 +420,10 @@ class RiggingMainUI(QtWidgets.QWidget):
                                                      spineBackUpAxis=rig.rigArgs['spineBackUpAxis'],
                                                      mainSpineAttach=rig.rigArgs['mainSpineAttach'],
                                                      baseRig=project)
+                # connect Attr
+                cmds.connectAttr(project.settingGrp + '.RigModule',
+                                 self.attachSpine['rigModule'].topGrp + '.settingGrp', f=1)
+
                 logger.debug('%s IK_FK_AttachSpine finished!' % rig.partLineEdit.text())
                 continue
             else:
@@ -381,38 +434,55 @@ class RiggingMainUI(QtWidgets.QWidget):
         if self.mainSpine or self.attachSpine:
             for rig in self.rigScrollWidget.findChildren(rigWidget):
                 if rig.typeName == 'IK_FK_Arm' and rig.rigArgs:
-                    IK_FK_HumanArm.build(armJoints=eval(rig.rigArgs['armJoints']),
-                                         prefix=rig.rigArgs['prefix'],
-                                         rigScale=eval(rig.rigArgs['rigScale']),
-                                         FK_Parent=rig.rigArgs['FK_Parent'],
-                                         switchCtrlPos=rig.rigArgs['switchCtrlPos'],
-                                         baseRig=project)
+                    self.rigModule = IK_FK_HumanArm.build(armJoints=eval(rig.rigArgs['armJoints']),
+                                                          prefix=rig.rigArgs['prefix'],
+                                                          rigScale=eval(rig.rigArgs['rigScale']),
+                                                          FK_Parent=rig.rigArgs['FK_Parent'],
+                                                          switchCtrlPos=rig.rigArgs['switchCtrlPos'],
+                                                          baseRig=project)
+                    # connect attr
+                    cmds.connectAttr(project.settingGrp + '.rigModule',
+                                     self.rigModule.topGrp + '.settingGrp', f=1)
+
                     logger.info('%s IK_FK_Arm build complete!' % rig.partLineEdit.text())
                     continue
 
                 elif rig.typeName == 'IK_AnimalLeg' and rig.rigArgs:
-                    IK_AnimalLeg.build(legJoints=eval(rig.rigArgs['legJoints']),
-                                       revJntlocList=eval(rig.rigArgs['revJntlocList']),
-                                       ankleRollLoc=rig.rigArgs['ankleRollLoc'],
-                                       prefix=rig.rigArgs['prefix'],
-                                       rigScale=eval(rig.rigArgs['rigScale']),
-                                       baseRig=project)
+                    self.rigModule = IK_AnimalLeg.build(legJoints=eval(rig.rigArgs['legJoints']),
+                                                        revJntlocList=eval(rig.rigArgs['revJntlocList']),
+                                                        ankleRollLoc=rig.rigArgs['ankleRollLoc'],
+                                                        prefix=rig.rigArgs['prefix'],
+                                                        rigScale=eval(rig.rigArgs['rigScale']),
+                                                        baseRig=project)
+
+                    # connect attr
+                    cmds.connectAttr(project.settingGrp + '.rigModule',
+                                     self.rigModule.topGrp + '.settingGrp', f=1)
+
                     logger.info('%s IK_AnimalLeg build complete!' % rig.partLineEdit.text())
                     continue
                 elif rig.typeName == 'IK_FK_Head_Neck' and rig.rigArgs:
-                    IK_FK_Head_Neck.build(neckJoints=eval(rig.rigArgs['neckJoints']),
-                                          rigScale=eval(rig.rigArgs['rigScale']),
-                                          prefix=rig.rigArgs['prefix'],
-                                          blendCtrl_Pos=rig.rigArgs['blendCtrl_Pos'],
-                                          baseRig=project)
+                    self.rigModule = IK_FK_Head_Neck.build(neckJoints=eval(rig.rigArgs['neckJoints']),
+                                                           rigScale=eval(rig.rigArgs['rigScale']),
+                                                           prefix=rig.rigArgs['prefix'],
+                                                           blendCtrl_Pos=rig.rigArgs['blendCtrl_Pos'],
+                                                           baseRig=project)
+                    cmds.connectAttr(project.settingGrp + '.rigModule',
+                                     self.rigModule.topGrp + '.settingGrp', f=1)
+
                     logger.info('%s IK_FK_Head_Neck build complete!' % rig.partLineEdit.text())
                     continue
                 elif rig.typeName == 'FK_Tail' and rig.rigArgs:
-                    FK_Tail.build(tailJoints=eval(rig.rigArgs['tailJoints']),
-                                  FK_Parent=rig.rigArgs['FK_Parent'],
-                                  rigScale=1.0,
-                                  prefix=rig.rigArgs['prefix'],
-                                  baseRig=project)
+                    self.rigModule = FK_Tail.build(tailJoints=eval(rig.rigArgs['tailJoints']),
+                                                   FK_Parent=rig.rigArgs['FK_Parent'],
+                                                   rigScale=1.0,
+                                                   prefix=rig.rigArgs['prefix'],
+                                                   baseRig=project)
+
+                    # connect attr
+                    cmds.connectAttr(project.settingGrp + '.rigModule',
+                                     self.rigModule.topGrp + '.settingGrp', f=1)
+
                     logger.info('%s FK_Tail build complete!' % rig.partLineEdit.text())
                     continue
                 else:
@@ -658,6 +728,30 @@ class RiggingMainUI(QtWidgets.QWidget):
             else:
                 logger.info("Can't find the specified part, please check your rig type.")
 
+    def createSlave(self):
+
+        listItems = self.jointListWidget.selectedItems()
+
+        selListJoints = []
+        for i in listItems:
+            selListJoints.append(self.jointListWidget.item(self.jointListWidget.row(i)).text())
+
+        Slave_Joints.build(inputJoints=selListJoints)
+
+    def refreshListWidget(self):
+
+        self.jointListWidget.clear()
+        joints = []
+
+        if self.jointCheck.isChecked():
+            joints = cmds.ls(type='joint')
+            joints.sort()
+
+        if joints:
+            if len(joints) > 1:
+                self.jointListWidget.addItems(joints)
+            else:
+                self.jointListWidget.addItem(joints[0])
 
 class rigWidget(QtWidgets.QFrame):
 

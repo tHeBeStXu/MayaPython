@@ -10,7 +10,7 @@ def build(inputJoints=None):
     """
 
     if inputJoints:
-        targetJoints=inputJoints
+        targetJoints = inputJoints
     else:
         targetJoints = []
 
@@ -59,10 +59,10 @@ def build(inputJoints=None):
                 if parent:
                     if cmds.attributeQuery('slaveJoint', node=parent[0], exists=1):
                         parentSlave = cmds.listConnections(parent[0] + '.slaveJoint',
-                                                           source=0, destination=1, type='joint')[0]
+                                                           source=0, destination=1, type='joint')
 
                         if parentSlave:
-                            cmds.parent(slaveJoint, parentSlave)
+                            cmds.parent(slaveJoint, parentSlave[0])
 
     cmds.select(cl=1)
 

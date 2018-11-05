@@ -44,7 +44,7 @@ def build(legJoints,
 
     cmds.select(cl=1)
 
-    rigmodule = module.Module(prefix=prefix,
+    rigModule = module.Module(prefix=prefix,
                               rigPartName=rigPartName,
                               baseObject=baseRig)
 
@@ -240,7 +240,7 @@ def build(legJoints,
         cmds.parent(hintJnt_List[0], spineJnt)
     else:
         cmds.warning('No spine joint, IK system may not work as expected!')
-        cmds.parent(hintJnt_List[0], rigmodule.topGrp)
+        cmds.parent(hintJnt_List[0], rigModule.topGrp)
 
     cmds.parent(IK_Hip_Part_List[0], ballRoll_Ctrl.C)
     cmds.parent(IK_Ball_List[0], ballRoll_Ctrl.C)
@@ -254,8 +254,8 @@ def build(legJoints,
     cmds.parent(revJntList[0], Foot_IK_Ctrl.C)
     cmds.parent(revJntRoll_Ctrl.Off, Foot_IK_Ctrl.C)
 
-    cmds.parent(PV_Ctrl.Off, rigmodule.topGrp)
-    cmds.parent(Foot_IK_Ctrl.Off, rigmodule.topGrp)
+    cmds.parent(PV_Ctrl.Off, rigModule.topGrp)
+    cmds.parent(Foot_IK_Ctrl.Off, rigModule.topGrp)
 
     # add Attr
     for joint in legJoints:
@@ -268,7 +268,9 @@ def build(legJoints,
     # connect Attr
     for joint in legJoints:
         if cmds.attributeQuery('rigModule', node=joint, exists=1):
-            cmds.connectAttr(rigmodule.topGrp + '.' + prefix + rigPartName + '_Jnt',
+            cmds.connectAttr(rigModule.topGrp + '.' + prefix + rigPartName + '_Jnt',
                              joint + '.rigModule', f=1)
 
     cmds.select(cl=1)
+
+    return rigModule

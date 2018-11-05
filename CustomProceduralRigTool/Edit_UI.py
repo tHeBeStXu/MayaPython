@@ -64,7 +64,9 @@ class EditWidget(QtWidgets.QDialog):
         selectionWidget.setLayout(selectionLayout)
 
         # filter part
+        filterWidget = QtWidgets.QWidget()
         filterLayout = QtWidgets.QHBoxLayout()
+        filterWidget.setLayout(filterLayout)
         filterLabel = QtWidgets.QLabel('Filter:    ')
         self.jointCheck = QtWidgets.QCheckBox('joint')
         self.locatorCheck = QtWidgets.QCheckBox('locator')
@@ -100,7 +102,7 @@ class EditWidget(QtWidgets.QDialog):
 
             self.formLayout.addRow(i, layout)
 
-        selectionLayout.addLayout(filterLayout)
+        selectionLayout.addWidget(filterWidget)
         selectionLayout.addWidget(self.listWidget)
 
         # selectionWidget.setMaximumHeight(self.formWidget.height())

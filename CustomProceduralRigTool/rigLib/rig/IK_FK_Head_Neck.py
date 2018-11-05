@@ -40,7 +40,7 @@ def build(neckJoints,
 
     rigPartName = 'Head'
 
-    rigmodule = module.Module(prefix=prefix,
+    rigModule = module.Module(prefix=prefix,
                               rigPartName=rigPartName,
                               baseObject=baseRig)
 
@@ -183,7 +183,7 @@ def build(neckJoints,
     if Neck_Parent:
         cmds.parent(IK_Start_Jnt, Neck_Parent)
     else:
-        cmds.parent(IK_Start_Jnt, rigmodule.topGrp)
+        cmds.parent(IK_Start_Jnt, rigModule.topGrp)
 
     cmds.setAttr(IK_Start_Jnt + '.v', 0)
     cmds.setAttr(IK_End_Jnt + '.v', 0)
@@ -300,14 +300,14 @@ def build(neckJoints,
 
     # fk_headLocal and fk_headWorld
     cmds.parent(fk_headLocal, FK_Neck_Ctrl_List[-1])
-    cmds.parent(fk_headWorld, rigmodule.topGrp)
+    cmds.parent(fk_headWorld, rigModule.topGrp)
     # ik_headLocal and ik_headWorld
     cmds.parent(ik_headLocal, neckLoc)
-    cmds.parent(ik_headWorld, rigmodule.topGrp)
+    cmds.parent(ik_headWorld, rigModule.topGrp)
 
     # ik parts
-    cmds.parent(IK_Part_List[0], rigmodule.dontTouchGrp)
-    cmds.parent(IK_Part_List[-1], rigmodule.dontTouchGrp)
+    cmds.parent(IK_Part_List[0], rigModule.dontTouchGrp)
+    cmds.parent(IK_Part_List[-1], rigModule.dontTouchGrp)
 
     # blend ctrl
     cmds.pointConstraint(blendCtrl_Pos, IK_FK_BlendCtrl.Off, mo=0)
@@ -324,12 +324,12 @@ def build(neckJoints,
     cmds.setAttr(headBlendLoc_Shape[0] + '.template', 1)
     cmds.pointConstraint(neckJoints[-2], headBlendLoc, mo=0)
     cmds.parent(blendCtrl_Pos, headBlendLoc)
-    cmds.parent(IK_FK_BlendCtrl.Off, rigmodule.topGrp)
-    cmds.parent(headBlendLoc, rigmodule.topGrp)
+    cmds.parent(IK_FK_BlendCtrl.Off, rigModule.topGrp)
+    cmds.parent(headBlendLoc, rigModule.topGrp)
 
     # clean rigModule
-    cmds.parent(FK_Head_Ctrl.Off, rigmodule.topGrp)
-    cmds.parent(neckLoc, rigmodule.topGrp)
+    cmds.parent(FK_Head_Ctrl.Off, rigModule.topGrp)
+    cmds.parent(neckLoc, rigModule.topGrp)
 
     # add attr
     for joint in neckJoints[:-1]:
@@ -342,7 +342,9 @@ def build(neckJoints,
     # connect attr
     for joint in neckJoints[:-1]:
         if cmds.attributeQuery('rigModule', node=joint, exists=1):
-            cmds.connectAttr(rigmodule.topGrp + '.' + prefix + rigPartName + '_Jnt',
+            cmds.connectAttr(rigModule.topGrp + '.' + prefix + rigPartName + '_Jnt',
                              joint + '.rigModule', f=1)
 
     cmds.select(cl=1)
+
+    return rigModule

@@ -24,7 +24,7 @@ def build(tailJoints,
     rigPartName = 'Tail'
 
     cmds.select(cl=1)
-    rigmodule = module.Module(prefix=prefix,
+    rigModule = module.Module(prefix=prefix,
                               rigPartName=rigPartName,
                               baseObject=baseRig)
 
@@ -94,9 +94,9 @@ def build(tailJoints,
         cmds.setAttr(FK_LocShape[0] + '.localScaleZ', 0)
         cmds.parentConstraint(FK_Parent, FK_Loc, mo=0)
         cmds.parent(FK_tailCtrlGrp_List[0], FK_Loc)
-        cmds.parent(FK_Loc, rigmodule.topGrp)
+        cmds.parent(FK_Loc, rigModule.topGrp)
     else:
-        cmds.parent(FK_tailCtrlGrp_List[0], rigmodule.topGrp)
+        cmds.parent(FK_tailCtrlGrp_List[0], rigModule.topGrp)
         cmds.warning('Warning: FK_Parent is None!')
 
     cmds.select(cl=1)
@@ -112,7 +112,9 @@ def build(tailJoints,
     # connect attr
     for joint in tailJoints[:-1]:
         if cmds.attributeQuery('rigModule', node=joint, exists=1):
-            cmds.connectAttr(rigmodule.topGrp + '.' + prefix + 'Tail_Jnt',
+            cmds.connectAttr(rigModule.topGrp + '.' + prefix + 'Tail_Jnt',
                              joint + '.rigModule', f=1)
 
     cmds.select(cl=1)
+
+    return rigModule

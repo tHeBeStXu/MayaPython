@@ -265,17 +265,19 @@ def build(spineJoints,
     # rootJoint
     rootJnt = ''
     if not mainSpineAttach:
-        rootJnt = cmds.listRelatives(spineJoints[0], p=1, c=0, s=0, type='joint')[0]
+        rootJnt = cmds.listRelatives(spineJoints[0], p=1, c=0, s=0, type='joint')
 
-        if not cmds.attributeQuery('slaveJoint', node=rootJnt, exists=1):
-            cmds.addAttr(rootJnt, ln='slaveJoint', at='message')
+        if rootJnt:
 
-        if not cmds.attributeQuery('rootJoint', node=rootJnt, exists=1):
-            cmds.addAttr(rootJnt, ln='rootJoint', at='message')
+            if not cmds.attributeQuery('slaveJoint', node=rootJnt[0], exists=1):
+                cmds.addAttr(rootJnt[0], ln='slaveJoint', at='message')
+
+            if not cmds.attributeQuery('rootJoint', node=rootJnt[0], exists=1):
+                cmds.addAttr(rootJnt[0], ln='rootJoint', at='message')
 
 
     # return
     return {'chest_Ctrl': C_Chest_Ctrl.C,
             'pelvis_Ctrl': C_Pelvis_Ctrl.C,
-            'rootJnt': rootJnt,
+            'rootJnt': rootJnt[0],
             'rigModule': rigModule}

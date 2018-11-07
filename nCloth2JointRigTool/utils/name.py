@@ -14,3 +14,20 @@ def removeSuffix(name):
     nameNoSuffix = name[:-len(suffix)]
 
     return nameNoSuffix
+
+
+def removeNodeAttr(name):
+    """
+    remove attr from given string
+    :param name: str, string
+    :return: str, pure node name
+    """
+    edit = name.split('.')
+
+    if len(edit) < 2:
+        return edit
+    Attr = '.' + edit[-1]
+
+    meshName = name[:-len(Attr)]
+
+    return meshName

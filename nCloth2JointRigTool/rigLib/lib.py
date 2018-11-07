@@ -2,7 +2,8 @@ import maya.cmds as cmds
 from ..utils import name
 
 
-def createEmitter(vertex):
+def createEmitter(vertex,
+                  meshName):
     """
     create a point emitter
     :param vertex: str, vertex name
@@ -17,36 +18,18 @@ def createEmitter(vertex):
     emitterList = cmds.emitter(n=vertex+'EM')
 
     emitter = emitterList[-1]
-    meshTrans = emitterList[0]
 
     cmds.select(cl=1)
 
     if not cmds.attributeQuery('bindMesh', node=emitter, exists=1):
         cmds.addAttr(emitter, ln='bindMesh', at='message')
 
-    if not cmds.attributeQuery('bindEmitter', node=meshTrans, exists=1):
-        cmds.addAttr(meshTrans, ln='bindEmitter', at='message')
+    if not cmds.attributeQuery('bindEmitter', node=meshName, exists=1):
+        cmds.addAttr(meshName, ln='bindEmitter', at='message')
 
-    cmds.connectAttr(meshTrans + '.bindEmitter', emitter + '.bindMesh', f=1)
+    cmds.connectAttr(meshName + '.bindEmitter', emitter + '.bindMesh', f=1)
 
-    return {'emitter': emitter,
-            'meshTrans': meshTrans}
-
-
-def createNCloth(name):
-    """
-    create nCloth on a mesh
-    :param name: str, name of the nCloth node
-    :return:
-    """
-    nClothShape = cmds.createNode('nCloth')
-    nClothTrans = cmds.listRelatives(nClothShape, c=0, p=1, s=0, type='transform')[0]
-
-    nClothTrans = cmds.rename(nClothTrans, name + '_nCloth')
-    nClothShape = cmds.listRelatives(nClothTrans, c=1, p=0, s=1, type='nCloth')[0]
-
-    return {'nClothShape': nClothShape,
-            'nClothTrans': nClothTrans}
+    return {'emitter': emitter}
 
 
 def createNucleus(name):
@@ -57,10 +40,18 @@ def createNucleus(name):
     """
     nucleus = cmds.createNode('nucleus', n=name + '_Nucleus')
 
+    # connect attr
+    cmds.connectAttr('time.outTime', nucleus + '.currentTime')
+
+    # add attr
+    if not cmds.attributeQuery('nucleus', node=nucleus, exists=1):
+        cmds.addAttr(nucleus, longName='nucleus', at='message', multi=1)
+    cmds.select(cl=1)
+
     return {'nucleus': nucleus}
 
 
-def connectNucleusAndNCloth(nCloth, nucleus=None):
+def createNCloth(name, nucleus=None):
     """
     connect nucleus to nCloth
     :param nucleus: str, nucleus
@@ -68,8 +59,14 @@ def connectNucleusAndNCloth(nCloth, nucleus=None):
     :return:
     """
 
-    if not nucleus:
-        nucleus = createNucleus(name=name.removeSuffix(nCloth))
+    nucleus = nucleus or createNucleus(name=name)
+
+    nClothShape = cmds.createNode('nCloth')
+    cmds.select(cl=1)
+    nClothTrans = cmds.listRelatives(nClothShape, c=0, p=1, s=0, type='transform')[0]
+
+    nClothTrans = cmds.rename(nClothTrans, name + '_nCloth')
+    nClothShape = cmds.listRelatives(nClothTrans, c=1, p=0, s=1, type='nCloth')[0]
 
     nucleusInputActiveIndex = findSingleAvailableIndex(nucleus + '.inputActive')
     nucleusInputActiveAttr = nucleus + '.inputActive' + '[%s]' % nucleusInputActiveIndex
@@ -81,10 +78,25 @@ def connectNucleusAndNCloth(nCloth, nucleus=None):
     nucleusOutputObjectsAttr = nucleus + '.outputObjects' + '[%s]' % nucleusOutputObjectsIndex
 
     # connect attr
-    cmds.connectAttr(nCloth + '.currentState', nucleusInputActiveAttr, f=1)
-    cmds.connectAttr(nCloth + '.startState', nucleusInputActiveStartAttr, f=1)
-    cmds.connectAttr(nucleus + '.startFrame', nCloth + '.startFrame', f=1)
-    cmds.connectAttr(nucleusOutputObjectsAttr, nCloth + '.nextState', f=1)
+    cmds.connectAttr(nClothShape + '.currentState', nucleusInputActiveAttr, f=1)
+    cmds.connectAttr(nClothShape + '.startState', nucleusInputActiveStartAttr, f=1)
+    cmds.connectAttr(nucleus + '.startFrame', nClothShape + '.startFrame', f=1)
+    cmds.connectAttr(nucleusOutputObjectsAttr, nClothShape + '.nextState', f=1)
+
+    cmds.connectAttr('time1.outTime', nClothShape + '.currentTime', f=1)
+
+    # add attr
+    if not cmds.attributeQuery('nCloth', node=nClothShape, exists=1):
+        cmds.addAttr(nClothShape, ln='nCloth', at='message', multi=1)
+
+    if not cmds.attributeQuery('nucleus', node=nucleus, exists=1):
+        cmds.addAttr(nucleus, ln='nucleus', at='message', multi=1)
+
+    cmds.select(cl=1)
+
+    return {'nucleus': nucleus,
+            'nClothShape': nClothShape,
+            'nClothTrans': nClothTrans}
 
 
 ########################################################################################################################
@@ -126,9 +138,8 @@ def findDoubleAvailableIndex(firstAttr, secondAttr):
         firstInputAttr = cmds.listConnections(firstFullAttr, plugs=1)
         secondInputAttr = cmds.listConnections(secondFullAttr, plugs=1)
 
-        if not firstInputAttr:
-            if not secondInputAttr:
-                return index
+        if not firstInputAttr and not secondInputAttr:
+            return index
 
         index += 1
 

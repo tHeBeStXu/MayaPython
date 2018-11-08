@@ -31,3 +31,16 @@ def removeNodeAttr(name):
     meshName = name[:-len(Attr)]
 
     return meshName
+
+
+def getPureVertex(name):
+    edit = name.split('.')
+
+    if len(edit) < 2:
+        return edit
+
+    meshName = edit[0] + '.'
+
+    pureVertex = name[len(meshName):]
+
+    return pureVertex

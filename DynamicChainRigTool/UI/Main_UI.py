@@ -292,10 +292,12 @@ class MainUI(QtWidgets.QDialog):
         jointList = eval(self.rowItem['jointList'].text())
         numCtrl = eval(self.rowItem['numCtrl'].text())
         hairSystem = self.rowItem['hairSystem'].text()
+        nucleus = self.rowItem['nucleus'].text()
 
         rig.build(jointList=jointList,
                   numCtrl=numCtrl,
-                  hairSystem=hairSystem)
+                  hairSystem=hairSystem,
+                  nucleus=nucleus)
 
     def populateSettingGrp(self):
         """

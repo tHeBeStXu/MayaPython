@@ -2,132 +2,293 @@ import maya.cmds as cmds
 import lib
 from ..utils import name
 from ..utils import distance
+from ..base import control
 
 reload(lib)
 reload(name)
 reload(distance)
+reload(control)
 
 
-def build(jointVertexList, nucleus=None, simJointParent=''):
+def build(vertexList, nucleus=None, jointParent='', rigScale=1.0):
 
     #############
     # Mesh Part #
     #############
-    meshName = name.removeNodeAttr(jointVertexList[0])
+    meshName = name.removeNodeAttr(vertexList[0])
 
-    skinMesh = cmds.duplicate(meshName)
-    cmds.select(cl=1)
-    skinMesh = cmds.rename(skinMesh, meshName + '_Skin')
+    skinMesh = cmds.duplicate(meshName, n=meshName + '_Skin')[0]
+
+    # set sim mesh visibility Off
+    cmds.setAttr(meshName + '.v', 0)
+
+    #################
+    # setting group #
+    #################
+    settingGrp = lib.createSettingGrp(meshName)
 
     ##############
     # joint part #
     ##############
+
+    # sim joint part
     simJointList = []
-    for vertex in jointVertexList:
-        # place joint to vertex
-        vertexPos = cmds.xform(vertex, q=1, ws=1, t=1)
-
-        joint = lib.createJoint(name=meshName)
-
-        cmds.xform(joint['joint'], t=vertexPos, ws=1)
-        simJointList.append(joint['joint'])
+    for vertex in vertexList:
 
         cmds.select(cl=1)
+        joint = cmds.joint(n=meshName + '_SimJnt_#')
+        cmds.select(cl=1)
+        simJointList.append(joint)
+
+        if not cmds.attributeQuery('simJoint', node=joint, exists=1):
+            cmds.addAttr(joint, ln='simJoint', at='message')
+
+        if not cmds.attributeQuery('targetEmitter', node=joint, exists=1):
+            cmds.addAttr(joint, ln='targetEmitter', at='message')
+
+        # place joint to vertex
+        lib.placeJnt2Vert(vertex=vertex, joint=joint)
+
+        cmds.select(cl=1)
+
+    if jointParent:
+        cmds.select(cl=1)
+        parentJoint = cmds.joint(n=meshName + '_SimJnt_P')
+        cmds.select(cl=1)
+
+        simJointList.append(parentJoint)
+
+        if not cmds.attributeQuery('simJoint', node=parentJoint, exists=1):
+            cmds.addAttr(parentJoint, ln='simJoint', at='message')
+
+        if not cmds.attributeQuery('targetEmitter', node=joint, exists=1):
+            cmds.addAttr(parentJoint, ln='targetEmitter', at='message')
+
+        cmds.delete(cmds.parentConstraint(jointParent, parentJoint, mo=0))
+
+        for joint in simJointList[:-1]:
+            cmds.parent(joint, simJointList[-1])
+
+    # skin joint part
+    skinJointList = []
+    for vertex in vertexList:
+
+        cmds.select(cl=1)
+        joint = cmds.joint(n=meshName + '_SkinJnt_#')
+        cmds.select(cl=1)
+
+        skinJointList.append(joint)
+
+        if not cmds.attributeQuery('skinJoint', node=joint, exists=1):
+            cmds.addAttr(joint, ln='skinJoint', at='message')
+
+        if not cmds.attributeQuery('targetVertex', node=joint, exists=1):
+            cmds.addAttr(joint, ln='targetVertex', dt='string')
+
+        if not cmds.attributeQuery('slaveJoint', node=joint, exists=1):
+            cmds.addAttr(joint, ln='slaveJoint', at='message')
+
+        # place joint to vertex
+        vertexPos = lib.placeJnt2Vert(vertex=vertex, joint=joint)
 
         # set vertex
-        closestVertex = distance.getClosestVertex(skinMesh, pos=vertexPos)
+        closestVertex = distance.getClosestVertex(mayaMesh=skinMesh, pos=vertexPos)
 
-        cmds.setAttr(joint['joint'] + '.targetVertex', str(closestVertex), type='string')
+        cmds.setAttr(joint + '.targetVertex', str(closestVertex), type='string')
 
+    if jointParent:
+        cmds.select(cl=1)
+        parentJoint = cmds.joint(n=meshName + '_SkinJnt_P')
         cmds.select(cl=1)
 
-    #############
-    # skin Part #
-    #############
-    if simJointParent:
-        simJointRoot = cmds.joint(n=meshName + '_Jnt_P')
+        skinJointList.append(parentJoint)
 
-        if not cmds.attributeQuery('slaveJoint', node=simJointRoot, exists=1):
-            cmds.addAttr(simJointRoot, ln='slaveJoint', at='message')
+        if not cmds.attributeQuery('skinJoint', node=parentJoint, exists=1):
+            cmds.addAttr(parentJoint, ln='skinJoint', at='message')
 
+        if not cmds.attributeQuery('slaveJoint', node=parentJoint, exists=1):
+            cmds.addAttr(parentJoint, ln='slaveJoint', at='message')
+
+        cmds.delete(cmds.parentConstraint(jointParent, parentJoint, mo=0))
+
+        for joint in skinJointList[:-1]:
+            cmds.parent(joint, skinJointList[-1])
+
+    # control joint part
+    controlJointList = []
+    ctrlList = []
+    ctrlGrpList = []
+    for vertex in vertexList:
         cmds.select(cl=1)
-        cmds.delete(cmds.parentConstraint(simJointParent, simJointRoot, mo=0))
+        joint = cmds.joint(n=meshName + '_CtrlJnt_#')
+        cmds.select(cl=1)
+        controlJointList.append(joint)
 
-        for joint in simJointList:
-            cmds.parent(joint, simJointRoot)
+        if not cmds.attributeQuery('ctrlJoint', node=joint, exists=1):
+            cmds.addAttr(joint, ln='ctrlJoint', at='message')
 
-        simJointList.append(simJointRoot)
+        lib.placeJnt2Vert(vertex=vertex, joint=joint)
 
+        ctrl = control.Control(prefix=joint,
+                               rigPartName='',
+                               scale=rigScale,
+                               translateTo=joint,
+                               rotateTo=joint,
+                               shape='circleY')
+
+        cmds.pointConstraint(ctrl.C, joint, mo=0)
+        cmds.orientConstraint(ctrl.C, joint, mo=0)
+
+        if not cmds.attributeQuery('bakeCtrl', node=ctrl.C, exists=1):
+            cmds.addAttr(ctrl.C, ln='bakeCtrl', at='message')
+
+        if not cmds.attributeQuery('bakeCtrlGrp', node=ctrl.Off, exists=1):
+            cmds.addAttr(ctrl.Off, ln='bakeCtrlGrp', at='message')
+
+        ctrlList.append(ctrl.C)
+        ctrlGrpList.append(ctrl.Off)
+
+    if jointParent:
+        cmds.select(cl=1)
+        parentJoint = cmds.joint(n=meshName + '_CtrlJnt_P')
+        cmds.select(cl=1)
+
+        controlJointList.append(parentJoint)
+
+        if not cmds.attributeQuery('ctrlJoint', node=parentJoint, exists=1):
+            cmds.addAttr(parentJoint, ln='ctrlJoint', at='message')
+
+        cmds.delete(cmds.parentConstraint(jointParent, parentJoint, mo=0))
+
+        for joint in controlJointList[:-1]:
+            cmds.parent(joint, controlJointList[-1])
+
+    ######################
+    # build blend system #
+    ######################
+    lib.createBlendSystem(simJointList=simJointList,
+                          skinJointList=skinJointList,
+                          ctrlJointList=controlJointList,
+                          settingGrp=settingGrp)
+
+    #####################
+    # skin cluster part #
+    #####################
+    # skin skintJoints with skin Mesh
+    skinCluster = cmds.skinCluster(skinJointList[:], skinMesh, mi=3, n=skinMesh + '_skinCluster')
     cmds.select(cl=1)
-
-    # skin joints with skin Mesh
-    skinCluster = cmds.skinCluster(simJointList[:], skinMesh, mi=4, n=skinMesh + '_skinCluster')
-    cmds.select(cl=1)
-
 
     # set 100% skin weight of each simJoint and targetVertex
-    if not simJointRoot:
-        for joint in simJointList:
+    if not jointParent:
+        for joint in skinJointList:
             vertex = cmds.getAttr(joint + '.targetVertex')
 
             cmds.skinPercent(skinCluster[0], vertex, transformValue=[(joint, 1.0)])
 
     else:
-        for joint in simJointList[:-1]:
+        for joint in skinJointList[:-1]:
             vertex = cmds.getAttr(joint + '.targetVertex')
             cmds.skinPercent(skinCluster[0], vertex, transformValue=[(joint, 1.0)])
-
     cmds.select(cl=1)
-
 
     ###############
     # nCloth Part #
     ###############
-    inputMeshTrans = name.removeNodeAttr(jointVertexList[0])
-    inputMeshShape = cmds.listRelatives(inputMeshTrans, c=1, p=0, s=1)[0]
-    cmds.setAttr(inputMeshTrans + '.v', 0)
 
     if not nucleus:
-        nCloth_nucleus = lib.createNCloth(name=meshName)
+        nCloth_nucleus = lib.createNCloth(nClothMesh=meshName)
     else:
-        nCloth_nucleus = lib.createNCloth(name=meshName, nucleus=nucleus)
+        nCloth_nucleus = lib.createNCloth(nClothMesh=meshName, nucleus=nucleus)
 
-    worldMeshAttrIndex = lib.findSingleAvailableIndex(inputMeshShape + '.worldMesh')
-    worldMeshAttrFull = inputMeshShape + '.worldMesh' + '[%s]' % worldMeshAttrIndex
-
-    cmds.connectAttr(worldMeshAttrFull, nCloth_nucleus['nClothShape'] + '.inputMesh', f=1)
-
-    # output mesh
-
-    #outputMeshShape = cmds.createNode('mesh')
-    #outputMeshTrans = cmds.listRelatives(outputMeshShape, c=0, p=1, s=0)[0]
-    #outputMeshTrans = cmds.rename(outputMeshTrans, meshName + '_output')
-    #outputMeshShape = cmds.listRelatives(outputMeshTrans, c=1, p=0, s=1)[0]
-
-    outputMeshTrans = cmds.polyPlane(n= meshName + '_output')[0]
-    outputMeshShape = cmds.listRelatives(outputMeshTrans, c=1, p=0, s=1)[0]
-
-    # connect outputMesh to nCloth
-    cmds.connectAttr(nCloth_nucleus['nClothShape'] + '.outputMesh', outputMeshShape + '.inMesh', f=1)
 
     ################
     # Emitter Part #
     ################
     emitterList = []
-    for vertex in jointVertexList:
-        outputMeshVertex = outputMeshTrans + '.' + name.getPureVertex(vertex)
-        print outputMeshVertex
+    particleList = []
+    for vertex in vertexList:
 
-        emitterParticle = lib.createEmitter(vertex=outputMeshVertex, meshName=outputMeshTrans)
+        emitterParticle = lib.createEmitter(vertex=vertex, meshName=meshName)
 
         cmds.setAttr(emitterParticle['particleShape'] + '.maxCount', 0)
 
         emitterList.append(emitterParticle['emitter'])
+        particleList.append(emitterParticle['particle'])
 
     # parentConstraint & connect attr
-    for i in xrange(len(jointVertexList)):
+    for i in xrange(len(vertexList)):
 
         cmds.parentConstraint(emitterList[i], simJointList[i], mo=0)
 
         cmds.connectAttr(emitterList[i] + '.targetJoint', simJointList[i] + '.targetEmitter', f=1)
+
+    ###############
+    # connect all #
+    ###############
+
+    for joint in simJointList:
+        cmds.connectAttr(settingGrp + '.simJoint', joint + '.simJoint', f=1)
+
+    for joint in skinJointList:
+        cmds.connectAttr(settingGrp + '.skinJoint', joint + '.skinJoint', f=1)
+
+    for joint in controlJointList:
+        cmds.connectAttr(settingGrp + '.ctrlJoint', joint + '.ctrlJoint', f=1)
+
+    for ctrl in ctrlList:
+        cmds.connectAttr(settingGrp + '.bakeCtrl', ctrl + '.bakeCtrl', f=1)
+
+    for Grp in ctrlGrpList:
+        cmds.connectAttr(settingGrp + '.bakeCtrlGrp', Grp + '.bakeCtrlGrp', f=1)
+
+    cmds.connectAttr(settingGrp + '.nucleus', nCloth_nucleus['nucleus'] + '.nucleus', f=1)
+    cmds.connectAttr(settingGrp + '.nCloth', nCloth_nucleus['nClothShape'] + '.nCloth', f=1)
+
+    rootGrp = cmds.group(n=meshName + '_nCloth_Root_Grp', em=1)
+    jointGrp = cmds.group(n=meshName + '_nCloth_Joint_Grp', em=1)
+    CtrlGrp = cmds.group(n=meshName + '_nCloth_Ctrl_Grp', em=1)
+    particleGrp = cmds.group(n=meshName + '_nCloth_Particle_Grp', em=1)
+
+    for Grp in ctrlGrpList:
+        cmds.parent(Grp, CtrlGrp)
+
+    for particle in particleList:
+        cmds.parent(particle, particleGrp)
+
+    if jointParent:
+        cmds.parent(skinJointList[-1], jointGrp)
+        cmds.parent(simJointList[-1], jointGrp)
+        cmds.parent(controlJointList[-1], jointGrp)
+
+        cmds.setAttr(simJointList[-1] + '.v', 0)
+        cmds.setAttr(controlJointList[-1] + '.v', 0)
+
+    else:
+        skinJointGrp = cmds.group(n=meshName + '_skinJnt_Grp', em=1)
+        for joint in skinJointList:
+            cmds.parent(joint, skinJointGrp)
+
+        simJointGrp = cmds.group(n=meshName + '_simJnt_Grp', em=1)
+        cmds.setAttr(simJointGrp + '.v', 0)
+        for joint in simJointList:
+            cmds.parent(joint, simJointGrp)
+
+        ctrlJointGrp = cmds.group(n=meshName + '_ctrlJnt_Grp', em=1)
+        cmds.setAttr(ctrlJointGrp + '.v', 0)
+        for joint in controlJointList:
+            cmds.parent(joint, ctrlJointGrp)
+
+        cmds.parent(ctrlJointGrp, CtrlGrp)
+        cmds.parent(simJointGrp, CtrlGrp)
+        cmds.parent(skinJointGrp, CtrlGrp)
+
+    cmds.parent(CtrlGrp, rootGrp)
+    cmds.parent(jointGrp, rootGrp)
+    cmds.parent(particleGrp, rootGrp)
+    cmds.parent(settingGrp, rootGrp)
+    cmds.parent(meshName, rootGrp)
+    cmds.parent(nCloth_nucleus['nClothTrans'], rootGrp)
+    cmds.parent(nCloth_nucleus['nucleus'], rootGrp)
+    cmds.parent(skinMesh, rootGrp)
+
 

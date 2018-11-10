@@ -10,12 +10,22 @@ reload(distance)
 reload(control)
 
 
-def build(vertexList, nucleus=None, jointParent='', rigScale=1.0):
-
+def build(proxyVertexList, nucleus=None, jointParent='', rigScale=1.0):
+    """
+    build nCloth 2 Joint system
+    :param proxyVertexList: list(str), vertices of sim proxy mesh
+    :param nucleus: str, target nucleus
+    :param jointParent: str, skin joints parent position
+    :param rigScale: float, rig scale fo the ctrl
+    :return: None
+    """
     #############
     # Mesh Part #
     #############
-    meshName = name.removeNodeAttr(vertexList[0])
+    meshName = name.removeNodeAttr(proxyVertexList[0])
+
+    if not cmds.attributeQuery('proxyMesh', node=meshName, exists=1):
+        cmds.addAttr(meshName, ln='proxyMesh', at='message')
 
     skinMesh = cmds.duplicate(meshName, n=meshName + '_Skin')[0]
 
@@ -33,7 +43,7 @@ def build(vertexList, nucleus=None, jointParent='', rigScale=1.0):
 
     # sim joint part
     simJointList = []
-    for vertex in vertexList:
+    for vertex in proxyVertexList:
 
         cmds.select(cl=1)
         joint = cmds.joint(n=meshName + '_SimJnt_#')
@@ -71,7 +81,7 @@ def build(vertexList, nucleus=None, jointParent='', rigScale=1.0):
 
     # skin joint part
     skinJointList = []
-    for vertex in vertexList:
+    for vertex in proxyVertexList:
 
         cmds.select(cl=1)
         joint = cmds.joint(n=meshName + '_SkinJnt_#')
@@ -94,7 +104,7 @@ def build(vertexList, nucleus=None, jointParent='', rigScale=1.0):
         # set vertex
         closestVertex = distance.getClosestVertex(mayaMesh=skinMesh, pos=vertexPos)
 
-        cmds.setAttr(joint + '.targetVertex', str(closestVertex), type='string')
+        cmds.setAttr(joint + '.targetVertex', str(closestVertex), type='string', lock=1)
 
     if jointParent:
         cmds.select(cl=1)
@@ -118,7 +128,7 @@ def build(vertexList, nucleus=None, jointParent='', rigScale=1.0):
     controlJointList = []
     ctrlList = []
     ctrlGrpList = []
-    for vertex in vertexList:
+    for vertex in proxyVertexList:
         cmds.select(cl=1)
         joint = cmds.joint(n=meshName + '_CtrlJnt_#')
         cmds.select(cl=1)
@@ -206,7 +216,7 @@ def build(vertexList, nucleus=None, jointParent='', rigScale=1.0):
     ################
     emitterList = []
     particleList = []
-    for vertex in vertexList:
+    for vertex in proxyVertexList:
 
         emitterParticle = lib.createEmitter(vertex=vertex, meshName=meshName)
 
@@ -216,7 +226,7 @@ def build(vertexList, nucleus=None, jointParent='', rigScale=1.0):
         particleList.append(emitterParticle['particle'])
 
     # parentConstraint & connect attr
-    for i in xrange(len(vertexList)):
+    for i in xrange(len(proxyVertexList)):
 
         cmds.parentConstraint(emitterList[i], simJointList[i], mo=0)
 
@@ -243,6 +253,7 @@ def build(vertexList, nucleus=None, jointParent='', rigScale=1.0):
 
     cmds.connectAttr(settingGrp + '.nucleus', nCloth_nucleus['nucleus'] + '.nucleus', f=1)
     cmds.connectAttr(settingGrp + '.nCloth', nCloth_nucleus['nClothShape'] + '.nCloth', f=1)
+    cmds.connectAttr(settingGrp + '.proxyMesh', meshName + '.proxyMesh', f=1)
 
     rootGrp = cmds.group(n=meshName + '_nCloth_Root_Grp', em=1)
     jointGrp = cmds.group(n=meshName + '_nCloth_Joint_Grp', em=1)

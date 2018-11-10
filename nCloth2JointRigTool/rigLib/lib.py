@@ -43,7 +43,7 @@ def createSettingGrp(name):
     if not cmds.attributeQuery('Sim2Bake', node=settingGrp, exists=1):
         cmds.addAttr(settingGrp, longName='Sim2Bake', at="float", min=0, max=1, keyable=1)
 
-    for attr in ['simJoint', 'skinJoint', 'ctrlJoint', 'bakeCtrl', 'bakeCtrlGrp', 'nucleus', 'nCloth']:
+    for attr in ['simJoint', 'skinJoint', 'ctrlJoint', 'bakeCtrl', 'bakeCtrlGrp', 'nucleus', 'nCloth', 'proxyMesh']:
         if not cmds.attributeQuery(attr, node=settingGrp, exists=1):
             cmds.addAttr(settingGrp, ln=attr, at='message')
 
@@ -52,29 +52,16 @@ def createSettingGrp(name):
 
 
 def placeJnt2Vert(vertex, joint):
-
+    """
+    translate joint to target vertex
+    :param vertex: str, target vertex
+    :param joint: str, joint you want to translate
+    :return: list[float, float, float], the position of the vertex
+    """
     vertexPos = cmds.xform(vertex, ws=1, q=1, t=1)
     cmds.xform(joint, t=vertexPos, ws=1)
 
     return vertexPos
-
-
-def createJoint(name):
-    cmds.select(cl=1)
-
-    joint = cmds.joint(n=name + '_Jnt_#')
-    cmds.select(cl=1)
-
-    if not cmds.attributeQuery('slaveJoint', node=joint, exists=1):
-        cmds.addAttr(joint, ln='slaveJoint', at='message')
-
-    if not cmds.attributeQuery('targetEmitter', node=joint, exists=1):
-        cmds.addAttr(joint, ln='targetEmitter', at='message')
-
-    if not cmds.attributeQuery('targetVertex', node=joint, exists=1):
-        cmds.addAttr(joint, ln='targetVertex', dt='string')
-
-    return {'joint': joint}
 
 
 def createEmitter(vertex, meshName):
@@ -83,7 +70,6 @@ def createEmitter(vertex, meshName):
     :param vertex: str, vertex name
     :return: dict(str), point Emitter, meshTransform Node.
     """
-
     cmds.select(cl=1)
 
     cmds.select(vertex)
@@ -196,6 +182,23 @@ def createNCloth(nClothMesh, nucleus=None):
             'nClothShape': nClothShape,
             'nClothTrans': nClothTrans}
 
+
+def findSettingGrp():
+    """
+    find and return setting group for selection
+    :return: list(str), setting groups
+    """
+    transformNodes = cmds.ls(type='transform')
+
+    settingGrps = []
+
+    if transformNodes:
+        for i in transformNodes:
+            if cmds.attributeQuery('Sim2Bake', node=i, exists=1):
+                settingGrps.append(i)
+
+    return settingGrps
+
 #####################################
 # find same multi attr index method #
 #####################################
@@ -242,7 +245,28 @@ def findDoubleAvailableIndex(firstAttr, secondAttr):
         index += 1
 
 
+def findTribleAvailableIndex(firstAttr, secondAttr, thirdAttr):
+    """
+    find the common free array index of 3 multi-attributes.
+    :param firstAttr: str, first attribute without index.
+    :param secondAttr:str, second attribute without index.
+    :param thirdAttr:str, third attribute without index.
+    :return:int, index of free array.
+    """
+    index = 0
 
+    while index < 10000:
+        firstFullAttr = firstAttr + '[%s]' % (str(index))
+        secondFullAttr = secondAttr + '[%s]' % (str(index))
+        thirdFullAttr = thirdAttr + '[%s]' % (str(index))
 
+        firstInputAttr = cmds.listConnections(firstFullAttr, plugs=1)
+        secondInputAttr = cmds.listConnections(secondFullAttr, plugs=1)
+        thirdInputAttr = cmds.listConnections(thirdFullAttr, plugs=1)
 
+        if not firstInputAttr:
+            if not secondInputAttr:
+                if not thirdInputAttr:
+                    return index
 
+        index += 1

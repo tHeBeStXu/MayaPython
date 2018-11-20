@@ -52,18 +52,39 @@ def getLocalMatrix(objectName):
     return localMatrix
 
 
-def getGlobalTransform(objectName):
+def getBindPoseMatrix(objectName):
+    """
+    get joint bind matrix
+    :param objectName: str, joint name
+    :return: matrix, bind matrix
+    """
     mSel = om2.MSelectionList()
     mSel.add(objectName)
 
-    mOjb = mSel.getDependNode(0)
+    mObj = mSel.getDependNode(0)
 
-    transformNode = om2.MFnTransform(mOjb)
+    mFnDependNode = om2.MFnDependencyNode(mObj)
 
-    transformationMatrix = transformNode.transformation().asMatrix()
+    bindPoseAttr = mFnDependNode.attribute('bindPose')
 
-    return transformationMatrix
+    matrixPlug = om2.MPlug(mObj, bindPoseAttr)
 
+    matrixObj = matrixPlug.asMObject()
+
+    bindPoseMatrixData = om2.MFnMatrixData(matrixObj)
+
+    bindPoseMatrix = bindPoseMatrixData.matrix()
+
+    return bindPoseMatrix
+
+
+def getInverseMatrix(MMatrix):
+    """
+    get inverse matrix of input MMatrix
+    :param MMatrix: MMatrix, input matrix
+    :return:MMatrix, inverse matrix
+    """
+    return MMatrix.inverse()
 
 
 

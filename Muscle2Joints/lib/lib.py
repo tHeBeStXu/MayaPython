@@ -162,7 +162,7 @@ def uniformSampling(transformLimits,
                 i += 1
 
     # generate final list
-    # finalList = [[{u'joint1.ry': -30}, {u'joint1.ry': -20}], ... , [{u'joint4.rx': -10}, {u'joint4.rx': 0.0}]]
+    # interList = [[{u'joint1.ry': -30}, {u'joint1.ry': -20}], ... , [{u'joint4.rx': -10}, {u'joint4.rx': 0.0}]]
     #                        [joint1.rx], [joint1.ry]        ......        [jointX.ry], [jointX.rz]
 
     interList = []

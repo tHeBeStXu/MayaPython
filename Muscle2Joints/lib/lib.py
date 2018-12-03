@@ -1,3 +1,4 @@
+import collections
 import maya.api.OpenMaya as om2
 import maya.cmds as cmds
 from itertools import combinations
@@ -141,28 +142,61 @@ def getTransformLimits(primaryJoints,
 
 
 def uniformSampling(transformLimits,
-                    iterAngle=20):
+                    jointsOrder,
+                    iterAngle=10):
 
-    sampleList = []
-    for key in transformLimits.keys():
-        tempList = []
+    # check dict and clean 0 keys
+    for joint in transformLimits.keys():
+        for rot in transformLimits[joint].keys():
+            if transformLimits[joint][rot][0] == transformLimits[joint][rot][-1]:
+                del transformLimits[joint][rot]
 
-        i = 0
-        while transformLimits[key][0] + iterAngle * i < transformLimits[key][-1]:
-            tempList.append(transformLimits[key][0] + iterAngle * i)
-            i += 1
+    # build lists for combinations
+    # ['joint1':{'.rx': [-30, -20, ..., 30]}, 'jointX':{'.rx': [-30, ..30]}]
+    for joint in transformLimits.keys():
+        for rot in transformLimits[joint].keys():
 
-        tempList.append(transformLimits[key][-1])
+            i = 1
+            while transformLimits[joint][rot][0] + iterAngle * i < transformLimits[joint][rot][-1]:
+                transformLimits[joint][rot].insert(-1, transformLimits[joint][rot][0] + iterAngle * i)
+                i += 1
 
-        sampleList.append(tempList)
+    # generate final list
+    # finalList = [[{u'joint1.ry': -30}, {u'joint1.ry': -20}], ... , [{u'joint4.rx': -10}, {u'joint4.rx': 0.0}]]
+    #                        [joint1.rx], [joint1.ry]        ......        [jointX.ry], [jointX.rz]
 
-    finalList = combinationLists(sampleList)
+    interList = []
+    for joint in jointsOrder:
+        for rot in transformLimits[joint].keys():
+            tempList = []
+            for attr in transformLimits[joint][rot]:
+                tempDict = {}
+                tempDict[joint + rot] = attr
 
-    for iterList in finalList:
-        if len(transformLimits.keys) == len(iterList):
-            pass
+                tempList.append(tempDict)
 
-    pass
+            interList.append(tempList)
+
+
+    # check interList and delete None list
+    for item in interList:
+        if len(item) < 1:
+            interList.remove(item)
+
+    finalList = combinationLists(interList)
+
+    # set Key Frame
+    startTime = 0
+    cmds.currentTime(startTime)
+    for joint in jointsOrder:
+        cmds.setKeyframe(joint, time=startTime)
+
+    for itemTuple in finalList:
+        for i in xrange(len(itemTuple)):
+            print 'key   : ' + str(itemTuple[i].keys()[0])
+            print 'value : ' + str(itemTuple[i][itemTuple[i].keys()[0]])
+            # cmds.setAttr(itemTuple[i].keys()[0], itemTuple[i][itemTuple[i].keys()[0]])
+
 
 
 def combinationLists(lists):

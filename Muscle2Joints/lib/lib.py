@@ -1,7 +1,6 @@
-import collections
 import maya.api.OpenMaya as om2
 import maya.cmds as cmds
-from itertools import combinations
+from ..utils import name
 
 
 def getWorldMatrix(objectName):
@@ -184,19 +183,22 @@ def uniformSampling(transformLimits,
             interList.remove(item)
 
     finalList = combinationLists(interList)
+    print finalList
 
-    # set Key Frame
+    # set Key Frame for different poses
     startTime = 0
     cmds.currentTime(startTime)
     for joint in jointsOrder:
         cmds.setKeyframe(joint, time=startTime)
 
     for itemTuple in finalList:
-        for i in xrange(len(itemTuple)):
-            print 'key   : ' + str(itemTuple[i].keys()[0])
-            print 'value : ' + str(itemTuple[i][itemTuple[i].keys()[0]])
-            # cmds.setAttr(itemTuple[i].keys()[0], itemTuple[i][itemTuple[i].keys()[0]])
+        startTime += 1
 
+        for i in xrange(len(itemTuple)):
+
+            cmds.setAttr(itemTuple[i].keys()[0], itemTuple[i][itemTuple[i].keys()[0]])
+            cmds.setKeyframe(name.removeSuffix(itemTuple[i].keys()[0]),
+                             time=cmds.currentTime(q=1))
 
 
 def combinationLists(lists):

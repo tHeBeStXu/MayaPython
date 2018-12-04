@@ -1,7 +1,7 @@
 import maya.api.OpenMaya as om2
 import maya.cmds as cmds
+import numpy as np
 from ..utils import name
-
 
 def getWorldMatrix(objectName):
     """
@@ -89,8 +89,25 @@ def getInverseMatrix(MMatrix):
     return MMatrix.inverse()
 
 
+def getMatrixAsNpArray(objectName, matrixType):
+    """
+    get the target matrix data and return as a npArray
+    :param objectName: str,
+    :param matrixType:str, matrix type string(worldMatrix, matrix, bindPose)
+    :return: matrix in npArray
+    """
+    tempMatrix = cmds.getAttr(objectName + '.' + matrixType)
+    npArray = np.array([
+                        [tempMatrix[0], tempMatrix[1], tempMatrix[2], tempMatrix[3]],
+                        [tempMatrix[4], tempMatrix[5], tempMatrix[6], tempMatrix[7]],
+                        [tempMatrix[8], tempMatrix[9], tempMatrix[10], tempMatrix[11]],
+                        [tempMatrix[12], tempMatrix[13], tempMatrix[14], tempMatrix[15]]
+                       ])
+    return npArray
+
+
 def getTransformLimits(primaryJoints,
-                       defaultAngle=180):
+                       defaultAngle=90):
     """
     get transform Limits for uniform sampling
     :param primaryJoints: list(str), primary joint list
@@ -143,7 +160,13 @@ def getTransformLimits(primaryJoints,
 def uniformSampling(transformLimits,
                     jointsOrder,
                     iterAngle=10):
-
+    """
+    uniformly generating different poses
+    :param transformLimits: dict, transform limits of each bone
+    :param jointsOrder: list, primary bones correct order
+    :param iterAngle: int, iter angle for each poses
+    :return: None
+    """
     # check dict and clean 0 keys
     for joint in transformLimits.keys():
         for rot in transformLimits[joint].keys():
@@ -162,7 +185,7 @@ def uniformSampling(transformLimits,
 
     # generate final list
     # interList = [[{u'joint1.ry': -30}, {u'joint1.ry': -20}], ... , [{u'joint4.rx': -10}, {u'joint4.rx': 0.0}]]
-    #                        [joint1.rx], [joint1.ry]        ......        [jointX.ry], [jointX.rz]
+    #                             [joint1.ry]                ......                  [jointX.rx]
 
     interList = []
     for joint in jointsOrder:
@@ -176,35 +199,32 @@ def uniformSampling(transformLimits,
 
             interList.append(tempList)
 
-
     # check interList and delete None list
     for item in interList:
         if len(item) < 1:
             interList.remove(item)
 
-    finalList = combinationLists(interList)
-    print finalList
-
-    # set Key Frame for different poses
-    startTime = 0
-    cmds.currentTime(startTime)
+    # bind pose keyFrame
+    cmds.currentTime(0)
     for joint in jointsOrder:
-        cmds.setKeyframe(joint, time=startTime)
+        cmds.setKeyframe(joint, time=cmds.currentTime(q=1))
 
-    for itemTuple in finalList:
-        startTime += 1
-
-        for i in xrange(len(itemTuple)):
-
-            cmds.setAttr(itemTuple[i].keys()[0], itemTuple[i][itemTuple[i].keys()[0]])
-            cmds.setKeyframe(name.removeSuffix(itemTuple[i].keys()[0]),
-                             time=cmds.currentTime(q=1))
+    # generate keyFrames
+    generatePoses(interList)
 
 
-def combinationLists(lists):
+def generatePoses(lists):
+    """
+    generate different poses
+    :param lists:list of lists for each joint rotations
+    :return: None
+    """
     total = reduce(lambda x, y: x*y, map(len, lists))
 
-    finalList = []
+    startTime = 1
+    endTime = startTime + total
+    cmds.playbackOptions(min=startTime - 1)
+    cmds.playbackOptions(max=endTime)
 
     for i in range(0, total):
         step = total
@@ -216,7 +236,8 @@ def combinationLists(lists):
 
             tempItem.append(l[i/step % len(l)])
 
-        finalList.append(tuple(tempItem))
-
-    return finalList
-
+        for dict in tempItem:
+            cmds.currentTime(startTime)
+            cmds.setAttr(dict.keys()[0], dict[dict.keys()[0]])
+            cmds.setKeyframe(name.removeSuffix(dict.keys()[0]), time=startTime)
+        startTime += 1

@@ -1,4 +1,5 @@
 import maya.api.OpenMaya as om2
+import maya.api.OpenMayaAnim as oma2
 import maya.cmds as cmds
 import numpy as np
 from ..utils import name
@@ -89,14 +90,59 @@ def getInverseMatrix(MMatrix):
     return MMatrix.inverse()
 
 
-def getMatrixAsNpArray(objectName, matrixType):
+def getNodeOrDagPath(name):
+    """
+    get the node(MObject) or MDagPath of the specified string
+    :param name: str, name string
+    :return: Node(MObject) or MDagPath
+    """
+    selectionList = om2.MGlobal.getSelectionListByName(name)
+
+    try:
+        return selectionList.getDagPath(0)
+    except:
+        return selectionList.getDependNode(0)
+
+
+def getSkinWeights(meshDagPath, skinNode):
+    """
+    get skin weight per vertex for each joint
+    :param meshDagPath: MDagPath, MDagPath of mesh shape node
+    :param skinNode:MObject, MObject of skinCluster node
+    :return: dict, mesh skin weight for each joint Per vertex.
+             dict={0:{joint1:0.1, ..., jointX: 0.0}, ..., x:{joint1:0.03, ..., jointX:0.2}}
+    """
+    meshNode = meshDagPath.node()
+
+    skinFn = oma2.MFnSkinCluster(skinNode)
+
+    meshVertIterFn = om2.MItMeshVertex(meshNode)
+    indices = range(meshVertIterFn.count())
+
+    data = {}
+    for i in indices:
+
+        singleIDComponent = om2.MFnSingleIndexedComponent()
+        vertexComponent = singleIDComponent.create(om2.MFn.kMeshVertComponent)
+        singleIDComponent.addElement(indices[i])
+
+        rawWeightDataPerVertex = skinFn.getWeights(meshDagPath, vertexComponent)
+
+        influecesObjs = skinFn.influenceObjects()
+
+        data[i] = {}
+
+        for j in xrange(influecesObjs.__len__()):
+            data[i][influecesObjs[j].fullPathName()] = rawWeightDataPerVertex[0][j]
+
+    return data
+
+def getMatrixAsNpArray(tempMatrix):
     """
     get the target matrix data and return as a npArray
-    :param objectName: str,
-    :param matrixType:str, matrix type string(worldMatrix, matrix, bindPose)
+    :param tempMatrix: list, matrix data in list(worldMatrix, matrix, bindPose)
     :return: matrix in npArray
     """
-    tempMatrix = cmds.getAttr(objectName + '.' + matrixType)
     npArray = np.array([
                         [tempMatrix[0], tempMatrix[1], tempMatrix[2], tempMatrix[3]],
                         [tempMatrix[4], tempMatrix[5], tempMatrix[6], tempMatrix[7]],

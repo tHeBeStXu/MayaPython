@@ -287,3 +287,13 @@ def generatePoses(lists):
             cmds.setAttr(dict.keys()[0], dict[dict.keys()[0]])
             cmds.setKeyframe(name.removeSuffix(dict.keys()[0]), time=startTime)
         startTime += 1
+
+
+def getAllInputData(mesh, primaryJoints, startFrame, endFrame):
+
+
+
+    for joint in primaryJoints:
+        jointBindPosMatrix = getBindPoseMatrix(joint)
+
+

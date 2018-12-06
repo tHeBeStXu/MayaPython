@@ -4,6 +4,7 @@ import maya.cmds as cmds
 import numpy as np
 from ..utils import name
 
+
 def getWorldMatrix(objectName):
     """
     Get the world Matrix of an object based on name
@@ -136,6 +137,7 @@ def getSkinWeights(meshDagPath, skinNode):
             data[i][influecesObjs[j].fullPathName()] = rawWeightDataPerVertex[0][j]
 
     return data
+
 
 def getMatrixAsNpArray(tempMatrix):
     """
@@ -289,11 +291,70 @@ def generatePoses(lists):
         startTime += 1
 
 
-def getAllInputData(mesh, primaryJoints, startFrame, endFrame):
+def getAllInputData(mesh, primaryJoints):
+    """
+    get all necessary input data for calculating regression
+    :param mesh: str, TransformNode name of bind mesh
+    :param primaryJoints: list(str), list of name of primary joints
+    :return: dict,
+    """
+    inputData = {}
+    # {v j}
+    vertexTransBindPose = {}
+    # {B d}
+    primaryJntsBindPose = {}
+    # {v d,n}
+    vertexTransAtDiffPoses = {}
+    # {G d,n}
+    primaryJntsWorldTransAtDiffPoses = {}
 
+    #############
+    # Bind Pose #
+    #############
 
+    # {v j}
+    cmds.currentTime(0)
 
+    meshShapeName = cmds.listRelatives(mesh, p=0, c=0, s=1)[0]
+    meshSelList = om2.MSelectionList()
+    meshSelList.add(meshShapeName)
+
+    meshDagPath = meshSelList.getDagPath(0)
+    meshMFn = om2.MFnMesh(meshDagPath)
+    meshVertIterFn = om2.MItMeshVertex(meshDagPath.node())
+    indices = range(meshVertIterFn.count())
+
+    for vertexIndex in indices:
+        vertexTransBindPose[vertexIndex] = list(meshMFn.getPoint(vertexIndex, om2.MSpace.kWorld))
+
+    # {B d}
     for joint in primaryJoints:
-        jointBindPosMatrix = getBindPoseMatrix(joint)
+        primaryJntsBindPose[joint] = list(getBindPoseMatrix(joint))
 
+    ###################
+    # Different Poses #
+    ###################
 
+    # {v d,n}
+    startFrame = 1
+    endFrame = cmds.playbackOptions(max=1, q=1)
+
+    for frame in range((endFrame-startFrame+1)):
+        cmds.currentTime(startFrame + frame)
+        vertexTransAtDiffPoses[startFrame + frame] = {}
+
+        for vertexIndex in indices:
+            vertexPoint = meshMFn.getPoint(vertexIndex, om2.MSpace.kWorld)
+            vertexTransAtDiffPoses[startFrame + frame][vertexIndex] = [vertexPoint.x, vertexPoint.y, vertexPoint.z, vertexPoint.w]
+
+        # {G d,n}
+        primaryJntsWorldTransAtDiffPoses[startFrame + frame] = {}
+
+        for joint in primaryJoints:
+            primaryJntsWorldTransAtDiffPoses[startFrame + frame][joint] = list(getWorldMatrix(joint))
+
+    # input data
+    inputData['vertexTransBindPose'] = vertexTransBindPose
+    inputData['primaryJntsBindPose'] = primaryJntsBindPose
+    inputData['vertexWorldTransAtDiffPoses'] = vertexTransAtDiffPoses
+    inputData['primaryJntsWorldTransAtDiffPoses'] = primaryJntsWorldTransAtDiffPoses

@@ -1,7 +1,7 @@
 import maya.api.OpenMaya as om2
 import maya.api.OpenMayaAnim as oma2
 import maya.cmds as cmds
-import numpy as np
+import cPickle as pickle
 from ..utils import name
 
 
@@ -137,21 +137,6 @@ def getSkinWeights(meshDagPath, skinNode):
             data[i][influecesObjs[j].fullPathName()] = rawWeightDataPerVertex[0][j]
 
     return data
-
-
-def getMatrixAsNpArray(tempMatrix):
-    """
-    get the target matrix data and return as a npArray
-    :param tempMatrix: list, matrix data in list(worldMatrix, matrix, bindPose)
-    :return: matrix in npArray
-    """
-    npArray = np.array([
-                        [tempMatrix[0], tempMatrix[1], tempMatrix[2], tempMatrix[3]],
-                        [tempMatrix[4], tempMatrix[5], tempMatrix[6], tempMatrix[7]],
-                        [tempMatrix[8], tempMatrix[9], tempMatrix[10], tempMatrix[11]],
-                        [tempMatrix[12], tempMatrix[13], tempMatrix[14], tempMatrix[15]]
-                       ])
-    return npArray
 
 
 def getTransformLimits(primaryJoints,
@@ -339,7 +324,7 @@ def getAllInputData(mesh, primaryJoints):
     startFrame = 1
     endFrame = cmds.playbackOptions(max=1, q=1)
 
-    for frame in range((endFrame-startFrame+1)):
+    for frame in range(int((endFrame-startFrame)+1)):
         cmds.currentTime(startFrame + frame)
         vertexTransAtDiffPoses[startFrame + frame] = {}
 
@@ -358,3 +343,35 @@ def getAllInputData(mesh, primaryJoints):
     inputData['primaryJntsBindPose'] = primaryJntsBindPose
     inputData['vertexWorldTransAtDiffPoses'] = vertexTransAtDiffPoses
     inputData['primaryJntsWorldTransAtDiffPoses'] = primaryJntsWorldTransAtDiffPoses
+
+    return inputData
+
+
+def exportData(mesh,
+               primaryJoints,
+               filePath=None):
+    """
+    Export All input Data for further calculating
+    :param filePath: file path
+    :return:
+    """
+    kFileExtension = '.data'
+    if not filePath:
+        startDir = cmds.workspace(q=1, rootDirectory=1)
+        filePath = cmds.fileDialog2(dialogStyle=2, fileMode=0, startingDirectory=startDir,
+                                    fileFilter='Input Data(*%s)' % kFileExtension)
+
+    if not filePath:
+        return
+    filePath = filePath[0]
+
+    if not filePath.endswith(kFileExtension):
+        filePath += kFileExtension
+
+    data = getAllInputData(mesh=mesh, primaryJoints=primaryJoints)
+
+    fh = open(filePath, 'wb')
+
+    pickle.dump(data, fh, pickle.HIGHEST_PROTOCOL)
+
+    fh.close()

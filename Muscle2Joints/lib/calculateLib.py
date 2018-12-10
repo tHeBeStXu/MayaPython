@@ -14,3 +14,11 @@ def getMatrixAsNpArray(tempMatrix):
                         [tempMatrix[12], tempMatrix[13], tempMatrix[14], tempMatrix[15]]
                        ])
     return npArray
+
+
+def getSkinMatrix(bindMatrix, globalTransMatrix):
+    bindMatrix = getMatrixAsNpArray(bindMatrix)
+    globalTransMatrix = getMatrixAsNpArray(globalTransMatrix)
+    bindMatrixInverse = np.linalg.inv(bindMatrix)
+
+    return np.dot(bindMatrixInverse, globalTransMatrix)

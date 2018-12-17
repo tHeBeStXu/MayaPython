@@ -6,7 +6,15 @@ import shutil
 
 
 def exportPose(selectionList, posePath, fileName, snapShotPath, iconPath):
-
+    """
+    Export pose(s) to specified directory
+    :param selectionList: list(str), current controllers selection list
+    :param posePath: str, pose path
+    :param fileName: str, pose name
+    :param snapShotPath: str, snap shot path
+    :param iconPath: str, icon path
+    :return: str, icon path of current pose
+    """
     controlInfoList = {}
     for eachSelection in selectionList:
         # get ctrl attribute list

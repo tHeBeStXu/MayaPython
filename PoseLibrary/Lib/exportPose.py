@@ -2,14 +2,15 @@ import maya.cmds as cmds
 import json
 import os
 import datetime
+import shutil
 
 
-def exportPose(selectionList):
+def exportPose(selectionList, posePath, fileName, snapShotPath, iconPath):
 
     controlInfoList = {}
     for eachSelection in selectionList:
         # get ctrl attribute list
-        attrList = cmds.listAttr(eachSelection, k=1, u=1, shortName=1)
+        attrList = cmds.listAttr(eachSelection, k=1, u=1, sn=1)
 
         attrInfoList = {}
         if attrList:
@@ -32,27 +33,38 @@ def exportPose(selectionList):
     version = '0.1'
     dataList = {'control': controlInfoList, 'history': [owner, time, mayaVersion, version]}
 
-
     # write pose data
-    curParentPath = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
-    dataPath = os.path.join(curParentPath, 'Data/CurrentPose.pose')
+    dataPath = '%s/%s.pose' % (posePath, fileName)
+
+    if os.path.isfile(dataPath):
+        try:
+            os.chmod(dataPath, 0777)
+            os.remove(dataPath)
+        except Exception, result:
+            print result
+
+    # write data
     poseData = open(dataPath, 'w')
-    jsonData = json.dump(dataList, indent=4)
+    jsonData = json.dumps(dataList, indent=4)
     poseData.write(jsonData)
     poseData.close()
 
-    # Create pose Icon
-    poseIconPath = dataPath.replace('.pose', '.png')
-    currentFrame = cmds.currentTime(q=1)
+    # Pose Icon
+    currentIcon = snapShotPath
+    if not os.path.isfile(currentIcon):
+        currentIcon = '%s/poseTemplate.png' % iconPath
 
-    modelPanel = cmds.getPanel(type='modelPanel')
-    for eachPanel in modelPanel:
-        cmds.modelEditor(eachPanel, e=1, alo=0)
-        cmds.modelEditor(eachPanel, e=1, pm=1)
+    currentPoseIconPath = dataPath.replace('.pose', '.png')
 
-    playBlast = cmds.playblast(st=currentFrame, et=currentFrame, fmt='image',
-                               cc=1, v=0, orn=0, fp=1, p=100, c='png', wh=[512, 512],
-                               cf=poseIconPath)
+    if currentIcon == '%s/poseTemplate.png' % iconPath:
+        try:
+            shutil.copy2(currentIcon, currentPoseIconPath)
+        except Exception, result:
+            print result
+    else:
+        try:
+            shutil.move(currentIcon, currentPoseIconPath)
+        except Exception, result:
+            print result
 
-    print 'Successfully export pose data!'
-
+    return currentPoseIconPath

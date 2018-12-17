@@ -35,27 +35,33 @@ class MainUI(QtWidgets.QDialog):
         self.setObjectName('PoseLibrary')
         self.setWindowTitle('Pose Library')
 
-        self.iconSize = 100
-        self.buffer = 15
-
+        # Directories
         self.currentDirectory = os.path.abspath(os.path.dirname(__file__))
         self.rootDirectory = os.path.abspath(os.path.join(self.currentDirectory, os.path.pardir))
+        self.rootDirectory = self.rootDirectory.replace('\\', '/')
 
-        self.iconsDirectory = '%s\Icons' % self.rootDirectory
-        self.iconsDirectory = self.iconsDirectory.replace('\\', '/')
-        self.dataDirectory = '%s\Data' % self.rootDirectory
-        self.dataDirectory = self.dataDirectory.replace('\\', '/')
+        self.iconsDirectory = '%s/Icons' % self.rootDirectory
+        self.dataDirectory = '%s/Data' % self.rootDirectory
         self.tempDirectory = os.path.abspath(os.getenv('TEMP'))
         self.tempDirectory = self.tempDirectory.replace('\\', '/')
         self.snapShotDir = '%s/myPose_snapShot.png' % self.tempDirectory
 
+        # Build UI
         self.buildUI()
+        # Adjust UI
         self.uiConfigure()
+        # Adjust Icons
         self.iconConfigure()
+        # load file structure
         self.loadFolderStructure(self.dataDirectory)
+
         self.show()
 
     def buildUI(self):
+        """
+        Build UI
+        :return: None
+        """
         self.setFixedSize(800, 500)
 
         self.mainLayout = QtWidgets.QHBoxLayout()
@@ -81,19 +87,6 @@ class MainUI(QtWidgets.QDialog):
         self.poseLib.setWidgetResizable(True)
         self.poseLib.setFocusPolicy(QtCore.Qt.NoFocus)
         self.poseLib.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-
-        """
-        ############
-        # Pose Lib #
-        ############
-        self.poseLib = QtWidgets.QListWidget()
-        self.poseLib.setViewMode(QtWidgets.QListWidget.IconMode)
-        self.poseLib.setIconSize(QtCore.QSize(self.iconSize, self.iconSize))
-        self.poseLib.setResizeMode(QtWidgets.QListWidget.Adjust)
-        self.poseLib.setGridSize(QtCore.QSize(self.iconSize + self.buffer, self.iconSize + self.buffer))
-        self.poseLib.setFocusPolicy(QtCore.Qt.NoFocus)
-        self.poseLib.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        """
 
         ##############
         # Pose Group #
@@ -137,7 +130,10 @@ class MainUI(QtWidgets.QDialog):
         self.mainLayout.addWidget(self.poseGroup)
 
     def uiConfigure(self):
-
+        """
+        Adjust UI
+        :return: None
+        """
         # folder menu
         self.folderMenu = QtWidgets.QMenu(self)
 
@@ -154,14 +150,10 @@ class MainUI(QtWidgets.QDialog):
         self.collapseAction.setObjectName('collapse_Folder')
         self.collapseAction.triggered.connect(self.collapseFolder)
 
-        # self.deleteAction = QtWidgets.QAction('Delete Folder', self.fileDir)
-
         self.folderMenu.addAction(self.folderAction)
         self.folderMenu.addSeparator()
         self.folderMenu.addAction(self.expandAction)
         self.folderMenu.addAction(self.collapseAction)
-        # self.folderMenu.addSeparator()
-        # self.folderMenu.addAction(self.deleteAction)
 
         # custom context menu
         self.fileDir.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
@@ -213,7 +205,6 @@ class MainUI(QtWidgets.QDialog):
                     self.fileDir.setItemSelected(parent, False)
 
                 self.fileDir.setItemSelected(item, True)
-
 
                 os.makedirs('%s/%s' % (currentPath, str(folderName)))
 
@@ -287,7 +278,10 @@ class MainUI(QtWidgets.QDialog):
             self.fileDir.expandAll()
 
     def collapseFolder(self):
-
+        """
+        Collapse Folder action
+        :return: None
+        """
         currentItem = self.fileDir.invisibleRootItem()
 
         if self.fileDir.selectedItems():
@@ -299,13 +293,21 @@ class MainUI(QtWidgets.QDialog):
             self.fileDir.collapseItem(eachDepend)
 
     def collectChildItems(self, parent):
-
+        """
+        Collect child items
+        :param parent: str, selected item
+        :return: None
+        """
         for index in range(parent.childCount()):
             currentChild = parent.child(index)
             self.dependentList.append(currentChild)
             self.collectChildItems(currentChild)
 
     def iconConfigure(self):
+        """
+        Adjust icons
+        :return: None
+        """
         menuList = self.fileDir.findChildren(QtWidgets.QAction)
 
         for index in xrange(len(menuList)):
@@ -320,7 +322,10 @@ class MainUI(QtWidgets.QDialog):
                 menuList[index].setIcon(icon)
 
     def takeSnapShot(self):
-
+        """
+        Take snap shot for saving pose
+        :return: None
+        """
         if os.path.isfile(self.snapShotDir):
             try:
                 os.chmod(self.snapShotDir, 0777)
@@ -342,13 +347,23 @@ class MainUI(QtWidgets.QDialog):
         self.loadImage2Button(self.snapShotButton, self.snapShotDir, [150, 150])
 
     def loadImage2Button(self, button, path, size):
-
+        """
+        Load icon to snap shot button
+        :param button: QPushButton, snap shot button
+        :param path: str, icon path
+        :param size: list(int), pixel size list
+        :return: None
+        """
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(path), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         button.setIcon(icon)
         button.setIconSize(QtCore.QSize(size[0], size[1]))
 
     def savePose(self):
+        """
+        Save pose to specified directory
+        :return: None
+        """
         poseLabel = str(self.nameEditLine.text())
         selectionList = cmds.ls(sl=1)
         if poseLabel:
@@ -375,7 +390,10 @@ class MainUI(QtWidgets.QDialog):
                                           QtWidgets.QMessageBox.Ok)
 
     def loadCurrentFolder(self):
-
+        """
+        Load pose(s) and icon(s) of current folder
+        :return: None
+        """
         self.dependentList = []
 
         currentItems = self.fileDir.selectedItems()
@@ -390,6 +408,11 @@ class MainUI(QtWidgets.QDialog):
         self.loadPose2Layout(self.dependentList)
 
     def loadPose2Layout(self, itemList):
+        """
+        load pose(s) to poseGridLayout
+        :param itemList: list(QToolButton),
+        :return: None
+        """
         poseList = []
 
         for eachItem in itemList:
@@ -435,6 +458,11 @@ class MainUI(QtWidgets.QDialog):
             self.poseWidgetLayout.addWidget(toolButton, coordinateList[index][0], coordinateList[index][1], 1, 1)
 
     def removeExistWidget(self, layout):
+        """
+        remove Exist widget(s) from poseGridLayout
+        :param layout: QGridLayout, self.poseGridLayout
+        :return: None
+        """
         for index in range(layout.count()):
             if layout.itemAt(index).widget():
                 layout.itemAt(index).widget().deleteLater()

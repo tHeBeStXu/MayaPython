@@ -4,6 +4,8 @@ import maya.OpenMayaUI as omui
 from shiboken2 import wrapInstance
 import logging
 import os
+from ..Lib import exportPose
+from ..Lib import importPose
 
 logging.basicConfig()
 logger = logging.getLogger('PoseLibrary')
@@ -43,11 +45,14 @@ class MainUI(QtWidgets.QDialog):
         self.iconsDirectory = self.iconsDirectory.replace('\\', '/')
         self.dataDirectory = '%s\Data' % self.rootDirectory
         self.dataDirectory = self.dataDirectory.replace('\\', '/')
+        self.tempDirectory = os.path.abspath(os.getenv('TEMP'))
+        self.tempDirectory = self.tempDirectory.replace('\\', '/')
+        self.snapShotDir = '%s/myPose_snapShot.png' % self.tempDirectory
 
         self.buildUI()
-
+        self.uiConfigure()
+        self.iconConfigure()
         self.loadFolderStructure(self.dataDirectory)
-
         self.show()
 
     def buildUI(self):
@@ -62,26 +67,22 @@ class MainUI(QtWidgets.QDialog):
         self.fileDir = QtWidgets.QTreeWidget()
         self.fileDir.setFixedSize(180, 480)
 
-        # folder menu
-        self.folderMenu = QtWidgets.QMenu(self)
-        # Action
-        self.folderAction = QtWidgets.QAction('Create Folder', self.fileDir)
-        self.folderAction.triggered.connect(self.createFolder)
+        ###################
+        # Pose ScrollArea #
+        ###################
+        self.poseWidget = QtWidgets.QWidget()
+        self.poseWidgetLayout = QtWidgets.QGridLayout()
+        self.poseWidgetLayout.setAlignment(QtCore.Qt.AlignTop | QtCore.Qt.AlignLeft)
+        self.poseWidget.setLayout(self.poseWidgetLayout)
 
-        self.folderMenu.addAction(self.folderAction)
-
-        # custom context menu
-        self.fileDir.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
-        self.fileDir.customContextMenuRequested.connect(self.onFolderContextMenu)
-
-        """
         self.poseLib = QtWidgets.QScrollArea()
         self.poseLib.setFixedSize(400, 480)
+        self.poseLib.setWidget(self.poseWidget)
         self.poseLib.setWidgetResizable(True)
         self.poseLib.setFocusPolicy(QtCore.Qt.NoFocus)
         self.poseLib.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
-        """
 
+        """
         ############
         # Pose Lib #
         ############
@@ -92,6 +93,7 @@ class MainUI(QtWidgets.QDialog):
         self.poseLib.setGridSize(QtCore.QSize(self.iconSize + self.buffer, self.iconSize + self.buffer))
         self.poseLib.setFocusPolicy(QtCore.Qt.NoFocus)
         self.poseLib.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOff)
+        """
 
         ##############
         # Pose Group #
@@ -101,9 +103,9 @@ class MainUI(QtWidgets.QDialog):
         self.poseGroupLayout = QtWidgets.QVBoxLayout()
         self.poseGroup.setLayout(self.poseGroupLayout)
 
-        self.snapButton = QtWidgets.QPushButton('Shot')
-        self.snapButton.setFixedSize(QtCore.QSize(150, 150))
-        self.poseGroupLayout.addWidget(self.snapButton)
+        self.snapShotButton = QtWidgets.QPushButton()
+        self.snapShotButton.setFixedSize(QtCore.QSize(150, 150))
+        self.poseGroupLayout.addWidget(self.snapShotButton)
 
         self.nameLayout = QtWidgets.QHBoxLayout()
         self.nameLayout.setAlignment(QtCore.Qt.AlignTop)
@@ -134,6 +136,47 @@ class MainUI(QtWidgets.QDialog):
         self.mainLayout.addWidget(self.poseLib)
         self.mainLayout.addWidget(self.poseGroup)
 
+    def uiConfigure(self):
+
+        # folder menu
+        self.folderMenu = QtWidgets.QMenu(self)
+
+        # Actions
+        self.folderAction = QtWidgets.QAction('Create Folder', self.fileDir)
+        self.folderAction.setObjectName('create_Folder')
+        self.folderAction.triggered.connect(self.createFolder)
+
+        self.expandAction = QtWidgets.QAction('Expand', self.fileDir)
+        self.expandAction.setObjectName('expand_Folder')
+        self.expandAction.triggered.connect(self.expandFolder)
+
+        self.collapseAction = QtWidgets.QAction('Collapse', self.fileDir)
+        self.collapseAction.setObjectName('collapse_Folder')
+        self.collapseAction.triggered.connect(self.collapseFolder)
+
+        # self.deleteAction = QtWidgets.QAction('Delete Folder', self.fileDir)
+
+        self.folderMenu.addAction(self.folderAction)
+        self.folderMenu.addSeparator()
+        self.folderMenu.addAction(self.expandAction)
+        self.folderMenu.addAction(self.collapseAction)
+        # self.folderMenu.addSeparator()
+        # self.folderMenu.addAction(self.deleteAction)
+
+        # custom context menu
+        self.fileDir.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.fileDir.customContextMenuRequested.connect(self.onFolderContextMenu)
+
+        # snap shot button
+        self.snapShotButton.clicked.connect(self.takeSnapShot)
+        self.loadImage2Button(self.snapShotButton, '%s/snapshot.png' % self.iconsDirectory, [150, 150])
+
+        # save current Pose
+        self.saveButton.clicked.connect(self.savePose)
+
+        # load pose to UI
+        self.fileDir.itemClicked.connect(self.loadCurrentFolder)
+
     def onFolderContextMenu(self, paint):
 
         self.folderMenu.exec_(self.fileDir.mapToGlobal(paint))
@@ -147,7 +190,32 @@ class MainUI(QtWidgets.QDialog):
                                                         QtWidgets.QLineEdit.Normal)
 
         if ok:
-            os.makedirs('%s/%s' % (self.dataDirectory, folderName))
+            parent = self.fileDir
+            currentPath = self.dataDirectory
+            if self.fileDir.selectedItems():
+                parent = self.fileDir.selectedItems()[-1]
+                currentPath = str(parent.toolTip(0))
+
+            if not os.path.isdir('%s/%s' % (currentPath, str(folderName))):
+                item = QtWidgets.QTreeWidgetItem(parent)
+
+                item.setText(0, str(folderName))
+                item.setToolTip(0, '%s/%s' % (currentPath, str(folderName)))
+
+                # connect icon
+                icon = QtGui.QIcon()
+                icon.addPixmap(QtGui.QPixmap('%s/folder.png' % (self.iconsDirectory)), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+                item.setIcon(0, icon)
+
+                # be careful about shiboken2, you can use 'is' and 'is not' instead of using operator '==' and '!='
+                if parent is not self.fileDir:
+                    self.fileDir.setItemExpanded(parent, True)
+                    self.fileDir.setItemSelected(parent, False)
+
+                self.fileDir.setItemSelected(item, True)
+
+
+                os.makedirs('%s/%s' % (currentPath, str(folderName)))
 
     def getFolderStructure(self, path):
         """
@@ -187,8 +255,8 @@ class MainUI(QtWidgets.QDialog):
 
             # connect icon
             icon = QtGui.QIcon()
-            # icon.addPixmap(QtGui.QPixmap('%s/folder.png' % (self.iconsDirectory)), QtGui.QIcon.Normal, QtGui.QIcon.Off)
-            # item.setIcon(0, icon)
+            icon.addPixmap(QtGui.QPixmap('%s/folder.png' % (self.iconsDirectory)), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+            item.setIcon(0, icon)
 
             self.loadFolder2TreeWidget(directoryList[eachDirectory], item, self.folderPath)
 
@@ -206,7 +274,170 @@ class MainUI(QtWidgets.QDialog):
 
         self.loadFolder2TreeWidget(directoryList[path], self.fileDir, self.folderPath)
 
+    def expandFolder(self):
+        if self.fileDir.selectedItems():
+            currentItem = self.fileDir.selectedItems()[-1]
+            self.dependentList = [currentItem]
+            self.collectChildItems(currentItem)
 
+            for eachDepend in self.dependentList:
+                self.fileDir.setItemExpanded(eachDepend, 1)
+
+        else:
+            self.fileDir.expandAll()
+
+    def collapseFolder(self):
+
+        currentItem = self.fileDir.invisibleRootItem()
+
+        if self.fileDir.selectedItems():
+            currentItem = self.fileDir.selectedItems()[-1]
+
+        self.dependentList = [currentItem]
+        self.collectChildItems(currentItem)
+        for eachDepend in self.dependentList:
+            self.fileDir.collapseItem(eachDepend)
+
+    def collectChildItems(self, parent):
+
+        for index in range(parent.childCount()):
+            currentChild = parent.child(index)
+            self.dependentList.append(currentChild)
+            self.collectChildItems(currentChild)
+
+    def iconConfigure(self):
+        menuList = self.fileDir.findChildren(QtWidgets.QAction)
+
+        for index in xrange(len(menuList)):
+            objectName = menuList[index].objectName()
+
+            if objectName:
+                currentIcon = objectName.split('_')[0]
+
+                icon = QtGui.QIcon()
+                icon.addPixmap(QtGui.QPixmap('%s/%s.png' % (self.iconsDirectory, currentIcon)),
+                               QtGui.QIcon.Normal, QtGui.QIcon.Off)
+                menuList[index].setIcon(icon)
+
+    def takeSnapShot(self):
+
+        if os.path.isfile(self.snapShotDir):
+            try:
+                os.chmod(self.snapShotDir, 0777)
+                os.remove(self.snapShotDir)
+            except Exception, result:
+                print result
+
+        modelPanelList = cmds.getPanel(type='modelPanel')
+        for eachModelPanel in modelPanelList:
+            cmds.modelEditor(eachModelPanel, e=1, alo=0)
+            cmds.modelEditor(eachModelPanel, e=1, pm=1)
+
+
+        currentFrame = cmds.currentTime(q=1)
+        playBlast = cmds.playblast(st=currentFrame, et=currentFrame, fmt='image',
+                                   cc=1, v=0, orn=0, fp=1, p=100, c='png',
+                                   wh=[512, 512], cf=self.snapShotDir)
+
+        self.loadImage2Button(self.snapShotButton, self.snapShotDir, [150, 150])
+
+    def loadImage2Button(self, button, path, size):
+
+        icon = QtGui.QIcon()
+        icon.addPixmap(QtGui.QPixmap(path), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        button.setIcon(icon)
+        button.setIconSize(QtCore.QSize(size[0], size[1]))
+
+    def savePose(self):
+        poseLabel = str(self.nameEditLine.text())
+        selectionList = cmds.ls(sl=1)
+        if poseLabel:
+            if selectionList:
+                currentItem = self.fileDir.selectedItems()
+                if currentItem:
+                    # export file, clear nameLine and load icon to snapshot button
+                    currentPoseIconPath = exportPose.exportPose(selectionList, currentItem[-1].toolTip(0),
+                                                                poseLabel, self.snapShotDir, self.iconsDirectory)
+                    self.nameEditLine.clear()
+                    self.loadImage2Button(self.snapShotButton, currentPoseIconPath, [150, 150])
+                    logger.info('Successfully Save Poses!')
+                else:
+                    QtWidgets.QMessageBox.warning(self, 'Warning',
+                                                  'No folder selected!\nPlease select the folder!',
+                                                  QtWidgets.QMessageBox.Ok)
+            else:
+                QtWidgets.QMessageBox.warning(self, 'Warning',
+                                              'No item selected!\nPlease select the Control Object(s)!',
+                                              QtWidgets.QMessageBox.Ok)
+        else:
+            QtWidgets.QMessageBox.warning(self, 'Warning',
+                                          'No pose file name enter!\nPlease input the pose file name!',
+                                          QtWidgets.QMessageBox.Ok)
+
+    def loadCurrentFolder(self):
+
+        self.dependentList = []
+
+        currentItems = self.fileDir.selectedItems()
+
+        for eachItem in currentItems:
+            self.dependentList.append(eachItem)
+            self.collectChildItems(eachItem)
+
+        # clean layout
+        self.removeExistWidget(self.poseWidgetLayout)
+        # add toolButtons to layout
+        self.loadPose2Layout(self.dependentList)
+
+    def loadPose2Layout(self, itemList):
+        poseList = []
+
+        for eachItem in itemList:
+            currentPath = str(eachItem.toolTip(0))
+            if os.path.isdir(currentPath):
+                directoryList = os.listdir(currentPath)
+
+                for eachFile in directoryList:
+                    if os.path.isfile('%s/%s' % (currentPath, eachFile)):
+                        if eachFile.endswith('.pose'):
+                            poseList.append('%s/%s' % (currentPath, eachFile))
+
+        row = -1
+        column = 0
+        coordinateList = []
+        for index in range(len(poseList)):
+            if index % 4:
+                column += 1
+                coordinateList.append([row, column])
+            else:
+                row += 1
+                column = 0
+                coordinateList.append([row, column])
+
+        # tool buttons
+        for index in range(len(poseList)):
+            poseLabel = os.path.splitext(os.path.basename(poseList[index]))[0]
+
+            # tool button
+            toolButton = QtWidgets.QToolButton(self.poseWidget)
+            toolButton.setFixedSize(90, 90)
+            toolButton.setObjectName('toolButton_%s' % poseLabel)
+            toolButton.setText(poseLabel)
+            toolButton.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
+
+            # Icons
+            poseIconPath  = poseList[index].replace('.pose', '.png')
+            icon = QtGui.QIcon()
+            icon.addPixmap(QtGui.QPixmap(poseIconPath), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+            toolButton.setIcon(icon)
+            toolButton.setIconSize(QtCore.QSize(80, 70))
+
+            self.poseWidgetLayout.addWidget(toolButton, coordinateList[index][0], coordinateList[index][1], 1, 1)
+
+    def removeExistWidget(self, layout):
+        for index in range(layout.count()):
+            if layout.itemAt(index).widget():
+                layout.itemAt(index).widget().deleteLater()
 
 
 

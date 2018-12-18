@@ -1,13 +1,15 @@
 import maya.cmds as cmds
-import os
 import json
 
 
-def importPose(selectionList):
-
-    curParentPath = os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir))
-
-    dataPath = os.path.join(curParentPath, 'Data/CurrentPose.pose')
+def importPose(selectionList, dataPath):
+    """
+    Import pose to
+    :param selectionList: list(str), selected controller(s)
+    :param dataPath: str, pose data path
+    :return: list(str), historyList, dict(str), control data
+    """
+    controlDataDict = {}
 
     readData = open(dataPath, 'r')
 
@@ -28,9 +30,16 @@ def importPose(selectionList):
             attrList = dataList['control'][currentCtrl]
 
             for eachAttr in attrList:
-                attrValue = attrList[eachAttr]
+                poseValue = attrList[eachAttr]
 
-                cmds.setAttr('%s.%s' % (eachSel, eachAttr), attrValue)
+                currentValue = cmds.getAttr('%s.%s' % (eachSel, eachAttr))
 
-    print 'Successfully import pose data!'
+                controlDataDict.setdefault('%s.%s' % (eachSel, eachAttr), [currentValue, poseValue])
 
+    # read history
+    historyData = dataList['history']
+    historyList = ['Owner: %s' % historyData[0],
+                   'Created: %s' % historyData[1],
+                   'Maya version: %s' % historyData[2],
+                   'Module version: %s' % historyData[3]]
+    return historyList, controlDataDict

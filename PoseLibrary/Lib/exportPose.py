@@ -13,7 +13,7 @@ def exportPose(selectionList, posePath, fileName, snapShotPath, iconPath):
     :param fileName: str, pose name
     :param snapShotPath: str, snap shot path
     :param iconPath: str, icon path
-    :return: str, icon path of current pose
+    :return: str, currentPoseIconPath, icon path of current pose
     """
     controlInfoList = {}
     for eachSelection in selectionList:

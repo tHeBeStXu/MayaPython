@@ -30,6 +30,7 @@ for index in range(len(jointList)):
 
     jointDagPath = jointMSelection.getDagPath(0)
 
+    # transform 1 unit to get the weight. weight = MOVE_LENGTH / 1
     mFnTransform = om.MFnTransform(jointDagPath)
     world = mFnTransform.translation(om.MSpace.kWorld)
     moveWorld = om.MVector(world.x + 1, world.y, world.z)
@@ -43,10 +44,14 @@ for index in range(len(jointList)):
         weight = length.length()
         jointWeights.append(weight)
 
+    #                   joint1            joint2
+    # weightList = [[0.2, 0.3, ...], [0.3, 0.2, ...]]
     weightList.append(jointWeights)
 
+    # translate back to original position
     mFnTransform.setTranslation(world, om.MSpace.kWorld)
 
+# bind skin
 geoSkinCluster = cmds.skinCluster(jointList, geometry)[0]
 
 geoSkinMSelectionList = om.MSelectionList()
@@ -65,7 +70,6 @@ influenceIntList = om.MIntArray()
 for each in influenceObjects:
     currentIndex = mFnGeoSkinCluster.indexForInfluenceObject(each)
     influenceIntList.append(currentIndex)
-
 
 mWeightList = om.MDoubleArray()
 for wIndex in range(len(weightList[0])):

@@ -234,7 +234,7 @@ class MainUI(QtWidgets.QDialog):
 
         # bake button
         self.bakeBtnLayout = QtWidgets.QHBoxLayout()
-        self.bakeDynamicBtn = QtWidgets.QPushButton('Bake Dynamic on Bake Ctrls')
+        self.bakeDynamicBtn = QtWidgets.QPushButton('Bake Dynamic on FK_Ctrls')
         self.bakeBtnLayout.addWidget(self.bakeDynamicBtn)
         self.bakeDynamicBtn.clicked.connect(self.bakeDynamic2Ctrls)
 

@@ -38,6 +38,7 @@ if data and selectionList:
 
                 connectedList = attributeMPlug.connectedTo(1, 0)
 
+                # whether to create a new curve or use the existed curve
                 newAnimCurve = 1
                 if connectedList:
                     connectedNode = connectedList[0].node()
@@ -50,10 +51,9 @@ if data and selectionList:
                 if newAnimCurve:
                     MFnAnimCurve = oma.MFnAnimCurve()
 
-                    # set attr
                     MFnAnimCurve.create(attributeMPlug, animCurveType)
 
-
+                # set value
                 MFnAnimCurve.setPreInfinityType(preInfinity)
                 MFnAnimCurve.setPostInfinityType(postInfinity)
 
@@ -80,6 +80,3 @@ if data and selectionList:
 
                     MFnAnimCurve.setWeight(index, inTangentAngleWeightList[index], 1)
                     MFnAnimCurve.setWeight(index, outTangentAngleWeightList[index], 0)
-
-
-

@@ -119,8 +119,3 @@ if objects:
         animData.close()
 
         print 'Successfully store animation curve data!'
-
-
-
-
-

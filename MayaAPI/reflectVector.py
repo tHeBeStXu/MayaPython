@@ -1,3 +1,6 @@
+"""
+http://fevsy.blogspot.com/2016/05/reflecting-vector.html
+"""
 import maya.OpenMaya as om
 import maya.OpenMayaMPx as ompx
 
@@ -84,6 +87,7 @@ def nodeInitializer():
     reflectVectorNode.attributeAffects(reflectVectorNode.inputMatrix, reflectVectorNode.outputPoint)
     reflectVectorNode.attributeAffects(reflectVectorNode.inputVector, reflectVectorNode.outputPoint)
 
+
 def initializePlugin(mObj):
     mPlugin = ompx.MFnPlugin(mObj, 'Yixiong Xu', '1.0')
 
@@ -93,6 +97,7 @@ def initializePlugin(mObj):
         raise RuntimeError
         print 'Failed to register node.'
 
+
 def uninitializePlugin(mObj):
     mPlugin = ompx.MFnPlugin(mObj)
 
@@ -101,10 +106,3 @@ def uninitializePlugin(mObj):
     except:
         raise RuntimeError
         print 'Failed to deregister node.'
-
-
-
-
-
-
-

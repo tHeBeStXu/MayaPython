@@ -1,4 +1,3 @@
-import maya.api.OpenMaya as om2
 import maya.OpenMaya as om
 import maya.OpenMayaMPx as ompx
 
@@ -34,18 +33,17 @@ class MeshIntersectionNode(ompx.MPxNode):
 
         inputMeshMFn = om.MFnMesh(inputMeshObj)
 
-        hitPoints = om.MFloatPointArray()
+        hitPoints = om.MFloatPoint()
 
-        tolerance = om.MFloatArray()
-        tolerance.append(0.0)
+        tolerance = float(0.0)
 
-        inputMeshMFn.allIntersections(sourcePoint, direction, None, None, False, om.MSpace.kWorld,
-                                            10000.0, False, None, True, hitPoints, None, None, None, None, tolerance)
+        inputMeshMFn.closestIntersection(sourcePoint, direction, None, None, False, om.MSpace.kWorld,
+                                            10000.0, False, None, hitPoints, None, None, None, None, None, tolerance)
 
         outputPoint = dataBlock.outputValue(MeshIntersectionNode.Loc_3_Pos)
 
         if hitPoints[0]:
-            outputVector = om.MFloatVector(hitPoints[0].x, hitPoints[0].y, hitPoints[0].z)
+            outputVector = om.MFloatVector(hitPoints.x, hitPoints.y, hitPoints.z)
         else:
             outputVector = om.MFloatVector(0.0, 0.0, 0.0)
 

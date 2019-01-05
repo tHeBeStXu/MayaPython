@@ -1,5 +1,6 @@
 import maya.OpenMaya as om
 import maya.OpenMayaMPx as ompx
+import maya.OpenMayaAnim as omanim
 import maya.cmds as cmds
 
 nodeName = 'JiggleDeformer'
@@ -9,11 +10,12 @@ nodeID = om.MTypeId(0xBEEF6)
 class JiggleDeformerNode(ompx.MPxDeformerNode):
     dampingAttr = om.MObject()
     stiffAttr = om.MObject()
+    animTime = om.MObject()
 
     def __init__(self):
         ompx.MPxDeformerNode.__init__(self)
 
-    def deform(self, dataBlock, geoIterator, matrix, geoIndex):
+    def deform(self, dataBlock, geoIterator, local2WorldMatrix, geoIndex):
 
         input = ompx.cvar.MPxGeometryFilter_input
 
@@ -41,9 +43,32 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         dataHandleStiff = dataBlock.inputValue(JiggleDeformerNode.stiffAttr)
         stiffValue = dataHandleStiff.asFloat()
 
-        #
+        # MFnMesh
         inputMFnMesh = om.MFnMesh(inputMesh)
 
+        # current time
+        currentTime = omanim.MAnimControl.currentTime()
+
+
+        while not geoIterator.isDone():
+            pointPosition_Local = geoIterator.position()
+            pointPosition_World = pointPosition_Local * local2WorldMatrix
+
+            self.currentPosition = pointPosition_Local * local2WorldMatrix
+            self.previousPosition = self.currentPosition
+
+
+            #
+            velocity = (self.currentPosition - self.previousPosition) * (1 - dampingValue)
+
+            newPosition = self.currentPosition + velocity
+
+            # goalForce = (goalPoint - newPosition) * stiffValue
+
+            # newPosition = newPosition + goalForce
+
+
+            weight = self.weightValue(dataBlock, geoIndex, geoIterator.index())
 
 
 
@@ -53,6 +78,9 @@ def deformerCreator():
 
 def nodeInitializer():
     MFnNumericAttr = om.MFnNumericAttribute()
+    MFnUnitAttr = om.MFnUnitAttribute()
+
+    # input
     JiggleDeformerNode.dampingAttr = MFnNumericAttr.create('damping', 'damp', om.MFnNumericData.kFloat, 0.0)
     MFnNumericAttr.setKeyable(1)
     MFnNumericAttr.setMin(0.0)
@@ -65,10 +93,14 @@ def nodeInitializer():
     MFnNumericAttr.setMax(10.0)
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.stiffAttr)
 
+    JiggleDeformerNode.animTime = MFnUnitAttr.create('animTime', 'time', om.MFnUnitAttribute.kTime, 0.0)
+    JiggleDeformerNode.addAttribute(JiggleDeformerNode.animTime)
+
     outputGeom = ompx.cvar.MPxGeometryFilter_outputGeom
 
     JiggleDeformerNode.attributeAffects(JiggleDeformerNode.dampingAttr, outputGeom)
     JiggleDeformerNode.attributeAffects(JiggleDeformerNode.stiffAttr, outputGeom)
+    JiggleDeformerNode.attributeAffects(JiggleDeformerNode.animTime, outputGeom)
 
 
 def initializePlugin(MObj):
@@ -76,7 +108,7 @@ def initializePlugin(MObj):
 
     try:
         MPlugin.registerNode(nodeName, nodeID, deformerCreator, nodeInitializer, ompx.MPxNode.kDeformerNode)
-        cmds.makePaintable(nodeName, 'weights', at='multiFloat', sm='deformer')
+        cmds.makePaintable(nodeName, 'jiggleWeights', at='multiFloat', sm='deformer')
 
     except:
         raise RuntimeError

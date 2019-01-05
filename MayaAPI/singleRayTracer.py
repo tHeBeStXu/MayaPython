@@ -1,7 +1,11 @@
+"""
+Just a practice of Method: MFnMesh.closestIntersection(MFnMesh.allIntersection, MFnMesh.anyIntersection),
+Be sure that you must to connect the worldMesh[0] to the inMesh. It will works well.
+"""
 import maya.OpenMaya as om
 import maya.OpenMayaMPx as ompx
 
-nodeName = 'RayTracer'
+nodeName = 'SingleRayTracer'
 nodeID = om.MTypeId(0X100fff)
 
 

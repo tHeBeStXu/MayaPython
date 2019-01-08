@@ -7,6 +7,7 @@ nodeID = om.MTypeId(0xBEEF6)
 
 
 class JiggleDeformerNode(ompx.MPxDeformerNode):
+    # input
     dampingVal = om.MObject()
     stiffVal = om.MObject()
     goalPos = om.MObject()
@@ -14,6 +15,7 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
 
     worldMatrix = om.MObject()
 
+    # make ture to connect 'time1.outTime' to 'CustomJiggleDeformer#.time' for stable simulation.
     time = om.MObject()
 
     def __init__(self):
@@ -65,11 +67,11 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         dataHandlejiggleAmount = dataBlock.inputValue(JiggleDeformerNode.jiggleAmountVal)
         jiggleAmount = dataHandlejiggleAmount.asFloat()
 
-        # points' positions
+        # points' positions in local space
         points = om.MPointArray()
         geoIterator.allPositions(points)
 
-        # test initialize flag
+        # test initialize flag for the first time
         if not self.initializeFlag:
             self.currentPositions.setLength(geoIterator.count())
             self.previousPositions.setLength(geoIterator.count())
@@ -82,7 +84,7 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
 
             self.initializeFlag = True
 
-        # check the time difference whether it is 1 frame or not
+        # for stable simulation, check the time difference whether it is 1 frame or not
         timeDiff = currentTime.value() - self.previousTime.value()
 
         if timeDiff > 1.0 or timeDiff < 0.0:
@@ -91,15 +93,19 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
             # dataBlock.setClean()
             return
 
+        # following lines are just like a FOR loop
+        # for i in range(geoIterator.count()):
+        #        ......
         while not geoIterator.isDone():
             goal = points[geoIterator.index()] * local2WorldMatrix
 
+            # basic algorithm for jiggle effect
             velocity = (self.currentPositions[geoIterator.index()] - self.previousPositions[geoIterator.index()]) * (1.0 - damping)
             newPos = self.currentPositions[geoIterator.index()] + velocity
             goalVector = (goal - newPos) * stiff
             newPos += goalVector
 
-            # store value for next computing
+            # store value for the next computing
             self.previousPositions.set(self.currentPositions[geoIterator.index()], geoIterator.index())
             self.currentPositions.set(newPos, geoIterator.index())
             self.previousTime = om.MTime(currentTime)
@@ -107,10 +113,13 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
             # weight and envelope
             weight = self.weightValue(dataBlock, geoIndex, geoIterator.index())
 
+            # make point[i] back to local space
             points.set(points[geoIterator.index()] + ((newPos * local2WorldMatrix.inverse()) - points[geoIterator.index()]) * weight * envelopeValue * jiggleAmount, geoIterator.index())
 
+            # make it to go to the next iter(loop)
             geoIterator.next()
 
+        # set the position after iter all points of the geometry
         geoIterator.setAllPositions(points)
 
 
@@ -147,7 +156,8 @@ def nodeInitializer():
     MFnUnitAttr.setWritable(1)
     MFnUnitAttr.setKeyable(1)
 
-    # world Matrix for trigger the deorm
+    # world Matrix for trigger the deform when user is dragging the geometry
+    # it is useless for the basic algorithm
     JiggleDeformerNode.worldMatrix = MFnMatrixAttr.create('worldMatrix', 'worldMat')
 
     # outputGeom

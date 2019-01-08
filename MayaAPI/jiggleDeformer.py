@@ -12,10 +12,13 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
     goalPos = om.MObject()
     jiggleAmountVal = om.MObject()
 
+    worldMatrix = om.MObject()
+
     time = om.MObject()
 
     def __init__(self):
         ompx.MPxDeformerNode.__init__(self)
+
         self.currentPositions = om.MPointArray()
         self.previousPositions = om.MPointArray()
 
@@ -38,6 +41,9 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         dataHandleInputGeom = dataHandleInputElement.child(inputGeom)
         inputMesh = dataHandleInputGeom.asMesh()
 
+        # MFnMesh
+        inputMFnMesh = om.MFnMesh(inputMesh)
+
         # Envelope
         envelope = ompx.cvar.MPxGeometryFilter_envelope
         dataHandleEnvolope = dataBlock.inputValue(envelope)
@@ -59,15 +65,9 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         dataHandlejiggleAmount = dataBlock.inputValue(JiggleDeformerNode.jiggleAmountVal)
         jiggleAmount = dataHandlejiggleAmount.asFloat()
 
-        # goal position
-        # goal = om.MPoint(dataBlock.inputValue(JiggleDeformerNode.goalPos).asFloatVector())
+        # points' positions
         points = om.MPointArray()
         geoIterator.allPositions(points)
-
-        # goal = geoIterator.position() * local2WorldMatrix
-
-        # MFnMesh
-        inputMFnMesh = om.MFnMesh(inputMesh)
 
         # test initialize flag
         if not self.initializeFlag:
@@ -82,14 +82,13 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
 
             self.initializeFlag = True
 
+        # check the time difference whether it is 1 frame or not
         timeDiff = currentTime.value() - self.previousTime.value()
         if timeDiff > 1.0 or timeDiff < 0.0:
             self.initializeFlag = False
             self.previousTime = currentTime
             # dataBlock.setClean()
             return
-
-        outputPosMPointArray = om.MPointArray()
 
         while not geoIterator.isDone():
             goal = points[geoIterator.index()] * local2WorldMatrix
@@ -121,6 +120,7 @@ def deformerCreator():
 def nodeInitializer():
     MFnNumericAttr = om.MFnNumericAttribute()
     MFnUnitAttr = om.MFnUnitAttribute()
+    MFnMatrixAttr = om.MFnMatrixAttribute()
 
     # Create Attributes
     # damping
@@ -146,7 +146,8 @@ def nodeInitializer():
     MFnUnitAttr.setWritable(1)
     MFnUnitAttr.setKeyable(1)
 
-    # goalPosition
+    # world Matrix for trigger the deorm
+    JiggleDeformerNode.worldMatrix = MFnMatrixAttr.create('worldMatrix', 'worldMat')
 
     # outputGeom
     outputGeom = ompx.cvar.MPxGeometryFilter_outputGeom
@@ -156,11 +157,13 @@ def nodeInitializer():
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.stiffVal)
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.jiggleAmountVal)
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.time)
+    JiggleDeformerNode.addAttribute(JiggleDeformerNode.worldMatrix)
 
     # Design Circuitry
     JiggleDeformerNode.attributeAffects(JiggleDeformerNode.dampingVal, outputGeom)
     JiggleDeformerNode.attributeAffects(JiggleDeformerNode.stiffVal, outputGeom)
     JiggleDeformerNode.attributeAffects(JiggleDeformerNode.time, outputGeom)
+    JiggleDeformerNode.attributeAffects(JiggleDeformerNode.worldMatrix, outputGeom)
 
 
 def initializePlugin(MObj):
@@ -183,6 +186,3 @@ def uninitializePlugin(MObj):
     except:
         raise RuntimeError
         print 'Failed to de-register command: %s .\n' % nodeName
-
-
-

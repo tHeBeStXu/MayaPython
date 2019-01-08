@@ -84,6 +84,7 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
 
         # check the time difference whether it is 1 frame or not
         timeDiff = currentTime.value() - self.previousTime.value()
+
         if timeDiff > 1.0 or timeDiff < 0.0:
             self.initializeFlag = False
             self.previousTime = currentTime

@@ -2,7 +2,7 @@ import maya.OpenMaya as om
 import maya.OpenMayaMPx as ompx
 import maya.cmds as cmds
 
-nodeName = 'JiggleDeformer'
+nodeName = 'CustomJiggleDeformer'
 nodeID = om.MTypeId(0xBEEF6)
 
 
@@ -16,8 +16,8 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
 
     def __init__(self):
         ompx.MPxDeformerNode.__init__(self)
-        self.currentPosition = om.MPoint()
-        self.previousPosition = om.MPoint()
+        self.currentPositions = om.MPointArray()
+        self.previousPositions = om.MPointArray()
 
         self.initializeFlag = False
 
@@ -60,15 +60,23 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         jiggleAmount = dataHandlejiggleAmount.asFloat()
 
         # goal position
-        goal = om.MPoint(dataBlock.inputValue(JiggleDeformerNode.goalPos).asFloatVector())
+        # goal = om.MPoint(dataBlock.inputValue(JiggleDeformerNode.goalPos).asFloatVector())
+        points = om.MPointArray()
+        geoIterator.allPositions(points)
+
+        # goal = geoIterator.position() * local2WorldMatrix
 
         # MFnMesh
         inputMFnMesh = om.MFnMesh(inputMesh)
 
         # test initialize flag
         if not self.initializeFlag:
-            self.currentPosition = goal
-            self.previousPosition = goal
+            self.currentPositions.setLength(geoIterator.count())
+            self.previousPositions.setLength(geoIterator.count())
+
+            for i in range(points.length()):
+                self.currentPositions.set(points[i] * local2WorldMatrix, i)
+                self.previousPositions.set(self.currentPositions[i], i)
 
             self.previousTime = currentTime
 
@@ -78,40 +86,32 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         if timeDiff > 1.0 or timeDiff < 0.0:
             self.initializeFlag = False
             self.previousTime = currentTime
-            dataBlock.setClean()
+            # dataBlock.setClean()
             return
 
         outputPosMPointArray = om.MPointArray()
 
         while not geoIterator.isDone():
-            pointPosition_Local = geoIterator.position()
-            pointPosition_World = pointPosition_Local * local2WorldMatrix
+            goal = points[geoIterator.index()] * local2WorldMatrix
 
-            velocity = (self.currentPosition - self.previousPosition) * (1.0 - damping)
-            newPos = self.currentPosition + velocity
+            velocity = (self.currentPositions[geoIterator.index()] - self.previousPositions[geoIterator.index()]) * (1.0 - damping)
+            newPos = self.currentPositions[geoIterator.index()] + velocity
             goalVector = (goal - newPos) * stiff
-            newPos = newPos + goalVector
+            newPos += goalVector
 
             # store value for next computing
-            self.previousPosition = om.MPoint(self.currentPosition)
-            self.currentPosition = om.MPoint(newPos)
+            self.previousPositions.set(self.currentPositions[geoIterator.index()], geoIterator.index())
+            self.currentPositions.set(newPos, geoIterator.index())
             self.previousTime = om.MTime(currentTime)
 
-            newPos = goal + ((newPos - goal) * jiggleAmount)
-
-            # put the output in the local space
-            newPos = newPos * local2WorldMatrix.inverse()
-
+            # weight and envelope
             weight = self.weightValue(dataBlock, geoIndex, geoIterator.index())
 
-            newPos = newPos * weight * envelope
-
-            # vertex position
-            outputPosMPointArray.append(newPos)
+            points.set(points[geoIterator.index()] + ((newPos * local2WorldMatrix.inverse()) - points[geoIterator.index()]) * weight * envelopeValue * jiggleAmount, geoIterator.index())
 
             geoIterator.next()
 
-        geoIterator.setAllPositions(outputPosMPointArray)
+        geoIterator.setAllPositions(points)
 
 
 def deformerCreator():
@@ -124,19 +124,19 @@ def nodeInitializer():
 
     # Create Attributes
     # damping
-    JiggleDeformerNode.dampingVal = MFnNumericAttr.create('damping', 'damp', om.MFnNumericData.kFloat, 0.0)
+    JiggleDeformerNode.dampingVal = MFnNumericAttr.create('damping', 'damp', om.MFnNumericData.kFloat, 0.1)
     MFnNumericAttr.setKeyable(1)
     MFnNumericAttr.setMin(0.0)
     MFnNumericAttr.setMax(1.0)
 
     # stiffness
-    JiggleDeformerNode.stiffVal = MFnNumericAttr.create('stiffness', 'stiff', om.MFnNumericData.kFloat, 0.0)
+    JiggleDeformerNode.stiffVal = MFnNumericAttr.create('stiffness', 'stiff', om.MFnNumericData.kFloat, 0.1)
     MFnNumericAttr.setKeyable(1)
     MFnNumericAttr.setMin(0.0)
     MFnNumericAttr.setMax(1.0)
 
     # jiggle amount
-    JiggleDeformerNode.jiggleAmountVal = MFnNumericAttr.create('jiggle', 'jig', om.MFnNumericData.kFloat, 0.0)
+    JiggleDeformerNode.jiggleAmountVal = MFnNumericAttr.create('jiggle', 'jig', om.MFnNumericData.kFloat, 1)
     MFnNumericAttr.setKeyable(1)
     MFnNumericAttr.setMin(0.0)
     MFnNumericAttr.setMax(1.0)
@@ -147,10 +147,6 @@ def nodeInitializer():
     MFnUnitAttr.setKeyable(1)
 
     # goalPosition
-    JiggleDeformerNode.goalPos = MFnNumericAttr.createPoint('goalPostion', 'goal')
-    MFnNumericAttr.setKeyable(1)
-    MFnNumericAttr.setWritable(1)
-    MFnNumericAttr.setWritable(1)
 
     # outputGeom
     outputGeom = ompx.cvar.MPxGeometryFilter_outputGeom
@@ -160,13 +156,11 @@ def nodeInitializer():
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.stiffVal)
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.jiggleAmountVal)
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.time)
-    JiggleDeformerNode.addAttribute(JiggleDeformerNode.goalPos)
 
     # Design Circuitry
     JiggleDeformerNode.attributeAffects(JiggleDeformerNode.dampingVal, outputGeom)
     JiggleDeformerNode.attributeAffects(JiggleDeformerNode.stiffVal, outputGeom)
     JiggleDeformerNode.attributeAffects(JiggleDeformerNode.time, outputGeom)
-    JiggleDeformerNode.attributeAffects(JiggleDeformerNode.goalPos, outputGeom)
 
 
 def initializePlugin(MObj):

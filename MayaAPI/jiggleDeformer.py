@@ -172,7 +172,8 @@ def initializePlugin(MObj):
 
     try:
         MPlugin.registerNode(nodeName, nodeID, deformerCreator, nodeInitializer, ompx.MPxNode.kDeformerNode)
-        cmds.makePaintable(nodeName, 'jiggleWeights', at='multiFloat', sm='deformer')
+        # paint default weights
+        cmds.makePaintable(nodeName, 'weights', at='multiFloat', sm='deformer')
 
     except:
         raise RuntimeError

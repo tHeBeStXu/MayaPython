@@ -82,9 +82,10 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
 
         hJiggleMap = hPerGeo.child(JiggleDeformerNode.jiggleMap)
 
-        while not geoIterator.isDone:
+        for i in range(geoIterator.count()):
             self.jump2Element(hJiggleMap, geoIterator.index())
             self.jiggleMapArray.set(hJiggleMap.inputValue().asFloat(), geoIterator.index())
+
 
         # test initialize flag for the first time
         if not self.initializeFlag:

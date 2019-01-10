@@ -92,7 +92,7 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
             return
 
         # perGeometry
-        jiggleMapArray = []
+        jiggleMapArray = om.MFloatArray()
 
         hGeo = dataBlock.inputArrayValue(JiggleDeformerNode.perGeo)
 
@@ -102,23 +102,19 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         hPerGeo = hGeo.inputValue()
 
         hJiggleMap = om.MArrayDataHandle(hPerGeo.child(JiggleDeformerNode.jiggleMap))
+        worldMatrix = hPerGeo.child(JiggleDeformerNode.worldMatrix).asMatrix()
 
         # jiggleMapArray.setLength(geoIterator.count())
 
-        geoIterator.reset()
-        # print geoIterator.index()
-        # while not geoIterator.isDone():
-        for i in range(geoIterator.count()):
+        # geoIterator.reset()
+
+        while not geoIterator.isDone():
 
             self.jump2Element(hJiggleMap, geoIterator.index())
             hJiggleMap.jumpToElement(geoIterator.index())
 
             jiggleMapArray.append(hJiggleMap.inputValue().asFloat())
             geoIterator.next()
-
-        print jiggleMapArray
-        # print self.jiggleMapArray.length()
-        # print geoIterator.count()
 
         # following lines are just like a FOR loop
         # for i in range(geoIterator.count()):
@@ -199,7 +195,7 @@ def nodeInitializer():
     JiggleDeformerNode.worldMatrix = MFnMatrixAttr.create('worldMatrix', 'worldMat')
 
     # jiggle map
-    JiggleDeformerNode.jiggleMap = MFnNumericAttr.create('jiggleMap', 'jiggle', om.MFnNumericData.kFloat, 0.3)
+    JiggleDeformerNode.jiggleMap = MFnNumericAttr.create('jiggleMap', 'jiggle', om.MFnNumericData.kFloat, 1.0)
     MFnNumericAttr.setMin(0.0)
     MFnNumericAttr.setMax(1.0)
     MFnNumericAttr.setArray(True)
@@ -208,7 +204,7 @@ def nodeInitializer():
     # perGeometry
     JiggleDeformerNode.perGeo = MFnCompoundAttr.create('perGeometry', 'perGeo')
     MFnCompoundAttr.setArray(True)
-    # MFnCompoundAttr.addChild(JiggleDeformerNode.worldMatrix)
+    MFnCompoundAttr.addChild(JiggleDeformerNode.worldMatrix)
     MFnCompoundAttr.addChild(JiggleDeformerNode.jiggleMap)
     MFnCompoundAttr.setUsesArrayDataBuilder(True)
 
@@ -219,7 +215,7 @@ def nodeInitializer():
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.dampingVal)
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.stiffVal)
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.time)
-    JiggleDeformerNode.addAttribute(JiggleDeformerNode.worldMatrix)
+    # JiggleDeformerNode.addAttribute(JiggleDeformerNode.worldMatrix)
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.perGeo)
 
     # Design Circuitry

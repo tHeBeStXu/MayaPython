@@ -94,10 +94,6 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
             return
 
         # perGeometry
-        jiggleMapArray = []
-        stiffMapArray = []
-        dampMapArray = []
-
         hGeo = dataBlock.inputArrayValue(JiggleDeformerNode.perGeo)
 
         self.jump2Element(hGeo, geoIndex)
@@ -108,6 +104,12 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         hJiggleMap = om.MArrayDataHandle(hPerGeo.child(JiggleDeformerNode.jiggleMap))
         hStiffMap = om.MArrayDataHandle(hPerGeo.child(JiggleDeformerNode.stiffMap))
         hDampMap = om.MArrayDataHandle(hPerGeo.child(JiggleDeformerNode.dampMap))
+
+        matrix = hPerGeo.child(JiggleDeformerNode.worldMatrix).asMatrix()
+
+        jiggleMapArray = []
+        stiffMapArray = []
+        dampMapArray = []
 
         # loop through the geoIterator.count() (i.e. mesh geometry) for getting the jiggleMap Value.
         for i in range(geoIterator.count()):
@@ -170,8 +172,6 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
 
             arrayHandle.set(builder)
 
-            # arrayHandle.jumpToElement(index)
-
 
 def deformerCreator():
     return ompx.asMPxPtr(JiggleDeformerNode())
@@ -227,7 +227,7 @@ def nodeInitializer():
     # perGeometry
     JiggleDeformerNode.perGeo = MFnCompoundAttr.create('perGeometry', 'perGeo')
     MFnCompoundAttr.setArray(True)
-    # MFnCompoundAttr.addChild(JiggleDeformerNode.worldMatrix)
+    MFnCompoundAttr.addChild(JiggleDeformerNode.worldMatrix)
     MFnCompoundAttr.addChild(JiggleDeformerNode.jiggleMap)
     MFnCompoundAttr.addChild(JiggleDeformerNode.stiffMap)
     MFnCompoundAttr.addChild(JiggleDeformerNode.dampMap)
@@ -240,7 +240,7 @@ def nodeInitializer():
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.dampingVal)
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.stiffVal)
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.time)
-    JiggleDeformerNode.addAttribute(JiggleDeformerNode.worldMatrix)
+    # JiggleDeformerNode.addAttribute(JiggleDeformerNode.worldMatrix)
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.perGeo)
 
     # Design Circuitry

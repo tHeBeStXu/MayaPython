@@ -88,7 +88,6 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         if timeDiff > 1.0 or timeDiff < 0.0:
             self.initializeFlag = False
             self.previousTime = currentTime
-            # dataBlock.setClean()
             return
 
         # perGeometry
@@ -103,22 +102,13 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
 
         hJiggleMap = om.MArrayDataHandle(hPerGeo.child(JiggleDeformerNode.jiggleMap))
 
-        # jiggleMapArray.setLength(geoIterator.count())
-
-        geoIterator.reset()
-        # print geoIterator.index()
-        # while not geoIterator.isDone():
+        # loop through the geoIterator.count() (i.e. mesh geometry) for getting the jiggleMap Value.
         for i in range(geoIterator.count()):
 
-            self.jump2Element(hJiggleMap, geoIterator.index())
-            hJiggleMap.jumpToElement(geoIterator.index())
+            self.jump2Element(hJiggleMap, i)
+            hJiggleMap.jumpToElement(i)
 
             jiggleMapArray.append(hJiggleMap.inputValue().asFloat())
-            geoIterator.next()
-
-        print jiggleMapArray
-        # print self.jiggleMapArray.length()
-        # print geoIterator.count()
 
         # following lines are just like a FOR loop
         # for i in range(geoIterator.count()):

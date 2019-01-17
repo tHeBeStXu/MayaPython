@@ -11,7 +11,10 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
     dampingVal = om.MObject()
     stiffVal = om.MObject()
     goalPos = om.MObject()
+
     jiggleMap = om.MObject()
+    stiffMap = om.MObject()
+    dampMap = om.MObject()
 
     perGeo = om.MObject()
 
@@ -55,11 +58,11 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
 
         # damping
         dataHandleDamping = dataBlock.inputValue(JiggleDeformerNode.dampingVal)
-        damping = dataHandleDamping.asFloat()
+        dampMagnitude = dataHandleDamping.asFloat()
 
         # stiffness
         dataHandleStiff = dataBlock.inputValue(JiggleDeformerNode.stiffVal)
-        stiff = dataHandleStiff.asFloat()
+        stiffMagnitude = dataHandleStiff.asFloat()
 
         # time
         dataHandleTime = dataBlock.inputValue(JiggleDeformerNode.time)
@@ -88,12 +91,9 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         if timeDiff > 1.0 or timeDiff < 0.0:
             self.initializeFlag = False
             self.previousTime = currentTime
-            # dataBlock.setClean()
             return
 
         # perGeometry
-        jiggleMapArray = om.MFloatArray()
-
         hGeo = dataBlock.inputArrayValue(JiggleDeformerNode.perGeo)
 
         self.jump2Element(hGeo, geoIndex)
@@ -102,19 +102,29 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         hPerGeo = hGeo.inputValue()
 
         hJiggleMap = om.MArrayDataHandle(hPerGeo.child(JiggleDeformerNode.jiggleMap))
-        worldMatrix = hPerGeo.child(JiggleDeformerNode.worldMatrix).asMatrix()
+        hStiffMap = om.MArrayDataHandle(hPerGeo.child(JiggleDeformerNode.stiffMap))
+        hDampMap = om.MArrayDataHandle(hPerGeo.child(JiggleDeformerNode.dampMap))
 
-        # jiggleMapArray.setLength(geoIterator.count())
+        matrix = hPerGeo.child(JiggleDeformerNode.worldMatrix).asMatrix()
 
-        # geoIterator.reset()
+        jiggleMapArray = []
+        stiffMapArray = []
+        dampMapArray = []
 
-        while not geoIterator.isDone():
+        # loop through the geoIterator.count() (i.e. mesh geometry) for getting the jiggleMap Value.
+        for i in range(geoIterator.count()):
 
-            self.jump2Element(hJiggleMap, geoIterator.index())
-            hJiggleMap.jumpToElement(geoIterator.index())
-
+            self.jump2Element(hJiggleMap, i)
+            hJiggleMap.jumpToElement(i)
             jiggleMapArray.append(hJiggleMap.inputValue().asFloat())
-            geoIterator.next()
+
+            self.jump2Element(hDampMap, i)
+            hDampMap.jumpToElement(i)
+            dampMapArray.append(hDampMap.inputValue().asFloat())
+
+            self.jump2Element(hStiffMap, i)
+            hStiffMap.jumpToElement(i)
+            stiffMapArray.append(hStiffMap.inputValue().asFloat())
 
         # following lines are just like a FOR loop
         # for i in range(geoIterator.count()):
@@ -122,6 +132,9 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         while not geoIterator.isDone():
 
             goal = points[geoIterator.index()] * local2WorldMatrix
+
+            damping = dampMapArray[geoIterator.index()] * dampMagnitude
+            stiff = stiffMapArray[geoIterator.index()] * stiffMagnitude
 
             # basic algorithm for jiggle effect
             velocity = (self.currentPositions[geoIterator.index()] - self.previousPositions[geoIterator.index()]) * (1.0 - damping)
@@ -159,8 +172,6 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
 
             arrayHandle.set(builder)
 
-            # arrayHandle.jumpToElement(index)
-
 
 def deformerCreator():
     return ompx.asMPxPtr(JiggleDeformerNode())
@@ -174,13 +185,13 @@ def nodeInitializer():
 
     # Create Attributes
     # damping
-    JiggleDeformerNode.dampingVal = MFnNumericAttr.create('damping', 'damp', om.MFnNumericData.kFloat, 0.05)
+    JiggleDeformerNode.dampingVal = MFnNumericAttr.create('damping', 'damping', om.MFnNumericData.kFloat, 0.05)
     MFnNumericAttr.setKeyable(1)
     MFnNumericAttr.setMin(0.0)
     MFnNumericAttr.setMax(1.0)
 
     # stiffness
-    JiggleDeformerNode.stiffVal = MFnNumericAttr.create('stiffness', 'stiff', om.MFnNumericData.kFloat, 0.05)
+    JiggleDeformerNode.stiffVal = MFnNumericAttr.create('stiffness', 'stiffness', om.MFnNumericData.kFloat, 0.05)
     MFnNumericAttr.setKeyable(1)
     MFnNumericAttr.setMin(0.0)
     MFnNumericAttr.setMax(1.0)
@@ -195,7 +206,19 @@ def nodeInitializer():
     JiggleDeformerNode.worldMatrix = MFnMatrixAttr.create('worldMatrix', 'worldMat')
 
     # jiggle map
-    JiggleDeformerNode.jiggleMap = MFnNumericAttr.create('jiggleMap', 'jiggle', om.MFnNumericData.kFloat, 1.0)
+    JiggleDeformerNode.jiggleMap = MFnNumericAttr.create('jiggleMap', 'jiggleMap', om.MFnNumericData.kFloat, 0.3)
+    MFnNumericAttr.setMin(0.0)
+    MFnNumericAttr.setMax(1.0)
+    MFnNumericAttr.setArray(True)
+    MFnNumericAttr.setUsesArrayDataBuilder(True)
+
+    JiggleDeformerNode.stiffMap = MFnNumericAttr.create('stiffMap', 'stiffMap', om.MFnNumericData.kFloat, 0.3)
+    MFnNumericAttr.setMin(0.0)
+    MFnNumericAttr.setMax(1.0)
+    MFnNumericAttr.setArray(True)
+    MFnNumericAttr.setUsesArrayDataBuilder(True)
+
+    JiggleDeformerNode.dampMap = MFnNumericAttr.create('dampMap', 'dampMap', om.MFnNumericData.kFloat, 0.3)
     MFnNumericAttr.setMin(0.0)
     MFnNumericAttr.setMax(1.0)
     MFnNumericAttr.setArray(True)
@@ -206,6 +229,8 @@ def nodeInitializer():
     MFnCompoundAttr.setArray(True)
     MFnCompoundAttr.addChild(JiggleDeformerNode.worldMatrix)
     MFnCompoundAttr.addChild(JiggleDeformerNode.jiggleMap)
+    MFnCompoundAttr.addChild(JiggleDeformerNode.stiffMap)
+    MFnCompoundAttr.addChild(JiggleDeformerNode.dampMap)
     MFnCompoundAttr.setUsesArrayDataBuilder(True)
 
     # outputGeom
@@ -224,6 +249,8 @@ def nodeInitializer():
     JiggleDeformerNode.attributeAffects(JiggleDeformerNode.time, outputGeom)
     JiggleDeformerNode.attributeAffects(JiggleDeformerNode.worldMatrix, outputGeom)
     JiggleDeformerNode.attributeAffects(JiggleDeformerNode.jiggleMap, outputGeom)
+    JiggleDeformerNode.attributeAffects(JiggleDeformerNode.stiffMap, outputGeom)
+    JiggleDeformerNode.attributeAffects(JiggleDeformerNode.dampMap, outputGeom)
 
 
 def initializePlugin(MObj):
@@ -234,6 +261,8 @@ def initializePlugin(MObj):
         # paint default weights
         cmds.makePaintable(nodeName, 'weights', at='multiFloat', sm='deformer')
         cmds.makePaintable(nodeName, 'jiggleMap', at='multiFloat', sm='deformer')
+        cmds.makePaintable(nodeName, 'stiffMap', at='multiFloat', sm='deformer')
+        cmds.makePaintable(nodeName, 'dampMap', at='multiFloat', sm='deformer')
 
     except:
         raise RuntimeError

@@ -26,12 +26,17 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
     def __init__(self):
         ompx.MPxDeformerNode.__init__(self)
 
-        self.currentPositions = om.MPointArray()
-        self.previousPositions = om.MPointArray()
+        self.curPosDict = dict()
+        self.prePosDict = dict()
 
-        self.initializeFlag = False
+        self.initialFlagDict = dict()
 
-        self.previousTime = om.MTime()
+        self.preTimeDict = dict()
+
+        self.weightMapDict = dict()
+        self.jiggleMapDict = dict()
+        self.stiffMapDict = dict()
+        self.dampMapDict = dict()
 
     def deform(self, dataBlock, geoIterator, local2WorldMatrix, geoIndex):
 
@@ -73,24 +78,32 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         geoIterator.allPositions(points)
 
         # test initialize flag for the first time
-        if not self.initializeFlag:
-            self.currentPositions.setLength(geoIterator.count())
-            self.previousPositions.setLength(geoIterator.count())
+        self.initialFlagDict[str(geoIndex)] = False
+        self.preTimeDict[str(geoIndex)] = om.MTime()
+
+        if not self.initialFlagDict[str(geoIndex)]:
+            self.preTimeDict[str(geoIndex)] = currentTime
+
+            self.curPosDict[str(geoIndex)] = om.MPointArray()
+            self.prePosDict[str(geoIndex)] = om.MPointArray()
+
+            self.curPosDict[str(geoIndex)].setLength(geoIterator.count())
+            self.prePosDict[str(geoIndex)].setLength(geoIterator.count())
 
             for i in range(points.length()):
-                self.currentPositions.set(points[i] * local2WorldMatrix, i)
-                self.previousPositions.set(self.currentPositions[i], i)
+                self.curPosDict[str(geoIndex)].set(points[i] * local2WorldMatrix, i)
+                self.prePosDict[str(geoIndex)].set(self.curPosDict[str(geoIndex)][i], i)
 
-            self.previousTime = currentTime
+            self.preTimeDict[str(geoIndex)] = currentTime
 
-            self.initializeFlag = True
+            self.initialFlagDict[str(geoIndex)] = True
 
         # for stable simulation, check the time difference whether it is 1 frame or not
-        timeDiff = currentTime.value() - self.previousTime.value()
+        timeDiff = currentTime.value() - self.preTimeDict[str(geoIndex)].value()
 
         if timeDiff > 1.0 or timeDiff < 0.0:
-            self.initializeFlag = False
-            self.previousTime = currentTime
+            self.initialFlagDict[str(geoIndex)] = False
+            self.preTimeDict[str(geoIndex)] = om.MTime(currentTime)
             return
 
         # perGeometry
@@ -107,58 +120,64 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
 
         matrix = hPerGeo.child(JiggleDeformerNode.worldMatrix).asMatrix()
 
-        jiggleMapArray = []
-        stiffMapArray = []
-        dampMapArray = []
+        self.weightMapDict[str(geoIndex)] = om.MFloatArray()
+        self.jiggleMapDict[str(geoIndex)] = om.MFloatArray()
+        self.stiffMapDict[str(geoIndex)] = om.MFloatArray()
+        self.dampMapDict[str(geoIndex)] = om.MFloatArray()
+
+        self.weightMapDict[str(geoIndex)].setLength(geoIterator.count())
+        self.jiggleMapDict[str(geoIndex)].setLength(geoIterator.count())
+        self.stiffMapDict[str(geoIndex)].setLength(geoIterator.count())
+        self.dampMapDict[str(geoIndex)].setLength(geoIterator.count())
 
         # loop through the geoIterator.count() (i.e. mesh geometry) for getting the jiggleMap Value.
-        for i in range(geoIterator.count()):
-
-            self.jump2Element(hJiggleMap, i)
-            hJiggleMap.jumpToElement(i)
-            jiggleMapArray.append(hJiggleMap.inputValue().asFloat())
-
-            self.jump2Element(hDampMap, i)
-            hDampMap.jumpToElement(i)
-            dampMapArray.append(hDampMap.inputValue().asFloat())
-
-            self.jump2Element(hStiffMap, i)
-            hStiffMap.jumpToElement(i)
-            stiffMapArray.append(hStiffMap.inputValue().asFloat())
-
-        # following lines are just like a FOR loop
-        # for i in range(geoIterator.count()):
-        #        ......
+        ii = 0
+        # geoIterator.reset()
         while not geoIterator.isDone():
+            index = geoIterator.index()
 
-            goal = points[geoIterator.index()] * local2WorldMatrix
+            self.jump2Element(hJiggleMap, index)
+            hJiggleMap.jumpToElement(index)
+            self.jiggleMapDict[str(geoIndex)].set(hJiggleMap.inputValue().asFloat(), ii)
 
-            damping = dampMapArray[geoIterator.index()] * dampMagnitude
-            stiff = stiffMapArray[geoIterator.index()] * stiffMagnitude
+            self.jump2Element(hStiffMap, index)
+            hStiffMap.jumpToElement(index)
+            self.stiffMapDict[str(geoIndex)].set(hStiffMap.inputValue().asFloat(), ii)
 
-            # basic algorithm for jiggle effect
-            velocity = (self.currentPositions[geoIterator.index()] - self.previousPositions[geoIterator.index()]) * (1.0 - damping)
-            newPos = self.currentPositions[geoIterator.index()] + velocity
-            goalVector = (goal - newPos) * stiff
-            newPos += goalVector
+            self.jump2Element(hDampMap, index)
+            hDampMap.jumpToElement(index)
+            self.dampMapDict[str(geoIndex)].set(hDampMap.inputValue().asFloat(), ii)
 
-            # store value for the next computing
-            self.previousPositions.set(self.currentPositions[geoIterator.index()], geoIterator.index())
-            self.currentPositions.set(newPos, geoIterator.index())
-            self.previousTime = om.MTime(currentTime)
+            self.weightMapDict[str(geoIndex)].set(self.weightValue(dataBlock, geoIndex, geoIterator.index()), ii)
 
-            # weight
-            weight = self.weightValue(dataBlock, geoIndex, geoIterator.index())
-
-            # make point[i] back to local space
-            points.set(points[geoIterator.index()] + ((newPos * local2WorldMatrix.inverse()) - points[geoIterator.index()]) * weight * envelopeValue * jiggleMapArray[geoIterator.index()],
-                       geoIterator.index())
-
-            # make it to go to the next iter(loop)
-
+            ii += 1
             geoIterator.next()
 
-        # set the position after iter all points of the geometry
+        # calculate positions
+        for i in range(points.length()):
+            goal = points[i] * local2WorldMatrix
+
+            damping = dampMagnitude * self.dampMapDict[str(geoIndex)][i]
+            stiff = stiffMagnitude * self.stiffMapDict[str(geoIndex)][i]
+
+            # velocity
+            velocity = (self.curPosDict[str(geoIndex)][i] - self.prePosDict[str(geoIndex)][i]) * (1.0 - damping)
+            newPos = self.curPosDict[str(geoIndex)][i] + velocity
+
+            goalForce = (goal - newPos) * stiff
+
+            newPos += goalForce
+
+            # store for next time computing
+            self.prePosDict[str(geoIndex)].set(self.curPosDict[str(geoIndex)][i], i)
+            self.curPosDict[str(geoIndex)].set(newPos, i)
+
+            # multi with weight map and envelope
+            points.set(points[i] + ((newPos * local2WorldMatrix.inverse()) - points[i]) * self.weightMapDict[str(geoIndex)][i] * envelopeValue * self.jiggleMapDict[str(geoIndex)][i], i)
+
+        self.preTimeDict[str(geoIndex)] = om.MTime(currentTime)
+
+        # set positions
         geoIterator.setAllPositions(points)
 
     def jump2Element(self, arrayHandle, index):

@@ -20,6 +20,12 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
 
     worldMatrix = om.MObject()
 
+    maxVelocity = om.MObject()
+
+    scale = om.MObject()
+
+    directionBias = om.MObject()
+
     # make ture to connect 'time1.outTime' to 'CustomJiggleDeformer#.time' for stable simulation.
     time = om.MObject()
 
@@ -31,6 +37,8 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
 
         self.initialFlagDict = dict()
 
+        self.dirtyMapDict = dict()
+
         self.preTimeDict = dict()
 
         self.weightMapDict = dict()
@@ -38,23 +46,11 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         self.stiffMapDict = dict()
         self.dampMapDict = dict()
 
+        self.membershipDict = dict()
+
     def deform(self, dataBlock, geoIterator, local2WorldMatrix, geomIndex):
 
-        input = ompx.cvar.MPxGeometryFilter_input
-
-        dataHandleInputArray = dataBlock.outputArrayValue(input)
-
-        dataHandleInputArray.jumpToElement(geomIndex)
-
-        dataHandleInputElement = dataHandleInputArray.outputValue()
-
-        # inputMesh
-        inputGeom = ompx.cvar.MPxGeometryFilter_inputGeom
-        dataHandleInputGeom = dataHandleInputElement.child(inputGeom)
-        inputMesh = dataHandleInputGeom.asMesh()
-
-        # MFnMesh
-        inputMFnMesh = om.MFnMesh(inputMesh)
+        inputAttr = ompx.cvar.MPxGeometryFilter_input
 
         # Envelope
         envelope = ompx.cvar.MPxGeometryFilter_envelope
@@ -73,6 +69,18 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         dataHandleTime = dataBlock.inputValue(JiggleDeformerNode.time)
         currentTime = dataHandleTime.asTime()
 
+        # scale
+        dataHandleScale = dataBlock.inputValue(JiggleDeformerNode.scale)
+        scale = dataHandleScale.asFloat()
+
+        # max velocity
+        dataHandleVelocity = dataBlock.inputValue(JiggleDeformerNode.maxVelocity)
+        maxVelocity = dataHandleVelocity.asFloat() * scale
+
+        # direction bias
+        dataHandleDirection = dataBlock.inputValue(JiggleDeformerNode.directionBias)
+        directionBias = dataHandleDirection.asFloat()
+
         # points' positions in local space
         points = om.MPointArray()
         geoIterator.allPositions(points)
@@ -80,6 +88,9 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         # INITIALIZE ATTRIBUTES
         if geomIndex not in self.initialFlagDict.keys():
             self.initialFlagDict[geomIndex] = False
+
+        if geomIndex not in self.dirtyMapDict.keys():
+            self.dirtyMapDict[geomIndex] = False
 
         if geomIndex not in self.preTimeDict.keys():
             self.preTimeDict[geomIndex] = om.MTime()
@@ -89,6 +100,20 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
 
         if geomIndex not in self.prePosDict.keys():
             self.prePosDict[geomIndex] = om.MPointArray()
+
+        if geomIndex not in self.membershipDict.keys():
+            self.membershipDict[geomIndex] = om.MIntArray()
+
+        # Get normalsDict
+
+        normals = om.MFloatVectorArray()
+        if directionBias != 0.0:
+
+            inputMesh = self.getInputMesh(dataBlock, geomIndex, inputAttr)
+
+            MFnMesh = om.MFnMesh(inputMesh)
+
+            MFnMesh.getVertexNormals(False, normals)
 
         # test initialize flag for the first time
         if not self.initialFlagDict[geomIndex]:
@@ -101,9 +126,9 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
                 self.curPosDict[geomIndex].set(points[i] * local2WorldMatrix, i)
                 self.prePosDict[geomIndex].set(self.curPosDict[geomIndex][i], i)
 
-            self.preTimeDict[geomIndex] = currentTime
-
             self.initialFlagDict[geomIndex] = True
+
+            self.dirtyMapDict[geomIndex] = True
 
         # for stable simulation, check the time difference whether it is 1 frame or not
         timeDiff = currentTime.value() - self.preTimeDict[geomIndex].value()
@@ -129,44 +154,63 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
 
         if geomIndex not in self.weightMapDict.keys():
             self.weightMapDict[geomIndex] = om.MFloatArray()
-            self.weightMapDict[geomIndex].setLength(geoIterator.count())
+            # self.weightMapDict[geomIndex].setLength(geoIterator.count())
 
         if geomIndex not in self.jiggleMapDict.keys():
             self.jiggleMapDict[geomIndex] = om.MFloatArray()
-            self.jiggleMapDict[geomIndex].setLength(geoIterator.count())
+            # self.jiggleMapDict[geomIndex].setLength(geoIterator.count())
 
         if geomIndex not in self.stiffMapDict.keys():
             self.stiffMapDict[geomIndex] = om.MFloatArray()
-            self.stiffMapDict[geomIndex].setLength(geoIterator.count())
+            # self.stiffMapDict[geomIndex].setLength(geoIterator.count())
 
         if geomIndex not in self.dampMapDict.keys():
             self.dampMapDict[geomIndex] = om.MFloatArray()
+            # self.dampMapDict[geomIndex].setLength(geoIterator.count())
+
+        if self.dirtyMapDict[geomIndex] or geoIterator.count() != self.membershipDict[geomIndex].length():
+            self.weightMapDict[geomIndex].setLength(geoIterator.count())
+            self.jiggleMapDict[geomIndex].setLength(geoIterator.count())
+            self.stiffMapDict[geomIndex].setLength(geoIterator.count())
             self.dampMapDict[geomIndex].setLength(geoIterator.count())
+            self.membershipDict[geomIndex].setLength(geoIterator.count())
 
-        # loop through the geoIterator.count() (i.e. mesh geometry) for getting the jiggleMap Value.
-        ii = 0
-        geoIterator.reset()
-        while not geoIterator.isDone():
-            index = geoIterator.index()
+            # loop through the geoIterator.count() (i.e. mesh geometry) for getting the jiggleMap Value.
+            ii = 0
+            geoIterator.reset()
+            while not geoIterator.isDone():
+                index = geoIterator.index()
 
-            self.jump2Element(hJiggleMap, index)
-            hJiggleMap.jumpToElement(index)
-            self.jiggleMapDict[geomIndex].set(hJiggleMap.inputValue().asFloat(), ii)
+                # JIGGLE MAP
+                self.jump2Element(hJiggleMap, index)
+                hJiggleMap.jumpToElement(index)
+                self.jiggleMapDict[geomIndex].set(hJiggleMap.inputValue().asFloat(), ii)
 
-            self.jump2Element(hStiffMap, index)
-            hStiffMap.jumpToElement(index)
-            self.stiffMapDict[geomIndex].set(hStiffMap.inputValue().asFloat(), ii)
+                # STIFF MAP
+                self.jump2Element(hStiffMap, index)
+                hStiffMap.jumpToElement(index)
+                self.stiffMapDict[geomIndex].set(hStiffMap.inputValue().asFloat(), ii)
 
-            self.jump2Element(hDampMap, index)
-            hDampMap.jumpToElement(index)
-            self.dampMapDict[geomIndex].set(hDampMap.inputValue().asFloat(), ii)
+                # DAMP MAP
+                self.jump2Element(hDampMap, index)
+                hDampMap.jumpToElement(index)
+                self.dampMapDict[geomIndex].set(hDampMap.inputValue().asFloat(), ii)
 
-            self.weightMapDict[geomIndex].set(self.weightValue(dataBlock, geomIndex, geoIterator.index()), ii)
+                # WEIGHT MAP
+                self.weightMapDict[geomIndex].set(self.weightValue(dataBlock, geomIndex, geoIterator.index()), ii)
 
-            ii += 1
-            geoIterator.next()
+                # MEMBERSHIP
+                self.membershipDict[geomIndex].set(geoIterator.index(), ii)
 
-        # calculate positions
+                ii += 1
+                geoIterator.next()
+
+            self.dirtyMapDict[geomIndex] = False
+
+        #######################
+        # CALCULATE POSITIONS #
+        #######################
+
         i = 0
         geoIterator.reset()
         while not geoIterator.isDone():
@@ -182,6 +226,28 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
             goalForce = (goal - newPos) * stiff
 
             newPos = newPos + goalForce
+
+            # clamp to the MAX velocity
+            displacement = newPos - goal
+            if displacement.length() > maxVelocity:
+                displacement = displacement.normal() * maxVelocity
+                newPos = goal + displacement
+
+            # direction bias
+            membership = self.membershipDict[geomIndex][i]
+
+            displacement = om.MFloatVector(displacement)
+            if directionBias > 0.0:
+                normalDot = displacement.normal() * normals[membership]
+
+                if normalDot < 0.0:
+                    newPos += displacement * ((displacement * normals[membership]) * directionBias)
+
+            elif directionBias < 0.0:
+                normalDot = displacement.normal() * normals[membership]
+
+                if normalDot > 0.0:
+                    newPos += displacement * ((displacement * normals[membership]) * directionBias)
 
             # store for next time computing
             self.prePosDict[geomIndex].set(self.curPosDict[geomIndex][i], i)
@@ -213,6 +279,29 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
 
             arrayHandle.set(builder)
 
+    def setDependentsDirty(self, plug, plugArray):
+        if plug == self.jiggleMap or plug == self.stiffMap or plug == self.dampMap or plug == self.weights:
+            geomIndex = 0
+            if plug.isArray():
+                geomIndex = plug.parent().logicalIndex()
+            else:
+                geomIndex = plug.array().parent().logicalIndex()
+            self.dirtyMapDict[geomIndex] = True
+
+    def getInputMesh(self, dataBlock, geomIndex, input):
+        dataHandleInputArray = dataBlock.outputArrayValue(input)
+
+        dataHandleInputArray.jumpToElement(geomIndex)
+
+        dataHandleInputElement = dataHandleInputArray.outputValue()
+
+        # inputMesh
+        inputGeom = ompx.cvar.MPxGeometryFilter_inputGeom
+        dataHandleInputGeom = dataHandleInputElement.child(inputGeom)
+        inputMesh = dataHandleInputGeom.asMesh()
+
+        return inputMesh
+
 
 def deformerCreator():
     return ompx.asMPxPtr(JiggleDeformerNode())
@@ -235,6 +324,21 @@ def nodeInitializer():
     JiggleDeformerNode.stiffVal = MFnNumericAttr.create('stiffness', 'stiffness', om.MFnNumericData.kFloat, 0.05)
     MFnNumericAttr.setKeyable(1)
     MFnNumericAttr.setMin(0.0)
+    MFnNumericAttr.setMax(1.0)
+
+    # max velocity
+    JiggleDeformerNode.maxVelocity = MFnNumericAttr.create('maxVelocity', 'maxVelocity', om.MFnNumericData.kFloat, 1.0)
+    MFnNumericAttr.setKeyable(1)
+    MFnNumericAttr.setMin(0.0)
+
+    # scale
+    JiggleDeformerNode.scale = MFnNumericAttr.create('scale', 'scale', om.MFnNumericData.kFloat, 1.0)
+    MFnNumericAttr.setKeyable(1)
+
+    # direction bias
+    JiggleDeformerNode.directionBias = MFnNumericAttr.create('directionBias', 'directionBias', om.MFnNumericData.kFloat, 0.0)
+    MFnNumericAttr.setKeyable(1)
+    MFnNumericAttr.setMin(-1.0)
     MFnNumericAttr.setMax(1.0)
 
     # time
@@ -283,6 +387,9 @@ def nodeInitializer():
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.time)
     # JiggleDeformerNode.addAttribute(JiggleDeformerNode.worldMatrix)
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.perGeo)
+    JiggleDeformerNode.addAttribute(JiggleDeformerNode.maxVelocity)
+    JiggleDeformerNode.addAttribute(JiggleDeformerNode.scale)
+    JiggleDeformerNode.addAttribute(JiggleDeformerNode.directionBias)
 
     # Design Circuitry
     JiggleDeformerNode.attributeAffects(JiggleDeformerNode.dampingVal, outputGeom)
@@ -292,6 +399,9 @@ def nodeInitializer():
     JiggleDeformerNode.attributeAffects(JiggleDeformerNode.jiggleMap, outputGeom)
     JiggleDeformerNode.attributeAffects(JiggleDeformerNode.stiffMap, outputGeom)
     JiggleDeformerNode.attributeAffects(JiggleDeformerNode.dampMap, outputGeom)
+    JiggleDeformerNode.attributeAffects(JiggleDeformerNode.maxVelocity, outputGeom)
+    JiggleDeformerNode.attributeAffects(JiggleDeformerNode.scale, outputGeom)
+    JiggleDeformerNode.attributeAffects(JiggleDeformerNode.directionBias, outputGeom)
 
 
 def initializePlugin(MObj):

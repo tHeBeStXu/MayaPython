@@ -77,13 +77,20 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         points = om.MPointArray()
         geoIterator.allPositions(points)
 
+        # INITIALIZE ATTRIBUTES
+        if geomIndex not in self.initialFlagDict.keys():
+            self.initialFlagDict[geomIndex] = False
+
+        if geomIndex not in self.preTimeDict.keys():
+            self.preTimeDict[geomIndex] = om.MTime()
+
+        if geomIndex not in self.curPosDict.keys():
+            self.curPosDict[geomIndex] = om.MPointArray()
+
+        if geomIndex not in self.prePosDict.keys():
+            self.prePosDict[geomIndex] = om.MPointArray()
+
         # test initialize flag for the first time
-        self.initialFlagDict[geomIndex] = False
-        self.preTimeDict[geomIndex] = om.MTime()
-
-        self.curPosDict[geomIndex] = om.MPointArray()
-        self.prePosDict[geomIndex] = om.MPointArray()
-
         if not self.initialFlagDict[geomIndex]:
             self.preTimeDict[geomIndex] = currentTime
 
@@ -120,15 +127,21 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
 
         matrix = hPerGeo.child(JiggleDeformerNode.worldMatrix).asMatrix()
 
-        self.weightMapDict[geomIndex] = om.MFloatArray()
-        self.jiggleMapDict[geomIndex] = om.MFloatArray()
-        self.stiffMapDict[geomIndex] = om.MFloatArray()
-        self.dampMapDict[geomIndex] = om.MFloatArray()
+        if geomIndex not in self.weightMapDict.keys():
+            self.weightMapDict[geomIndex] = om.MFloatArray()
+            self.weightMapDict[geomIndex].setLength(geoIterator.count())
 
-        self.weightMapDict[geomIndex].setLength(geoIterator.count())
-        self.jiggleMapDict[geomIndex].setLength(geoIterator.count())
-        self.stiffMapDict[geomIndex].setLength(geoIterator.count())
-        self.dampMapDict[geomIndex].setLength(geoIterator.count())
+        if geomIndex not in self.jiggleMapDict.keys():
+            self.jiggleMapDict[geomIndex] = om.MFloatArray()
+            self.jiggleMapDict[geomIndex].setLength(geoIterator.count())
+
+        if geomIndex not in self.stiffMapDict.keys():
+            self.stiffMapDict[geomIndex] = om.MFloatArray()
+            self.stiffMapDict[geomIndex].setLength(geoIterator.count())
+
+        if geomIndex not in self.dampMapDict.keys():
+            self.dampMapDict[geomIndex] = om.MFloatArray()
+            self.dampMapDict[geomIndex].setLength(geoIterator.count())
 
         # loop through the geoIterator.count() (i.e. mesh geometry) for getting the jiggleMap Value.
         ii = 0
@@ -175,7 +188,11 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
             self.curPosDict[geomIndex].set(newPos, i)
 
             # multi with weight map and envelope
-            points.set((points[i] + ((newPos * local2WorldMatrix.inverse()) - points[i]) * self.weightMapDict[geomIndex][i] * envelopeValue * self.jiggleMapDict[geomIndex][i]), i)
+            newPosLoc = newPos * local2WorldMatrix.inverse()
+            jiggle = self.jiggleMapDict[geomIndex][i]
+            weight = self.weightMapDict[geomIndex][i]
+
+            points.set((points[i] + (newPosLoc - points[i]) * weight * envelopeValue * jiggle), i)
 
             self.preTimeDict[geomIndex] = om.MTime(currentTime)
 

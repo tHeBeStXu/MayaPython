@@ -236,18 +236,20 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
             # direction bias
             membership = self.membershipDict[geomIndex][i]
 
-            displacement = om.MFloatVector(displacement)
+            # displacement = om.MFloatVector(displacement)
             if directionBias > 0.0:
-                normalDot = displacement.normal() * normals[membership]
+                normalDot = displacement.normal() * om.MVector(normals[membership])
 
                 if normalDot < 0.0:
-                    newPos += displacement * ((displacement * normals[membership]) * directionBias)
+                    RESULT = displacement * ((displacement * om.MVector(normals[membership])) * directionBias)
+                    newPos = newPos + RESULT
 
             elif directionBias < 0.0:
-                normalDot = displacement.normal() * normals[membership]
+                normalDot = displacement.normal() * om.MVector(normals[membership])
 
                 if normalDot > 0.0:
-                    newPos += displacement * ((displacement * normals[membership]) * directionBias)
+                    RESULT = displacement * ((displacement * om.MVector(normals[membership])) * directionBias)
+                    newPos = newPos + RESULT
 
             # store for next time computing
             self.prePosDict[geomIndex].set(self.curPosDict[geomIndex][i], i)

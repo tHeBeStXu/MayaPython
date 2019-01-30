@@ -26,6 +26,8 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
 
     directionBias = om.MObject()
 
+    normalStrength = om.MObject()
+
     # make ture to connect 'time1.outTime' to 'CustomJiggleDeformer#.time' for stable simulation.
     time = om.MObject()
 
@@ -81,6 +83,10 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         dataHandleDirection = dataBlock.inputValue(JiggleDeformerNode.directionBias)
         directionBias = dataHandleDirection.asFloat()
 
+        # normal strength
+        dataHandleNormalStrength = dataBlock.inputValue(JiggleDeformerNode.normalStrength)
+        normalStrength = dataHandleNormalStrength.asFloat()
+
         # points' positions in local space
         points = om.MPointArray()
         geoIterator.allPositions(points)
@@ -107,13 +113,13 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         # Get normalsDict
 
         normals = om.MFloatVectorArray()
-        if directionBias != 0.0:
+        if directionBias != 0.0 or normalStrength < 1.0:
 
             inputMesh = self.getInputMesh(dataBlock, geomIndex, inputAttr)
 
             MFnMesh = om.MFnMesh(inputMesh)
 
-            MFnMesh.getVertexNormals(False, normals)
+            MFnMesh.getVertexNormals(0, normals)
 
         # test initialize flag for the first time
         if not self.initialFlagDict[geomIndex]:
@@ -233,6 +239,11 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
                 displacement = displacement.normal() * maxVelocity
                 newPos = goal + displacement
 
+            # normal strength
+            if normalStrength < 1.0:
+                normalDot = displacement * om.MVector(normals[self.membershipDict[geomIndex][i]])
+                newPos -= om.MVector(normals[self.membershipDict[geomIndex][i]]) * normalDot * (1.0 - normalStrength)
+
             # direction bias
             membership = self.membershipDict[geomIndex][i]
 
@@ -343,6 +354,11 @@ def nodeInitializer():
     MFnNumericAttr.setMin(-1.0)
     MFnNumericAttr.setMax(1.0)
 
+    JiggleDeformerNode.normalStrength = MFnNumericAttr.create('normalStrength', 'normalStrength', om.MFnNumericData.kFloat, 0.0)
+    MFnNumericAttr.setKeyable(1)
+    MFnNumericAttr.setMin(0.0)
+    MFnNumericAttr.setMax(1.0)
+
     # time
     JiggleDeformerNode.time = MFnUnitAttr.create('time', 'time', om.MFnUnitAttribute.kTime, 0.0)
     MFnUnitAttr.setWritable(1)
@@ -392,6 +408,7 @@ def nodeInitializer():
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.maxVelocity)
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.scale)
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.directionBias)
+    JiggleDeformerNode.addAttribute(JiggleDeformerNode.normalStrength)
 
     # Design Circuitry
     JiggleDeformerNode.attributeAffects(JiggleDeformerNode.dampingVal, outputGeom)
@@ -404,6 +421,7 @@ def nodeInitializer():
     JiggleDeformerNode.attributeAffects(JiggleDeformerNode.maxVelocity, outputGeom)
     JiggleDeformerNode.attributeAffects(JiggleDeformerNode.scale, outputGeom)
     JiggleDeformerNode.attributeAffects(JiggleDeformerNode.directionBias, outputGeom)
+    JiggleDeformerNode.attributeAffects(JiggleDeformerNode.normalStrength, outputGeom)
 
 
 def initializePlugin(MObj):

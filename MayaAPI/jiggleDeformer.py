@@ -1,3 +1,6 @@
+"""
+This is the basic jiggle deformer node script, it could be used on only 1 object.
+"""
 import maya.OpenMaya as om
 import maya.OpenMayaMPx as ompx
 import maya.cmds as cmds

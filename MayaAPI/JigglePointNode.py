@@ -1,3 +1,6 @@
+"""
+This script is the math application of the jiggling effect.
+"""
 import maya.OpenMaya as om
 import maya.OpenMayaMPx as ompx
 

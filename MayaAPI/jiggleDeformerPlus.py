@@ -1,3 +1,10 @@
+"""
+This is the full python version of custom jiggle deformer tutorial:
+https://www.cgcircuit.com/tutorial/creating-a-custom-jiggle-deformer
+If you are interested in C++, you can go to:
+https://github.com/derek-williams/skinJiggle/blob/master/skinJiggle/cvJiggleDeformer.cpp
+for more details.
+"""
 import maya.OpenMaya as om
 import maya.OpenMayaMPx as ompx
 import maya.cmds as cmds
@@ -7,7 +14,7 @@ nodeID = om.MTypeId(0xBEEF6)
 
 
 class JiggleDeformerNode(ompx.MPxDeformerNode):
-    # input
+    # Input attributes
     dampingVal = om.MObject()
     stiffVal = om.MObject()
     goalPos = om.MObject()
@@ -36,6 +43,8 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
     def __init__(self):
         ompx.MPxDeformerNode.__init__(self)
 
+        # For components attributes in different geometries, we can use dict() to replace the std::map in C++
+        # If not, the deformation in different geometries by the same custom node will influence each other.
         self.curPosDict = dict()
         self.prePosDict = dict()
 
@@ -117,7 +126,6 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
             self.membershipDict[geomIndex] = om.MIntArray()
 
         # Get normalsDict
-
         normals = om.MFloatVectorArray()
         if directionBias != 0.0 or normalStrength < 1.0:
 
@@ -143,6 +151,7 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
             self.dirtyMapDict[geomIndex] = True
 
         # for stable simulation, check the time difference whether it is 1 frame or not
+        # If the current time smaller than the startFrame, jiggling effect will not be performed
         timeDiff = currentTime.value() - self.preTimeDict[geomIndex].value()
 
         if timeDiff > 1.0 or timeDiff < 0.0 or currentTime.value() <= startFrame:
@@ -153,11 +162,13 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         # perGeometry
         hGeo = dataBlock.inputArrayValue(JiggleDeformerNode.perGeo)
 
+        # jump to each geometry
         self.jump2Element(hGeo, geomIndex)
         hGeo.jumpToElement(geomIndex)
 
         hPerGeo = hGeo.inputValue()
 
+        # get the different map handle in component attribute
         hJiggleMap = om.MArrayDataHandle(hPerGeo.child(JiggleDeformerNode.jiggleMap))
         hStiffMap = om.MArrayDataHandle(hPerGeo.child(JiggleDeformerNode.stiffMap))
         hDampMap = om.MArrayDataHandle(hPerGeo.child(JiggleDeformerNode.dampMap))
@@ -288,7 +299,12 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
         geoIterator.setAllPositions(points)
 
     def jump2Element(self, arrayHandle, index):
-
+        """
+        Jump to the specified element
+        :param arrayHandle: MArrayDataHandle, MArrayDataHandle of the specified attribute
+        :param index: int, index of the component
+        :return: None
+        """
         # if not arrayHandle.jumpToElement(index):
         if index not in xrange(arrayHandle.elementCount()):
 
@@ -299,6 +315,12 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
             arrayHandle.set(builder)
 
     def setDependentsDirty(self, plug, plugArray):
+        """
+        Check whether plug of plugArray (i.e. attributes) is changed.
+        :param plug: MPlug, plug of the custom node
+        :param plugArray: MPlugArray, MPlugArray of the custom node
+        :return: None
+        """
         if plug == self.jiggleMap or plug == self.stiffMap or plug == self.dampMap or plug == self.weights:
             geomIndex = 0
             if plug.isArray():
@@ -308,6 +330,13 @@ class JiggleDeformerNode(ompx.MPxDeformerNode):
             self.dirtyMapDict[geomIndex] = True
 
     def getInputMesh(self, dataBlock, geomIndex, input):
+        """
+        Get input mesh as MObject.
+        :param dataBlock: MDataBlock, MDataBlock of the custom node
+        :param geomIndex:int, geometry index of the custom node
+        :param input:input attr of the custom node
+        :return: MObject, input mesh as MObject
+        """
         dataHandleInputArray = dataBlock.outputArrayValue(input)
 
         dataHandleInputArray.jumpToElement(geomIndex)
@@ -399,6 +428,8 @@ def nodeInitializer():
     MFnNumericAttr.setUsesArrayDataBuilder(True)
 
     # perGeometry
+    # add jiggleMap, stiffMap, dampMap and worldMatrix for each geometry.
+    # the worldMatrix is used to dirty(refresh) the deform method for calculate(update) the jiggling effect
     JiggleDeformerNode.perGeo = MFnCompoundAttr.create('perGeometry', 'perGeo')
     MFnCompoundAttr.setArray(True)
     MFnCompoundAttr.addChild(JiggleDeformerNode.worldMatrix)
@@ -414,7 +445,6 @@ def nodeInitializer():
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.dampingVal)
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.stiffVal)
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.time)
-    # JiggleDeformerNode.addAttribute(JiggleDeformerNode.worldMatrix)
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.perGeo)
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.maxVelocity)
     JiggleDeformerNode.addAttribute(JiggleDeformerNode.scale)

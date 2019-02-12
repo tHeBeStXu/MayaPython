@@ -274,7 +274,7 @@ def addFollicle(follicleShape, hairShape):
         if not inputAttrs:
             if not outputAttrs:
                 cmds.connectAttr(follicleShape + '.outHair', input_hair, f=1)
-                cmds.connectAttr(output_hair, follicleShape + '.currentPosition', f=1)
+                cmds.connectAttr(output_hair, follicleShape + '.curPos', f=1)
                 break
         hairIndex += 1
 

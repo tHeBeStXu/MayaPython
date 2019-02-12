@@ -422,14 +422,14 @@ class MainUI(QtWidgets.QDialog):
             currentFollicle = cmds.listConnections(self.currentSetGrp + '.follicle',
                                                    source=0, destination=1, shapes=1)[0]
 
-            curPosConnections = cmds.listConnections(currentFollicle + '.currentPosition',
+            curPosConnections = cmds.listConnections(currentFollicle + '.curPos',
                                                      source=1, destination=0, plugs=1)
             outHairConnections = cmds.listConnections(currentFollicle + '.outHair',
                                                       source=0, destination=1, plugs=1)
 
             if curPosConnections:
                 for i in curPosConnections:
-                    cmds.disconnectAttr(i, currentFollicle + '.currentPosition')
+                    cmds.disconnectAttr(i, currentFollicle + '.curPos')
 
             if outHairConnections:
                 for i in outHairConnections:
@@ -466,14 +466,14 @@ class MainUI(QtWidgets.QDialog):
             currentFollicle = cmds.listConnections(self.currentSetGrp + '.follicle',
                                                    source=0, destination=1, shapes=1)[0]
 
-            curPosConnections = cmds.listConnections(currentFollicle + '.currentPosition',
+            curPosConnections = cmds.listConnections(currentFollicle + '.curPos',
                                                      source=1, destination=0, plugs=1)
             outHairConnections = cmds.listConnections(currentFollicle + '.outHair',
                                                       source=0, destination=1, plugs=1)
 
             if curPosConnections:
                 for i in curPosConnections:
-                    cmds.disconnectAttr(i, currentFollicle + '.currentPosition')
+                    cmds.disconnectAttr(i, currentFollicle + '.curPos')
 
             if outHairConnections:
                 for i in outHairConnections:

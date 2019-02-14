@@ -281,7 +281,7 @@ def getAllInputData(mesh, primaryJoints):
     get all necessary input data for calculating regression
     :param mesh: str, TransformNode name of bind mesh
     :param primaryJoints: list(str), list of name of primary joints
-    :return: dict,
+    :return: dict, all data for export
     """
     inputData = {}
     # {v j}
@@ -352,8 +352,10 @@ def exportData(mesh,
                filePath=None):
     """
     Export All input Data for further calculating
-    :param filePath: file path
-    :return:
+    :param mesh: skin mesh
+    :param primaryJoints: list, primary joints list in correct order.
+    :param filePath: str, file path
+    :return: filePath: str, export data full file path.
     """
     kFileExtension = '.data'
     if not filePath:
@@ -375,3 +377,5 @@ def exportData(mesh,
     pickle.dump(data, fh, pickle.HIGHEST_PROTOCOL)
 
     fh.close()
+
+    return filePath

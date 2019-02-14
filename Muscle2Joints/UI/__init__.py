@@ -1,1 +1,2 @@
-import UI
+import desktopMainUI
+import mayaMainUI

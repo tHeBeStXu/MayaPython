@@ -158,7 +158,7 @@ class MainUI(QtWidgets.QDialog):
     def setEditLine(self, editLine):
         """
         Set specified edit line for parameter
-        :param editLine: dict, editLine
+        :param editLine: QLineEdit(), editLine
         :return: None
         """
         selection = cmds.ls(sl=1)
@@ -174,22 +174,49 @@ class MainUI(QtWidgets.QDialog):
                 editLine.setText(str(itemStr))
 
     def generateROMs(self, primaryJntsSel, defaultAngle, iterAngle):
+        """
+
+        :param primaryJntsSel: QLineEdit(), primary joints in correct order
+        :param defaultAngle: QDoubleSpinBox(), half default angle range
+        :param iterAngle: QDoubleSpinBox(), iter angle
+        :return: None
+        """
         primaryJnts = primaryJntsSel.text()
         defaultAngle = defaultAngle.value()
-        iterAngle = iterAngle.Value()
+        iterAngle = iterAngle.value()
 
-        print primaryJnts
-        print defaultAngle
-        print iterAngle
+        if primaryJnts and defaultAngle:
+            self.transformLimits = mayaLib.getTransformLimits(primaryJoints=eval(primaryJnts),
+                                                              defaultAngle=defaultAngle)
+            logger.info('Getting the %s transform limits successfully!!!' % primaryJnts)
+        else:
+            logger.info('You need to select the primary joints!')
 
-        # self.transformLimits = mayaLib.getTransformLimits()
+        if self.transformLimits and iterAngle:
+            mayaLib.uniformSampling(transformLimits=self.transformLimits,
+                                    jointsOrder=eval(primaryJnts),
+                                    iterAngle=iterAngle)
+            logger.info('Uniform sampling successfully!!!')
+        else:
+            logger.info('Failed to uniform sampling, please check your input attributes!')
 
     def exportData(self, skinMesh, primaryJntsSel):
-
+        """
+        Export Data for further calculating
+        :param skinMesh: QLineEdit(), transform node of skin mesh
+        :param primaryJntsSel: QLineEdit(), primary joints in correct order
+        :return: None
+        """
         primaryJntsSel = primaryJntsSel.text()
         skinMesh = skinMesh.text()
 
-        print 'Export Data'
+        if primaryJntsSel and skinMesh:
+            filePath = mayaLib.exportData(mesh=skinMesh,
+                                          primaryJoints=eval(primaryJntsSel))
+            logger.info('Export data successfully!!!\nFile: %s' % filePath)
+        else:
+            logger.info('Failed to export data, please check your input attributes!')
+
 
 class Splitter(QtWidgets.QWidget):
     def __init__(self, text=None):

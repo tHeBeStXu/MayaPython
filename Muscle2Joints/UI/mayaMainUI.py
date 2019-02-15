@@ -36,7 +36,7 @@ class MainUI(QtWidgets.QDialog):
 
         self.setModal(False)
         self.setObjectName('SSDS')
-        self.setWindowTitle('SSDS Exporter & Importer')
+        self.setWindowTitle('Muscle2Joints Converter')
 
         self.transformLimits = dict()
 

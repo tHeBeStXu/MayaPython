@@ -1,2 +1,2 @@
-import desktopMainUI
+# import desktopMainUI
 import mayaMainUI

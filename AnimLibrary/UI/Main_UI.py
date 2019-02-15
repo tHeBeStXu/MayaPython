@@ -81,6 +81,7 @@ class MainUI(QtWidgets.QDialog):
         ############
 
         self.fileDir = QtWidgets.QTreeWidget()
+        self.fileDir.headerItem().setText(0, self.dataDir)
         self.fileDir.setFixedSize(180, 480)
 
         ####################
@@ -128,19 +129,199 @@ class MainUI(QtWidgets.QDialog):
         self.nameLabelGroup.setLayout(nameLayout)
         self.animGroupLayout.addWidget(self.nameLabelGroup)
 
-        self.namelabel = QtWidgets.QLabel()
+        self.namelabel = QtWidgets.QLabel('Name: ')
+        self.nameEditLine = QtWidgets.QLineEdit()
+        self.nameEditLine.setFixedWidth(120)
+        self.nameEditLine.setPlaceholderText('Enter a Animation Name')
 
+        nameLayout.addWidget(self.namelabel)
+        nameLayout.addWidget(self.nameEditLine)
 
+        #####################
+        # History Edit Line #
+        #####################
+        self.historyGroup = QtWidgets.QGroupBox()
+        historyLayout = QtWidgets.QHBoxLayout()
+        self.historyGroup.setLayout(historyLayout)
 
+        self.historyEditLine = QtWidgets.QTextEdit()
+        self.historyEditLine.setFixedSize(160, 100)
+        self.historyEditLine.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.historyEditLine.setReadOnly(True)
+
+        historyLayout.addWidget(self.historyEditLine)
+        self.animGroupLayout.addWidget(self.historyGroup)
+
+        ###############
+        # Save Button #
+        ###############
+        self.saveBtnGroup = QtWidgets.QGroupBox()
+        saveBtnLayout = QtWidgets.QHBoxLayout()
+        self.saveBtnGroup.setLayout(saveBtnLayout)
+
+        self.saveBtn = QtWidgets.QPushButton('Save')
+        self.saveBtn.setFixedSize(160, 35)
+        saveBtnLayout.addWidget(self.saveBtn)
+        self.animGroupLayout.addWidget(self.saveBtnGroup)
+
+        # add all
+        self.mainLayout.addWidget(self.fileDir)
+        self.mainLayout.addWidget(self.animLib)
+        self.mainLayout.addWidget(self.animGroup)
 
     def uiConfigure(self):
-        pass
+        """
+        Adjust UI
+        :return: None
+        """
+        # Folder Menu
+        self.folderMenu = QtWidgets.QMenu(self)
+
+        # Actions
+        self.createAction = QtWidgets.QAction('Create Folder', self.fileDir)
+        self.createAction.setObjectName('create_Folder')
+        self.createAction.triggered.connect(self.createFolder)
+
+        self.expandAction = QtWidgets.QAction('Expand', self.fileDir)
+        self.expandAction.setObjectName('expand_Folder')
+        self.expandAction.triggered.connect(self.expandFolder)
+
+        self.collapseAction = QtWidgets.QAction('Collapse', self.fileDir)
+        self.collapseAction.setObjectName('collapse_Folder')
+        self.collapseAction.triggered.connect(self.collapseFolder)
+
+        self.removeAction = QtWidgets.QAction('Remove', self.fileDir)
+        self.removeAction.setObjectName('remove_Folder')
+        self.removeAction.triggered.connect(self.removeFolder)
+
+        self.renameAction = QtWidgets.QAction('Rename', self.fileDir)
+        self.renameAction.setObjectName('rename_Folder')
+        self.renameAction.triggered.connect(self.renameFolder)
+
+        self.folderMenu.addAction(self.createAction)
+        self.folderMenu.addSeparator()
+        self.folderMenu.addAction(self.expandAction)
+        self.folderMenu.addAction(self.collapseAction)
+        self.folderMenu.addSeparator()
+        self.folderMenu.addAction(self.renameAction)
+        self.folderMenu.addAction(self.removeAction)
+
+        # Custom Context Menu
+        self.fileDir.setContextMenuPolicy(QtCore.Qt.CustomContextMenu)
+        self.fileDir.customContextMenuRequested.connect(self.onFolderContextMenu)
+
+        # Record Button
+        self.recordBtn.clicked.connect(self.recordAnim)
+
+        # Save Current Anim
+        self.saveBtn.clicked.connect(self.saveAnim)
+
+        # Load Anim To UI
+        self.fileDir.itemClicked.connect(self.loadCurrentFolder)
+
+        # Rename Anim
+        self.nameEditLine.returnPressed.connect(self.renamePose)
+
+        # Export Import Switch
+        self.poseExportImportSwitch(mode='export')
 
     def iconConfigure(self):
-        pass
+        """
+        Adjust icons
+        :return: None
+        """
+        menuList = self.fileDir.findChildren(QtWidgets.QAction)
+
+        for index in xrange(len(menuList)):
+            objectName = menuList[index].objectName()
+
+            if objectName:
+                currentIcon = objectName.split('_')[0]
+
+                icon = QtGui.QIcon()
+                icon.addPixmap(QtGui.QPixmap('%s/%s.png' % (self.iconsDir, currentIcon)),
+                               QtGui.QIcon.Normal, QtGui.QIcon.Off)
+                menuList[index].setIcon(icon)
 
     def loadFolderStructure(self, path):
         pass
+
+    def createFolder(self):
+        """
+        create folder dialog on treeWidget
+        :return: None
+        """
+        folderName, ok = QtWidgets.QInputDialog.getText(self, 'Folder Name', 'Enter the folder name :',
+                                                        QtWidgets.QLineEdit.Normal)
+
+        if ok:
+            parent = self.fileDir
+            currentPath = self.dataDir
+            if self.fileDir.selectedItems():
+                parent = self.fileDir.selectedItems()[-1]
+                currentPath = str(parent.toolTip(0))
+
+            if not os.path.isdir('%s/%s' % (currentPath, str(folderName))):
+                item = QtWidgets.QTreeWidgetItem(parent)
+
+                item.setText(0, str(folderName))
+                item.setToolTip(0, '%s/%s' % (currentPath, str(folderName)))
+
+                # connect icon
+                icon = QtGui.QIcon()
+                icon.addPixmap(QtGui.QPixmap('%s/folder.png' % (self.iconsDir)), QtGui.QIcon.Normal,
+                               QtGui.QIcon.Off)
+                item.setIcon(0, icon)
+
+                # be careful about shiboken2, you can use 'is' and 'is not' instead of using operator '==' and '!='
+                if parent is not self.fileDir:
+                    self.fileDir.setItemExpanded(parent, True)
+                    self.fileDir.setItemSelected(parent, False)
+
+                self.fileDir.setItemSelected(item, True)
+
+                os.makedirs('%s/%s' % (currentPath, str(folderName)))
+
+    def expandFolder(self):
+        pass
+
+    def collapseFolder(self):
+        pass
+
+    def removeFolder(self):
+        pass
+
+    def renameFolder(self):
+        pass
+
+    def onFolderContextMenu(self, paint):
+        """
+        Show folder Menu at correct position
+        :param paint:
+        :return: None
+        """
+        self.folderMenu.exec_(self.fileDir.mapToGlobal(paint))
+
+    def recordAnim(self):
+        pass
+
+    def saveAnim(self):
+        pass
+
+    def loadCurrentFolder(self):
+        pass
+
+    def renamePose(self):
+        pass
+
+    def poseExportImportSwitch(self, mode):
+        """
+        Pose mode for export and import switch
+        :param mode: str, 'export' or 'import'
+        :return: None
+        """
+        pass
+
 
 
 class gifButton(QtWidgets.QPushButton):

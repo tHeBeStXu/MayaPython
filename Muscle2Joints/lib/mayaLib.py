@@ -192,6 +192,7 @@ def getTransformLimits(primaryJoints,
 
 def uniformSampling(transformLimits,
                     jointsOrder,
+                    progressBar,
                     iterAngle=10):
     """
     uniformly generating different poses
@@ -243,10 +244,13 @@ def uniformSampling(transformLimits,
         cmds.setKeyframe(joint, time=cmds.currentTime(q=1))
 
     # generate keyFrames
-    generatePoses(interList)
+    generatePoses(interList, progressBar=progressBar)
+
+    # set back to bind pose
+    cmds.currentTime(0)
 
 
-def generatePoses(lists):
+def generatePoses(lists, progressBar):
     """
     generate different poses
     :param lists:list of lists for each joint rotations
@@ -258,6 +262,8 @@ def generatePoses(lists):
     endTime = startTime + total
     cmds.playbackOptions(min=startTime - 1)
     cmds.playbackOptions(max=endTime)
+
+    prePercentage = 0
 
     for i in range(0, total):
         step = total
@@ -273,6 +279,13 @@ def generatePoses(lists):
             cmds.currentTime(startTime)
             cmds.setAttr(dict.keys()[0], dict[dict.keys()[0]])
             cmds.setKeyframe(name.removeSuffix(dict.keys()[0]), time=startTime)
+
+        percentage = round((float(i) / float(total)) * 100)
+
+        if percentage != prePercentage:
+            progressBar.setValue(percentage)
+            prePercentage = percentage
+
         startTime += 1
 
 
@@ -377,5 +390,16 @@ def exportData(mesh,
     pickle.dump(data, fh, pickle.HIGHEST_PROTOCOL)
 
     fh.close()
+
+    # delete the ROMs
+    endTime = cmds.playbackOptions(max=1, q=1)
+    startTime = 1
+
+    for i in primaryJoints:
+        cmds.cutKey(i, time=(endTime, startTime))
+
+    cmds.currentTime(0)
+    for i in primaryJoints:
+        cmds.cutKey(i, time=(0, 0))
 
     return filePath

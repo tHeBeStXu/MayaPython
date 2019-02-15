@@ -6,6 +6,7 @@ import maya.cmds as cmds
 import logging
 
 from ..lib import mayaLib
+reload(mayaLib)
 
 logging.basicConfig()
 logger = logging.getLogger('SSDS')
@@ -47,7 +48,7 @@ class MainUI(QtWidgets.QDialog):
         Build the main UI
         :return: None
         """
-        self.setFixedSize(380, 280)
+        self.setFixedSize(380, 320)
 
         self.mainLayout = QtWidgets.QVBoxLayout()
         self.setLayout(self.mainLayout)
@@ -136,6 +137,14 @@ class MainUI(QtWidgets.QDialog):
         buttonsLayout.addWidget(self.ROMsBtn)
         buttonsLayout.addWidget(self.exportBtn)
 
+        # ProgressBar
+        progressLayout = QtWidgets.QHBoxLayout()
+        self.progressBar = QtWidgets.QProgressBar()
+
+        progressLayout.addWidget(self.progressBar)
+
+        self.progressBar.setValue(0)
+
         # Splitters
         meshJointsSplitter = Splitter(text='Skin Mesh & Primary Joints')
         angleSplitter = Splitter(text='Default Angle & Iter Angle')
@@ -152,6 +161,9 @@ class MainUI(QtWidgets.QDialog):
 
         attrLayout.addRow(buildSplitter)
         attrLayout.addRow(buttonsLayout)
+
+        attrLayout.addRow(Splitter())
+        attrLayout.addRow(progressLayout)
 
         self.exportTabLayout.addWidget(attrWidget)
 
@@ -195,7 +207,8 @@ class MainUI(QtWidgets.QDialog):
         if self.transformLimits and iterAngle:
             mayaLib.uniformSampling(transformLimits=self.transformLimits,
                                     jointsOrder=eval(primaryJnts),
-                                    iterAngle=iterAngle)
+                                    iterAngle=iterAngle,
+                                    progressBar=self.progressBar)
             logger.info('Uniform sampling successfully!!!')
         else:
             logger.info('Failed to uniform sampling, please check your input attributes!')

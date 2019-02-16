@@ -1,127 +1,165 @@
 import maya.api.OpenMaya as om
 import maya.api.OpenMayaAnim as oma
 import maya.cmds as cmds
+import os
+import datetime
+import shutil
 import json
 
 
-def exportAnimCurve(objects,
-                    filePath = None):
-    if not filePath:
-        filePath = 'C:/Users/user/Desktop/AnimCurve.Anim'
+def exportAnimCurve(selectionList,
+                    animPath,
+                    animName,
+                    animGIFPath,
+                    iconPath):
+    if not animPath:
+        animPath = 'C:/Users/user/Desktop/AnimCurve.Anim'
 
-    if not objects:
-        objects = cmds.ls(sl=1)
+    animDataDict = {}
+    for currentObject in selectionList:
+        objMSL = om.MSelectionList()
+        objMSL.add(currentObject)
+        objMObject = objMSL.getDependNode(0)
 
-    if objects:
-        animDataDict = {}
-        for currentObject in objects:
-            objMSL = om.MSelectionList()
-            objMSL.add(currentObject)
-            objMObject = objMSL.getDependNode(0)
+        # find the attribute of current object
+        objMFnDPNode = om.MFnDependencyNode(objMObject)
+        attributeCount = objMFnDPNode.attributeCount()
 
-            # find the attribute of current object
-            objMFnDPNode = om.MFnDependencyNode(objMObject)
-            attributeCount = objMFnDPNode.attributeCount()
+        nodeAnimInformationDict = {}
 
-            nodeAnimInformationDict = {}
+        for attributeIndex in range(attributeCount):
+            attributeMObject = objMFnDPNode.attribute(attributeIndex)
 
-            for attributeIndex in range(attributeCount):
-                attributeMObject = objMFnDPNode.attribute(attributeIndex)
+            MFnAttribute = om.MFnAttribute(attributeMObject)
 
-                MFnAttribute = om.MFnAttribute(attributeMObject)
+            attributeName = MFnAttribute.name
 
-                attributeName = MFnAttribute.name
+            # find the attribute that anim curve connected
 
-                # find the attribute that anim curve connected
+            currentPlug = objMFnDPNode.findPlug(attributeName, 1)
 
-                currentPlug = objMFnDPNode.findPlug(attributeName, 1)
+            if currentPlug.connectedTo(1, 0):
+                currentConnectedList = currentPlug.connectedTo(1, 0)
 
-                if currentPlug.connectedTo(1, 0):
-                    currentConnectedList = currentPlug.connectedTo(1, 0)
+                # find the connected node type
+                currentConnectNodeMObject = currentConnectedList[0].node()
 
-                    # find the connected node type
-                    currentConnectNodeMObject = currentConnectedList[0].node()
+                # check it is an anim curve
+                if currentConnectNodeMObject.hasFn(om.MFn.kAnimCurve):
+                    # get anim curve
+                    MFnAnimCurve = oma.MFnAnimCurve(currentConnectNodeMObject)
 
-                    # check it is an anim curve
-                    if currentConnectNodeMObject.hasFn(om.MFn.kAnimCurve):
-                        # get anim curve
-                        MFnAnimCurve = oma.MFnAnimCurve(currentConnectNodeMObject)
+                    # get attribute
+                    animCurveType = MFnAnimCurve.animCurveType
+                    preInfinity = MFnAnimCurve.preInfinityType
+                    postInfinity = MFnAnimCurve.postInfinityType
 
-                        # get attribute
-                        animCurveType = MFnAnimCurve.animCurveType
-                        preInfinity = MFnAnimCurve.preInfinityType
-                        postInfinity = MFnAnimCurve.postInfinityType
+                    weightedTangents = int(MFnAnimCurve.isWeighted)
 
-                        weightedTangents = int(MFnAnimCurve.isWeighted)
+                    # get value of each key
+                    numKeys = MFnAnimCurve.numKeys
+                    timeList = []
+                    valueList = []
 
-                        # get value of each key
-                        numKeys = MFnAnimCurve.numKeys
-                        timeList = []
-                        valueList = []
+                    inTangentTypeList = []
+                    inTangentAngleList = []
+                    inTangentAngleWeightList = []
 
-                        inTangentTypeList = []
-                        inTangentAngleList = []
-                        inTangentAngleWeightList = []
+                    outTangentTypeList = []
+                    outTangentAngleList = []
+                    outTangentAngleWeightList = []
 
-                        outTangentTypeList = []
-                        outTangentAngleList = []
-                        outTangentAngleWeightList = []
+                    for index in range(numKeys):
+                        # time
+                        input = MFnAnimCurve.input(index)
+                        mTime = om.MTime(input)
+                        currentTime = mTime.value
+                        timeList.append(currentTime)
 
-                        for index in range(numKeys):
-                            # time
-                            input = MFnAnimCurve.input(index)
-                            mTime = om.MTime(input)
-                            currentTime = mTime.value
-                            timeList.append(currentTime)
+                        # value
+                        value = MFnAnimCurve.value(index)
+                        valueList.append(value)
 
-                            # value
-                            value = MFnAnimCurve.value(index)
-                            valueList.append(value)
+                        # inTangent
+                        inTangentType = MFnAnimCurve.inTangentType(index)
+                        inTangentTypeList.append(inTangentType)
 
-                            # inTangent
-                            inTangentType = MFnAnimCurve.inTangentType(index)
-                            inTangentTypeList.append(inTangentType)
+                        inTangentAngleWeight = MFnAnimCurve.getTangentAngleWeight(index, 1)
 
-                            inTangentAngleWeight = MFnAnimCurve.getTangentAngleWeight(index, 1)
+                        inTangentAngleMAngle = om.MAngle(inTangentAngleWeight[0])
+                        inTangentValue = inTangentAngleMAngle.value
+                        inTangentAngleList.append(inTangentValue)
+                        inTangentAngleWeightList.append(inTangentAngleWeight[1])
 
-                            inTangentAngleMAngle = om.MAngle(inTangentAngleWeight[0])
-                            inTangentValue = inTangentAngleMAngle.value
-                            inTangentAngleList.append(inTangentValue)
-                            inTangentAngleWeightList.append(inTangentAngleWeight[1])
+                        # outTangent
+                        outTangentType = MFnAnimCurve.outTangentType(index)
+                        outTangentTypeList.append(outTangentType)
 
-                            # outTangent
-                            outTangentType = MFnAnimCurve.outTangentType(index)
-                            outTangentTypeList.append(outTangentType)
+                        outTangentAngleWeight = MFnAnimCurve.getTangentAngleWeight(index, 0)
+                        outTangentAngleMAngle = om.MAngle(outTangentAngleWeight[0])
+                        outTangetValue = outTangentAngleMAngle.value
+                        outTangentAngleList.append(outTangetValue)
+                        outTangentAngleWeightList.append(outTangentAngleWeight[1])
 
-                            outTangentAngleWeight = MFnAnimCurve.getTangentAngleWeight(index, 0)
-                            outTangentAngleMAngle = om.MAngle(outTangentAngleWeight[0])
-                            outTangetValue = outTangentAngleMAngle.value
-                            outTangentAngleList.append(outTangetValue)
-                            outTangentAngleWeightList.append(outTangentAngleWeight[1])
+                    attributeDataDict = {'animCurveType': animCurveType,
+                                         'preInfinity': preInfinity,
+                                         'postInfinity': postInfinity,
+                                         'weightedTangents': weightedTangents,
+                                         'numKeys': numKeys,
+                                         'timeList': timeList,
+                                         'valueList': valueList,
+                                         'inTangentTypeList': inTangentTypeList,
+                                         'inTangentAngleList': inTangentAngleList,
+                                         'inTangentAngleWeightList': inTangentAngleWeightList,
+                                         'outTangentAngleList': outTangentAngleList,
+                                         'outTangentTypeList': outTangentTypeList,
+                                         'outTangentAngleWeightList': outTangentAngleWeightList}
 
-                        attributeDataDict = {'animCurveType': animCurveType,
-                                             'preInfinity': preInfinity,
-                                             'postInfinity': postInfinity,
-                                             'weightedTangents': weightedTangents,
-                                             'numKeys': numKeys,
-                                             'timeList': timeList,
-                                             'valueList': valueList,
-                                             'inTangentTypeList': inTangentTypeList,
-                                             'inTangentAngleList': inTangentAngleList,
-                                             'inTangentAngleWeightList': inTangentAngleWeightList,
-                                             'outTangentAngleList': outTangentAngleList,
-                                             'outTangentTypeList': outTangentTypeList,
-                                             'outTangentAngleWeightList': outTangentAngleWeightList}
+                    nodeAnimInformationDict.setdefault(attributeName)
 
-                        nodeAnimInformationDict.setdefault(attributeName)
+        animDataDict.setdefault(currentObject.encode(), nodeAnimInformationDict)
 
-            animDataDict.setdefault(currentObject.encode(), nodeAnimInformationDict)
+    # Data History
+    owner = os.getenv('USERNAME')
+    time = datetime.datetime.now().strftime("%A, %B, %d, %Y %H:%M %p")
+    mayaVersion = cmds.about(q=1, v=1)
+    version = '0.1'
+    dataList = {'animCurve': animDataDict, 'history': [owner, time, mayaVersion, version]}
 
-        # write anim data
-        if animDataDict:
-            animData = open(filePath, 'w')
-            data = json.dumps(animDataDict, indent=4)
-            animData.write(data)
-            animData.close()
+    dataPath = '%s/%s.anim' % (animPath, animName)
 
-            print 'Successfully store animation curve data!'
+    if os.path.isfile(dataPath):
+        try:
+            os.chmod(dataPath, 0777)
+            os.remove(dataPath)
+        except Exception, result:
+            print result
+
+    # write anim data
+    if animDataDict:
+        animData = open(dataPath, 'w')
+        data = json.dumps(dataList, indent=4)
+        animData.write(data)
+        animData.close()
+
+    currentGIF = animGIFPath
+    if not os.path.isfile(currentGIF):
+        currentGIF = '%s/animTemplate.gif' % iconPath
+
+    currentAnimGIFPath = dataPath.replace('.pose', '.gif')
+
+    if currentGIF == '%s/animTemplate.gif' % iconPath:
+        try:
+            shutil.copy2(currentGIF, currentAnimGIFPath)
+        except Exception, result:
+            print result
+
+    else:
+        try:
+            shutil.move(currentGIF, currentAnimGIFPath)
+        except Exception, result:
+            print result
+
+    print 'Successfully store animation curve data!'
+
+    return currentAnimGIFPath

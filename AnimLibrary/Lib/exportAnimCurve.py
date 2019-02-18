@@ -12,8 +12,6 @@ def exportAnimCurve(selectionList,
                     animName,
                     animGIFPath,
                     iconPath):
-    if not animPath:
-        animPath = 'C:/Users/user/Desktop/AnimCurve.Anim'
 
     animDataDict = {}
     for currentObject in selectionList:
@@ -146,7 +144,7 @@ def exportAnimCurve(selectionList,
     if not os.path.isfile(currentGIF):
         currentGIF = '%s/animTemplate.gif' % iconPath
 
-    currentAnimGIFPath = dataPath.replace('.pose', '.gif')
+    currentAnimGIFPath = dataPath.replace('.anim', '.gif')
 
     if currentGIF == '%s/animTemplate.gif' % iconPath:
         try:
@@ -156,10 +154,8 @@ def exportAnimCurve(selectionList,
 
     else:
         try:
-            shutil.move(currentGIF, currentAnimGIFPath)
+            shutil.copy2(currentGIF, currentAnimGIFPath)
         except Exception, result:
             print result
-
-    print 'Successfully store animation curve data!'
 
     return currentAnimGIFPath

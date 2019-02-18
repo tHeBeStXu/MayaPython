@@ -9,6 +9,7 @@ import shutil
 import imageio
 
 from ..Lib import exportAnimCurve
+reload(exportAnimCurve)
 
 logging.basicConfig()
 logger = logging.getLogger('AnimLibrary')
@@ -546,7 +547,7 @@ class MainUI(QtWidgets.QDialog):
                     self.loadGIF2Button(path=currentAnimGIFPath, button=self.recordBtn)
 
                     # refresh
-                    self.loadCurrentFolder()
+                    # self.loadCurrentFolder()
                     logger.info('Successfully Save Anim Curve')
                 else:
                     QtWidgets.QMessageBox.warning(self, 'Warning', 'No folder selected!\nPlease select the folder!',
@@ -626,7 +627,7 @@ class MainUI(QtWidgets.QDialog):
             toolButton.setToolButtonStyle(QtCore.Qt.ToolButtonTextUnderIcon)
 
             # Icons
-            animIconPath  = animList[index].replace('.anim', '.png')
+            animIconPath  = animList[index].replace('.anim', '.gif')
             icon = QtGui.QIcon()
             icon.addPixmap(QtGui.QPixmap(animIconPath), QtGui.QIcon.Normal, QtGui.QIcon.Off)
             toolButton.setIcon(icon)

@@ -620,7 +620,10 @@ class MainUI(QtWidgets.QDialog):
             animLabel = os.path.splitext(os.path.basename(animList[index]))[0]
 
             # tool button
-            toolButton = QtWidgets.QToolButton(self.animWidget)
+            toolButton = hoverToolBtn(gifPath=animList[index].replace('.anim', '.gif'),
+                                      tempGIFPath=self.tempGIFDir,
+                                      movie=self.movie,
+                                      parent=self.animWidget)
             toolButton.setFixedSize(90, 90)
             toolButton.setObjectName('toolButton_%s' % animLabel)
             toolButton.setText(animLabel)
@@ -629,7 +632,10 @@ class MainUI(QtWidgets.QDialog):
             # Icons
             animIconPath  = animList[index].replace('.anim', '.gif')
             icon = QtGui.QIcon()
-            icon.addPixmap(QtGui.QPixmap(animIconPath), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+            movie = QtGui.QMovie(animIconPath)
+            movie.jumpToFrame(0)
+            movie.stop()
+            icon.addPixmap(QtGui.QPixmap(movie.currentPixmap()), QtGui.QIcon.Normal, QtGui.QIcon.Off)
             toolButton.setIcon(icon)
             toolButton.setIconSize(QtCore.QSize(80, 70))
 
@@ -667,4 +673,31 @@ class MainUI(QtWidgets.QDialog):
 
             self.currentMode = 'import'
 
+
+class hoverToolBtn(QtWidgets.QToolButton):
+    def __init__(self, gifPath, tempGIFPath, movie, parent=None):
+        super(hoverToolBtn, self).__init__(parent)
+
+        self.gifPath = gifPath
+        self.tempGIFPath = tempGIFPath
+        self.movie = movie
+
+        self.setMouseTracking(True)
+
+    def enterEvent(self, QEvent):
+        if self.movie.fileName() != self.gifPath:
+            print self.movie
+            self.movie.stop()
+            self.movie.setFileName(self.gifPath)
+            self.movie.start()
+        else:
+            self.movie.start()
+
+    def leaveEvent(self, QEvent):
+        if self.movie.fileName() == self.gifPath:
+            self.movie.stop()
+            self.movie.setFileName(self.tempGIFPath)
+            self.movie.start()
+        else:
+            self.movie.start()
 

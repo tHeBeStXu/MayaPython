@@ -9,7 +9,9 @@ import shutil
 import imageio
 
 from ..Lib import exportAnimCurve
+from ..Lib import importAnimCurve
 reload(exportAnimCurve)
+reload(importAnimCurve)
 
 logging.basicConfig()
 logger = logging.getLogger('AnimLibrary')
@@ -53,12 +55,16 @@ class MainUI(QtWidgets.QDialog):
         self.tempDir = os.path.abspath(os.getenv('TEMP'))
         self.tempDir = self.tempDir.replace('\\', '/')
         self.tempGIFDir = '%s/tempGIF.gif' % self.tempDir
+        self.templateGIF = '%s/animTemplate.gif' % self.iconsDir
 
         # Current Mode
         self.currentMode = 'export'
 
         # Current anim Name
-        self.currentanimData = ''
+        self.currentAnimData = ''
+
+        # QMovie
+        self.movie = QtGui.QMovie(self.tempGIFDir)
 
         # ButtonImageSize
         self.size = [150, 150]
@@ -518,9 +524,9 @@ class MainUI(QtWidgets.QDialog):
             self.loadGIF2Button(self.tempGIFDir, self.recordBtn)
 
     def loadGIF2Button(self, path, button):
+        self.movie.stop()
         self.movie = QtGui.QMovie(path)
         self.movie.frameChanged.connect(partial(self.setBtnIcon, button))
-
         self.movie.start()
 
     def setBtnIcon(self, button, *args):
@@ -621,8 +627,10 @@ class MainUI(QtWidgets.QDialog):
 
             # tool button
             toolButton = hoverToolBtn(gifPath=animList[index].replace('.anim', '.gif'),
-                                      tempGIFPath=self.tempGIFDir,
+                                      templateGIFPath=self.templateGIF,
                                       movie=self.movie,
+                                      recordBtn=self.recordBtn,
+                                      instance=self,
                                       parent=self.animWidget)
             toolButton.setFixedSize(90, 90)
             toolButton.setObjectName('toolButton_%s' % animLabel)
@@ -645,10 +653,67 @@ class MainUI(QtWidgets.QDialog):
             toolButton.clicked.connect(partial(self.setCurrentAnim, animList[index]))
 
     def setCurrentAnim(self, animPath):
-        pass
+        """
+        Import Anim Curve to selected
+        :param animPath: str, anim path
+        :return: None
+        """
+        selectionList = cmds.ls(sl=1)
+
+        if selectionList:
+            # import anim, refresh record button and name edit line
+            historyList = importAnimCurve.importAnimCurve(selectionList=selectionList, animPath=animPath)
+
+            currentGIFPath = animPath.replace('.anim', '.gif')
+            self.loadGIF2Button(path=currentGIFPath, button=self.recordBtn)
+            currentPoseNameLabel = os.path.splitext(os.path.basename(animPath))[0]
+            self.nameEditLine.setText(currentPoseNameLabel)
+
+            # import history data
+            print historyList
+            self.historyEditLine.setText("\n".join(historyList))
+
+            # switch to import mode
+            self.animExportImportSwitch('import')
+
+            self.currentAnimData = animPath
+
+            logger.info('Successfully import Anim Curve!')
 
     def renameAnim(self):
-        pass
+        """
+        Rename specified anim
+        :return: None
+        """
+        if self.currentMode == 'import':
+            if self.currentAnimData:
+                newAnimLabel = str(self.nameEditLine.text())
+
+                if newAnimLabel:
+                    newAnimPath = '%s/%s.anim' % (os.path.dirname(self.currentAnimData), newAnimLabel)
+
+                    newGIFPath = newAnimPath.replace('.anim', '.gif')
+
+                    existsGIFPath = self.currentAnimData.replace('.anim', '.gif')
+
+                    if os.path.isfile(self.currentAnimData):
+                        try:
+                            os.chmod(self.currentAnimData, 0777)
+                            os.rename(self.currentAnimData, newAnimPath)
+
+                        except Exception, result:
+                            logger.warning(result)
+
+                        if os.path.isfile(existsGIFPath):
+                            try:
+                                os.chmod(existsGIFPath, 0777)
+                                os.rename(existsGIFPath, newGIFPath)
+
+                            except Exception, result:
+                                logger.warning(result)
+
+                        # refresh current folder
+                        self.loadCurrentFolder()
 
     def animExportImportSwitch(self, mode):
         """
@@ -656,6 +721,7 @@ class MainUI(QtWidgets.QDialog):
         :param mode: str, 'export' or 'import'
         :return: None
         """
+
         self.saveBtn.hide()
         # self.sliderGroup.hide()
 
@@ -664,7 +730,7 @@ class MainUI(QtWidgets.QDialog):
             self.historyEditLine.clear()
 
             self.saveBtn.show()
-            self.loadGIF2Button(button=self.recordBtn, path='%s/snapshot.png' % self.iconsDir)
+            self.loadGIF2Button(button=self.recordBtn, path=self.templateGIF)
 
             self.currentMode = 'export'
 
@@ -675,29 +741,29 @@ class MainUI(QtWidgets.QDialog):
 
 
 class hoverToolBtn(QtWidgets.QToolButton):
-    def __init__(self, gifPath, tempGIFPath, movie, parent=None):
+    def __init__(self,
+                 gifPath,
+                 templateGIFPath,
+                 movie,
+                 recordBtn,
+                 instance,
+                 parent=None):
         super(hoverToolBtn, self).__init__(parent)
 
         self.gifPath = gifPath
-        self.tempGIFPath = tempGIFPath
+        self.templateGIFPath = templateGIFPath
         self.movie = movie
+        self.targetBtn = recordBtn
+        self.instance = instance
 
         self.setMouseTracking(True)
 
     def enterEvent(self, QEvent):
         if self.movie.fileName() != self.gifPath:
-            print self.movie
             self.movie.stop()
-            self.movie.setFileName(self.gifPath)
-            self.movie.start()
-        else:
-            self.movie.start()
+            self.instance.loadGIF2Button(self.gifPath, self.targetBtn)
 
     def leaveEvent(self, QEvent):
-        if self.movie.fileName() == self.gifPath:
+        if self.movie.fileName() != self.gifPath:
             self.movie.stop()
-            self.movie.setFileName(self.tempGIFPath)
-            self.movie.start()
-        else:
-            self.movie.start()
-
+            self.instance.loadGIF2Button(self.templateGIFPath, self.targetBtn)

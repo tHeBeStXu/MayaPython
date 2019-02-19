@@ -113,7 +113,7 @@ def exportAnimCurve(selectionList,
                                          'outTangentTypeList': outTangentTypeList,
                                          'outTangentAngleWeightList': outTangentAngleWeightList}
 
-                    nodeAnimInformationDict.setdefault(attributeName)
+                    nodeAnimInformationDict.setdefault(attributeName, attributeDataDict)
 
         animDataDict.setdefault(currentObject.encode(), nodeAnimInformationDict)
 

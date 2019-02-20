@@ -1,5 +1,7 @@
 import sys
+import os
 from PyQt5 import QtWidgets, QtCore, QtGui, Qt
+import pickle
 
 from PyQt5.QtWidgets import qApp
 
@@ -8,6 +10,16 @@ class MainUI(QtWidgets.QMainWindow):
     def __init__(self):
         super(MainUI, self).__init__()
 
+        # Directories
+        self.currentDir = os.path.abspath(os.path.dirname(__file__))
+        self.rootDir = os.path.abspath(os.path.join(self.currentDir, os.path.pardir))
+        self.rootDir = self.rootDir.replace('\\', '/')
+
+        self.dataDir = '%s/Data' % self.rootDir
+
+        self.data = None
+
+        # Build UI
         self.buildUI()
         self.show()
 
@@ -33,7 +45,23 @@ class MainUI(QtWidgets.QMainWindow):
         self.setWindowTitle('Build Helper Joints')
 
     def importData(self):
-        print 'Import Data...'
+        kFileExtension = '.data'
+        fileName = QtWidgets.QFileDialog.getOpenFileName(self,
+                                                         'Import Data', self.dataDir,
+                                                         filter='Input Data(*%s)' % kFileExtension)
+        if fileName[0]:
+            fileHandle = open(fileName[0], 'rb')
+            self.data = pickle.load(fileHandle)
+            fileHandle.close()
+
+        if self.data:
+            # keys
+            # 'vertexTransBindPose'
+            # 'primaryJntsBindPose'
+            # 'vertexWorldTransAtDiffPoses'
+            # 'primaryJntsWorldTransAtDiffPoses'
+            print 'data is valid'
+
         self.statusBar().showMessage('Import Data...')
 
     def buildData(self):

@@ -64,7 +64,7 @@ class MainUI(QtWidgets.QDialog):
         self.currentAnimData = ''
 
         # QMovie
-        self.movie = QtGui.QMovie(self.tempGIFDir)
+        self.movie = QtGui.QMovie(self.tempGIFDir, parent=self)
 
         # ButtonImageSize
         self.size = [150, 150]
@@ -126,7 +126,7 @@ class MainUI(QtWidgets.QDialog):
         recordLayout = QtWidgets.QHBoxLayout()
         recordLayout.setAlignment(QtCore.Qt.AlignCenter)
         self.recordGroup.setLayout(recordLayout)
-        self.recordBtn = QtWidgets.QPushButton()
+        self.recordBtn = animatePushBtn(GIFPath=self.templateGIF, size=self.size, parent=self)
         self.recordBtn.setFixedSize(150, 150)
 
         recordLayout.addWidget(self.recordBtn)
@@ -521,17 +521,7 @@ class MainUI(QtWidgets.QDialog):
                     except Exception, result:
                         logger.warning(result)
 
-            self.loadGIF2Button(self.tempGIFDir, self.recordBtn)
-
-    def loadGIF2Button(self, path, button):
-        self.movie.stop()
-        self.movie = QtGui.QMovie(path)
-        self.movie.frameChanged.connect(partial(self.setBtnIcon, button))
-        self.movie.start()
-
-    def setBtnIcon(self, button, *args):
-        button.setIcon(QtGui.QIcon(self.movie.currentPixmap()))
-        button.setIconSize(QtCore.QSize(self.size[0], self.size[1]))
+            self.recordBtn.loadGIF2Button(path=self.tempGIFDir)
 
     def saveAnim(self):
         """
@@ -550,7 +540,7 @@ class MainUI(QtWidgets.QDialog):
                                                                          animLabel, self.tempGIFDir, self.iconsDir)
 
                     self.nameEditLine.clear()
-                    self.loadGIF2Button(path=currentAnimGIFPath, button=self.recordBtn)
+                    self.recordBtn.loadGIF2Button(path=currentAnimGIFPath)
 
                     # refresh
                     # self.loadCurrentFolder()
@@ -630,7 +620,6 @@ class MainUI(QtWidgets.QDialog):
                                       templateGIFPath=self.templateGIF,
                                       movie=self.movie,
                                       recordBtn=self.recordBtn,
-                                      instance=self,
                                       parent=self.animWidget)
             toolButton.setFixedSize(90, 90)
             toolButton.setObjectName('toolButton_%s' % animLabel)
@@ -665,7 +654,7 @@ class MainUI(QtWidgets.QDialog):
             historyList = importAnimCurve.importAnimCurve(selectionList=selectionList, animPath=animPath)
 
             currentGIFPath = animPath.replace('.anim', '.gif')
-            self.loadGIF2Button(path=currentGIFPath, button=self.recordBtn)
+            self.recordBtn.loadGIF2Button(path=currentGIFPath)
             currentPoseNameLabel = os.path.splitext(os.path.basename(animPath))[0]
             self.nameEditLine.setText(currentPoseNameLabel)
 
@@ -730,7 +719,7 @@ class MainUI(QtWidgets.QDialog):
             self.historyEditLine.clear()
 
             self.saveBtn.show()
-            self.loadGIF2Button(button=self.recordBtn, path=self.templateGIF)
+            self.recordBtn.loadGIF2Button(path=self.templateGIF)
 
             self.currentMode = 'export'
 
@@ -746,7 +735,6 @@ class hoverToolBtn(QtWidgets.QToolButton):
                  templateGIFPath,
                  movie,
                  recordBtn,
-                 instance,
                  parent=None):
         super(hoverToolBtn, self).__init__(parent)
 
@@ -754,16 +742,36 @@ class hoverToolBtn(QtWidgets.QToolButton):
         self.templateGIFPath = templateGIFPath
         self.movie = movie
         self.targetBtn = recordBtn
-        self.instance = instance
 
         self.setMouseTracking(True)
 
     def enterEvent(self, QEvent):
         if self.movie.fileName() != self.gifPath:
             self.movie.stop()
-            self.instance.loadGIF2Button(self.gifPath, self.targetBtn)
+            self.targetBtn.loadGIF2Button(self.gifPath)
 
     def leaveEvent(self, QEvent):
         if self.movie.fileName() != self.gifPath:
             self.movie.stop()
-            self.instance.loadGIF2Button(self.templateGIFPath, self.targetBtn)
+            self.targetBtn.loadGIF2Button(self.templateGIFPath)
+
+
+class animatePushBtn(QtWidgets.QPushButton):
+    def __init__(self, GIFPath, size, parent=None):
+        super(animatePushBtn, self).__init__(parent)
+
+        self.GIFPath = GIFPath
+        self.size = size
+        self.movie = QtGui.QMovie(self.GIFPath, parent=parent)
+
+    def loadGIF2Button(self, path):
+        self.movie.stop()
+        self.movie.setFileName(path)
+        self.movie.frameChanged.connect(self.setBtnIcon)
+        self.movie.start()
+
+    def setBtnIcon(self):
+        self.setIcon(QtGui.QIcon(self.movie.currentPixmap()))
+        self.setIconSize(QtCore.QSize(self.size[0], self.size[1]))
+
+

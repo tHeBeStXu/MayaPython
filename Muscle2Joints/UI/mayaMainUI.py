@@ -4,6 +4,7 @@ from shiboken2 import wrapInstance
 import maya.OpenMayaUI as omui
 import maya.cmds as cmds
 import logging
+import os
 
 from ..lib import mayaLib
 reload(mayaLib)
@@ -33,6 +34,15 @@ class MainUI(QtWidgets.QDialog):
             logger.info('No previous UI exists!')
 
         super(MainUI, self).__init__(parent=getMayaWindow())
+
+        # Directories
+        self.currentDir = os.path.abspath(os.path.dirname(__file__))
+        self.rootDir = os.path.abspath(os.path.join(self.currentDir, os.path.pardir))
+        self.rootDir = self.rootDir.replace('\\', '/')
+
+        self.dataDir = '%s/Data' % self.rootDir
+        self.tempDir = os.path.abspath(os.getenv('TEMP'))
+        self.tempDir = self.tempDir.replace('\\', '/')
 
         self.setModal(False)
         self.setObjectName('SSDS')
@@ -225,6 +235,7 @@ class MainUI(QtWidgets.QDialog):
 
         if primaryJntsSel and skinMesh:
             filePath = mayaLib.exportData(mesh=skinMesh,
+                                          dataDir=self.dataDir,
                                           primaryJoints=eval(primaryJntsSel))
             logger.info('Export data successfully!!!\nFile: %s' % filePath)
         else:

@@ -362,18 +362,19 @@ def getAllInputData(mesh, primaryJoints):
 
 def exportData(mesh,
                primaryJoints,
+               dataDir,
                filePath=None):
     """
     Export All input Data for further calculating
     :param mesh: skin mesh
     :param primaryJoints: list, primary joints list in correct order.
+    :param dataDir: str, data directory.
     :param filePath: str, file path
     :return: filePath: str, export data full file path.
     """
     kFileExtension = '.data'
     if not filePath:
-        startDir = cmds.workspace(q=1, rootDirectory=1)
-        filePath = cmds.fileDialog2(dialogStyle=2, fileMode=0, startingDirectory=startDir,
+        filePath = cmds.fileDialog2(dialogStyle=2, fileMode=0, startingDirectory=dataDir,
                                     fileFilter='Input Data(*%s)' % kFileExtension)
 
     if not filePath:

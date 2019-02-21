@@ -236,7 +236,8 @@ class MainUI(QtWidgets.QDialog):
         if primaryJntsSel and skinMesh:
             filePath = mayaLib.exportData(mesh=skinMesh,
                                           dataDir=self.dataDir,
-                                          primaryJoints=eval(primaryJntsSel))
+                                          primaryJoints=eval(primaryJntsSel),
+                                          progressBar=self.progressBar)
             logger.info('Export data successfully!!!\nFile: %s' % filePath)
         else:
             logger.info('Failed to export data, please check your input attributes!')

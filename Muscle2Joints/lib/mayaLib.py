@@ -289,7 +289,7 @@ def generatePoses(lists, progressBar):
         startTime += 1
 
 
-def getAllInputData(mesh, primaryJoints):
+def getAllInputData(mesh, primaryJoints, progressBar):
     """
     get all necessary input data for calculating regression
     :param mesh: str, TransformNode name of bind mesh
@@ -337,6 +337,8 @@ def getAllInputData(mesh, primaryJoints):
     startFrame = 1
     endFrame = cmds.playbackOptions(max=1, q=1)
 
+    prePercentage = 0
+
     for frame in range(int((endFrame-startFrame)+1)):
         cmds.currentTime(startFrame + frame)
         vertexTransAtDiffPoses[startFrame + frame] = {}
@@ -351,6 +353,12 @@ def getAllInputData(mesh, primaryJoints):
         for joint in primaryJoints:
             primaryJntsWorldTransAtDiffPoses[startFrame + frame][joint] = list(getWorldMatrix(joint))
 
+        percentage = round((float(frame) / float(endFrame -startFrame + 1)) * 100)
+
+        if percentage != prePercentage:
+            progressBar.setValue(percentage)
+            prePercentage = percentage
+
     # input data
     inputData['vertexTransBindPose'] = vertexTransBindPose
     inputData['primaryJntsBindPose'] = primaryJntsBindPose
@@ -363,12 +371,14 @@ def getAllInputData(mesh, primaryJoints):
 def exportData(mesh,
                primaryJoints,
                dataDir,
+               progressBar,
                filePath=None):
     """
     Export All input Data for further calculating
     :param mesh: skin mesh
     :param primaryJoints: list, primary joints list in correct order.
     :param dataDir: str, data directory.
+    :param progressBar: QProgressBar, progressBar.
     :param filePath: str, file path
     :return: filePath: str, export data full file path.
     """
@@ -384,7 +394,7 @@ def exportData(mesh,
     if not filePath.endswith(kFileExtension):
         filePath += kFileExtension
 
-    data = getAllInputData(mesh=mesh, primaryJoints=primaryJoints)
+    data = getAllInputData(mesh=mesh, primaryJoints=primaryJoints, progressBar=progressBar)
 
     fh = open(filePath, 'wb')
 

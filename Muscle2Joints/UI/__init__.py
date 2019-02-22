@@ -1,2 +1,0 @@
-# import desktopMainUI
-import mayaMainUI

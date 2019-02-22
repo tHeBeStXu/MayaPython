@@ -7,6 +7,7 @@ from PyQt5 import QtWidgets, QtCore, QtGui
 
 import lib.calculateLib as calculateLib
 
+
 class MainUI(QtWidgets.QMainWindow):
     def __init__(self):
         super(MainUI, self).__init__()
@@ -120,14 +121,17 @@ class MainUI(QtWidgets.QMainWindow):
                 for jnt in self.data['primaryJntsWorldTransAtDiffPoses'][pose]:
                     self.primaryJntsWorldTransAtDiffPoses[pose][jnt] = calculateLib.getMatrixAsNpArray(self.data['primaryJntsWorldTransAtDiffPoses'][pose][jnt])
 
-            # Show message
+            # log message
             self.textEditLine.append('Data file Dir: \n' + fileName[0] + '\n')
 
-            numVertexStr = "Num Vertex: %s \n" % len(self.data['vertexTransBindPose'].keys())
-            primaryJntsStr = "Num Primary Joints: %s \n" % len(self.data['primaryJntsBindPose'].keys())
-            vertexWorldStr = "Num Vertex Trans: %s \n" % len(self.data['vertexWorldTransAtDiffPoses'].keys())
-            primaryJntsWorldStr = "Num Primary Joints Trans: %s \n" % len(self.data['primaryJntsWorldTransAtDiffPoses'].keys())
-            text = numVertexStr + primaryJntsStr + vertexWorldStr + primaryJntsWorldStr
+            numVertexStr = "Num Vertex: %s \n" % len(self.vertexTransBindPose.keys())
+            primaryJntsStr = "Num Primary Joints: %s \n" % len(self.primaryJntsBindPose.keys())
+            vertexWorldStr = "Num Poses: %s \n" % len(self.vertexWorldTransAtDiffPoses.keys())
+
+            if self.vertexWorldTransAtDiffPoses and self.primaryJntsBindPose and self.vertexTransBindPose and self.primaryJntsWorldTransAtDiffPoses:
+                self.recordStatusAndTime('Input Data Ready!')
+
+            text = numVertexStr + primaryJntsStr + vertexWorldStr
             self.textEditLine.append(text)
 
             self.recordStatusAndTime('Data Imported Successfully!')

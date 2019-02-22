@@ -1,11 +1,11 @@
-import sys
-import os
 import datetime
-from PyQt5 import QtWidgets, QtCore, QtGui, Qt
+import os
 import pickle
+import sys
 
-from PyQt5.QtWidgets import qApp
+from PyQt5 import QtWidgets, QtCore, QtGui
 
+import lib.calculateLib as calculateLib
 
 class MainUI(QtWidgets.QMainWindow):
     def __init__(self):
@@ -19,6 +19,11 @@ class MainUI(QtWidgets.QMainWindow):
         self.dataDir = '%s/Data' % self.rootDir
 
         self.data = None
+
+        self.vertexTransBindPose = dict()
+        self.primaryJntsBindPose = dict()
+        self.vertexWorldTransAtDiffPoses = dict()
+        self.primaryJntsWorldTransAtDiffPoses = dict()
 
         # Build UI
         self.buildUI()
@@ -43,11 +48,31 @@ class MainUI(QtWidgets.QMainWindow):
         self.textEditLine.setReadOnly(True)
         self.textEditLine.setFixedHeight(145)
 
+        helpJntsLayout = QtWidgets.QHBoxLayout()
+        self.numJntsLabel = QtWidgets.QLabel('Num Helper Jnts: ')
+        self.numJntsSpinBox = QtWidgets.QSpinBox()
+        self.numJntsSpinBox.setValue(2)
+        self.numJntsSpinBox.setSingleStep(1)
+        self.numJntsSpinBox.setRange(1, 999)
+        helpJntsLayout.addWidget(self.numJntsLabel)
+        helpJntsLayout.addWidget(self.numJntsSpinBox)
+
+        iterLayout = QtWidgets.QHBoxLayout()
+        self.numIterLabel = QtWidgets.QLabel('Num Iters: ')
+        self.numIterSpinBox = QtWidgets.QSpinBox()
+        self.numIterSpinBox.setValue(5)
+        self.numIterSpinBox.setSingleStep(1)
+        self.numIterSpinBox.setRange(1, 999)
+        iterLayout.addWidget(self.numIterLabel)
+        iterLayout.addWidget(self.numIterSpinBox)
+
         self.mainWidgetLayout.addRow(Splitter(text='Import Data'))
         self.mainWidgetLayout.addRow(self.importBtn)
         self.mainWidgetLayout.addRow(Splitter(text='Data General View'))
         self.mainWidgetLayout.addRow(self.textEditLine)
         self.mainWidgetLayout.addRow(Splitter(text='Build Data'))
+        self.mainWidgetLayout.addRow(helpJntsLayout)
+        self.mainWidgetLayout.addRow(iterLayout)
         self.mainWidgetLayout.addRow(self.buildBtn)
         self.mainWidgetLayout.addRow(Splitter())
         self.mainWidgetLayout.addRow(self.progressBar)
@@ -56,8 +81,8 @@ class MainUI(QtWidgets.QMainWindow):
         self.importBtn.clicked.connect(self.importData)
         self.buildBtn.clicked.connect(self.buildData)
 
-        self.setGeometry(700, 350, 380, 320)
-        self.setFixedSize(380, 350)
+        self.setGeometry(700, 350, 380, 420)
+        self.setFixedSize(380, 420)
         self.setWindowTitle('Muscle2Joints Builder')
 
         self.recordStatusAndTime('Initialized Finished!')
@@ -78,9 +103,25 @@ class MainUI(QtWidgets.QMainWindow):
         if self.data:
             # keys
             # 'vertexTransBindPose'
+            for vertex in self.data['vertexTransBindPose'].keys():
+                self.vertexTransBindPose[vertex] = self.data['vertexTransBindPose'][vertex]
+
             # 'primaryJntsBindPose'
+            for jnt in self.data['primaryJntsBindPose'].keys():
+                self.primaryJntsBindPose[jnt] = calculateLib.getMatrixAsNpArray(self.data['primaryJntsBindPose'][jnt])
+
             # 'vertexWorldTransAtDiffPoses'
+            for pose in self.data['vertexWorldTransAtDiffPoses'].keys():
+                self.vertexWorldTransAtDiffPoses[pose] = self.data['vertexWorldTransAtDiffPoses'][pose]
+
             # 'primaryJntsWorldTransAtDiffPoses'
+            for pose in self.data['primaryJntsWorldTransAtDiffPoses'].keys():
+                self.primaryJntsWorldTransAtDiffPoses[pose] = dict()
+                for jnt in self.data['primaryJntsWorldTransAtDiffPoses'][pose]:
+                    self.primaryJntsWorldTransAtDiffPoses[pose][jnt] = calculateLib.getMatrixAsNpArray(self.data['primaryJntsWorldTransAtDiffPoses'][pose][jnt])
+
+            # Show message
+            self.textEditLine.append('Data file Dir: \n' + fileName[0] + '\n')
 
             numVertexStr = "Num Vertex: %s \n" % len(self.data['vertexTransBindPose'].keys())
             primaryJntsStr = "Num Primary Joints: %s \n" % len(self.data['primaryJntsBindPose'].keys())
@@ -88,8 +129,6 @@ class MainUI(QtWidgets.QMainWindow):
             primaryJntsWorldStr = "Num Primary Joints Trans: %s \n" % len(self.data['primaryJntsWorldTransAtDiffPoses'].keys())
             text = numVertexStr + primaryJntsStr + vertexWorldStr + primaryJntsWorldStr
             self.textEditLine.append(text)
-
-            self.textEditLine.append(fileName[0] + '\n')
 
             self.recordStatusAndTime('Data Imported Successfully!')
         else:
@@ -99,6 +138,12 @@ class MainUI(QtWidgets.QMainWindow):
 
         if self.data:
             self.recordStatusAndTime('Build Data...')
+
+            numIters = self.numIterSpinBox.value()
+            numHelperJnts = self.numJntsSpinBox.value()
+
+            self.recordStatusAndTime('Num Iterations: %s\nNum Helper Jnts: %s\n' % (numIters, numHelperJnts))
+
         else:
             self.recordStatusAndTime('No data exists, please check again!')
 

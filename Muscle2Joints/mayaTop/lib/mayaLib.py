@@ -1,7 +1,9 @@
+import cPickle as pickle
+
 import maya.api.OpenMaya as om2
 import maya.api.OpenMayaAnim as oma2
 import maya.cmds as cmds
-import cPickle as pickle
+
 from ..utils import name
 
 

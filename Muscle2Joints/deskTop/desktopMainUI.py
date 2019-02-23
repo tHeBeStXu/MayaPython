@@ -93,6 +93,9 @@ class MainUI(QtWidgets.QMainWindow):
 
         kFileExtension = '.data'
 
+        if not os.path.exists(self.dataDir):
+            os.mkdir(self.dataDir)
+
         fileName = QtWidgets.QFileDialog.getOpenFileName(self,
                                                          'Import Data', self.dataDir,
                                                          filter='Input Data(*%s)' % kFileExtension)

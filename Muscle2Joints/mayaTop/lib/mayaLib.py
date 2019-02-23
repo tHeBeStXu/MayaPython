@@ -1,3 +1,4 @@
+import os
 import cPickle as pickle
 
 import maya.api.OpenMaya as om2
@@ -385,6 +386,10 @@ def exportData(mesh,
     :return: filePath: str, export data full file path.
     """
     kFileExtension = '.data'
+
+    if not os.path.exists(dataDir):
+        os.mkdir(dataDir, 0777)
+
     if not filePath:
         filePath = cmds.fileDialog2(dialogStyle=2, fileMode=0, startingDirectory=dataDir,
                                     fileFilter='Input Data(*%s)' % kFileExtension)

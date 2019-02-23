@@ -40,6 +40,7 @@ class MainUI(QtWidgets.QDialog):
         # Directories
         self.currentDir = os.path.abspath(os.path.dirname(__file__))
         self.rootDir = os.path.abspath(os.path.join(self.currentDir, os.path.pardir))
+        self.rootDir = os.path.abspath(os.path.join(self.rootDir, os.path.pardir))
         self.rootDir = self.rootDir.replace('\\', '/')
 
         self.dataDir = '%s/Data' % self.rootDir

@@ -20,7 +20,7 @@ logger.setLevel(logging.INFO)
 
 def getMayaMainWindow():
     """
-    get the mayaMainWindow as parent
+    Get the mayaMainWindow as parent
     :return: mayaMainWindow Ptr
     """
     ptr = omui.MQtUtil.mainWindow()
@@ -84,6 +84,10 @@ class MainUI(QtWidgets.QDialog):
         self.show()
 
     def buildUI(self):
+        """
+        Build UI
+        :return: None
+        """
         self.setFixedSize(830, 500)
 
         self.mainLayout = QtWidgets.QHBoxLayout()
@@ -258,7 +262,7 @@ class MainUI(QtWidgets.QDialog):
 
     def loadFolderStructure(self, path):
         """
-        load folder structure of given path
+        Load folder structure of given path
         :param path: str, self.libraryDirectory
         :return: None
         """
@@ -273,7 +277,7 @@ class MainUI(QtWidgets.QDialog):
 
     def getFolderStructure(self, path):
         """
-        get folder structure with specified path
+        Get folder structure with specified path
         :param path: rootPath
         :return: dict, directory list
         """
@@ -289,7 +293,7 @@ class MainUI(QtWidgets.QDialog):
 
     def loadFolder2TreeWidget(self, directoryList, parent, path):
         """
-        load folder structure to treeWidget
+        Load folder structure to treeWidget
         :param directoryList: dict, directory list
         :param parent: QtreeWidget, self.fileDir
         :param path: file path
@@ -396,7 +400,7 @@ class MainUI(QtWidgets.QDialog):
 
     def removeFolder(self):
         """
-        remove folder from folder structure
+        Remove folder from folder structure
         :return: None
         """
         selectedItems = self.fileDir.selectedItems()
@@ -427,7 +431,7 @@ class MainUI(QtWidgets.QDialog):
 
     def removeExistWidget(self, layout):
         """
-        remove Exist widget(s) from animGridLayout
+        Remove exist widget(s) from animGridLayout
         :param layout: QGridLayout, self.animGridLayout
         :return: None
         """
@@ -525,7 +529,7 @@ class MainUI(QtWidgets.QDialog):
 
     def saveAnim(self):
         """
-        Save pose to specified directory
+        Save anim to specified directory
         :return: None
         """
         animLabel = str(self.nameEditLine.text())
@@ -710,7 +714,6 @@ class MainUI(QtWidgets.QDialog):
         :param mode: str, 'export' or 'import'
         :return: None
         """
-
         self.saveBtn.hide()
         # self.sliderGroup.hide()
 
@@ -730,6 +733,9 @@ class MainUI(QtWidgets.QDialog):
 
 
 class hoverToolBtn(QtWidgets.QToolButton):
+    """
+    Custom Hover Tool Button for GIF animation.
+    """
     def __init__(self,
                  gifPath,
                  templateGIFPath,
@@ -746,17 +752,30 @@ class hoverToolBtn(QtWidgets.QToolButton):
         self.setMouseTracking(True)
 
     def enterEvent(self, QEvent):
+        """
+        ToolButton Enter Event Occur.
+        :param QEvent: QEvent
+        :return: None
+        """
         if self.movie.fileName() != self.gifPath:
             self.movie.stop()
             self.targetBtn.loadGIF2Button(self.gifPath)
 
     def leaveEvent(self, QEvent):
+        """
+        ToolButton Leave Event Occur.
+        :param QEvent: QEvent
+        :return: None
+        """
         if self.movie.fileName() != self.gifPath:
             self.movie.stop()
             self.targetBtn.loadGIF2Button(self.templateGIFPath)
 
 
 class animatePushBtn(QtWidgets.QPushButton):
+    """
+    Custom Animate Push Button for playing GIF animation.
+    """
     def __init__(self, GIFPath, size, parent=None):
         super(animatePushBtn, self).__init__(parent)
 
@@ -765,12 +784,21 @@ class animatePushBtn(QtWidgets.QPushButton):
         self.movie = QtGui.QMovie(self.GIFPath, parent=parent)
 
     def loadGIF2Button(self, path):
+        """
+        Load GIF to the push button for playing animation.
+        :param path: str, filePath of the GIF file.
+        :return: None
+        """
         self.movie.stop()
         self.movie.setFileName(path)
         self.movie.frameChanged.connect(self.setBtnIcon)
         self.movie.start()
 
     def setBtnIcon(self):
+        """
+        Set Custom PushButton' QIcon for playing the GIF.
+        :return: None
+        """
         self.setIcon(QtGui.QIcon(self.movie.currentPixmap()))
         self.setIconSize(QtCore.QSize(self.size[0], self.size[1]))
 

@@ -426,7 +426,7 @@ def exportData(mesh,
 
 def getOneRingVertex(mesh, vertexIndex):
     """
-    Get a vertex's one ring vertices' index (surrounded by triangle)
+    Get a vertex's one ring neighbor vertices' index (surrounded by triangle)
     :param mesh: str, name of the shape node.
     :param vertexIndex: int, specified vertex index.
     :return: MIntArray, one ring vertices index.

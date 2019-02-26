@@ -3,6 +3,7 @@ import cPickle as pickle
 
 import maya.api.OpenMaya as om2
 import maya.api.OpenMayaAnim as oma2
+import maya.OpenMaya as om
 import maya.cmds as cmds
 
 from ..utils import name
@@ -421,3 +422,47 @@ def exportData(mesh,
         cmds.cutKey(i, time=(0, 0))
 
     return filePath
+
+
+def getOneRingVertex(mesh, vertexIndex):
+    """
+    Get a vertex's one ring vertices' index (surrounded by triangle)
+    :param mesh: str, name of the shape node.
+    :param vertexIndex: int, specified vertex index.
+    :return: MIntArray, one ring vertices index.
+    """
+    mSel = om2.MSelectionList()
+    mSel.add(mesh)
+    meshMObject = mSel.getDependNode(0)
+
+    meshMItVertex = om2.MItMeshVertex(meshMObject)
+    meshMItVertex.setIndex(vertexIndex)
+    firstMIntArray = meshMItVertex.getConnectedVertices()
+
+    tempList = list()
+    for subIndex in firstMIntArray:
+        meshMItVertex.setIndex(subIndex)
+        secondMIntArray = meshMItVertex.getConnectedVertices()
+        secondList = list()
+        for index in secondMIntArray:
+            secondList.append(index)
+
+        secondList.remove(vertexIndex)
+        if len(secondList):
+            for element in secondList:
+                tempList.append(element)
+
+    for index in tempList:
+        if tempList.count(index) == 1:
+            tempList.remove(index)
+
+    subList = list()
+
+    for i in tempList:
+        if not i in subList:
+            subList.append(i)
+
+    for index in subList:
+        firstMIntArray.append(index)
+
+    return firstMIntArray

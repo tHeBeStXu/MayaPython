@@ -6,6 +6,10 @@ import maya.api.OpenMayaAnim as oma2
 import maya.OpenMaya as om
 import maya.cmds as cmds
 
+import numpy as np
+import scipy as sp
+import sklearn as skl
+
 from ..utils import name
 
 
@@ -456,13 +460,56 @@ def getOneRingVertex(mesh, vertexIndex):
         if tempList.count(index) == 1:
             tempList.remove(index)
 
-    subList = list()
-
-    for i in tempList:
-        if not i in subList:
-            subList.append(i)
+    # remove repeated element by set() function.
+    subList = set(tempList)
 
     for index in subList:
         firstMIntArray.append(index)
 
     return firstMIntArray
+
+
+def getMesh():
+
+    mSel = om2.MGlobal.getActiveSelectionList()
+    itSel = om2.MItSelectionList(mSel)
+
+    meshPath = []
+
+    while not itSel.isDone():
+        dagPath = itSel.getDagPath()
+        itSel.next()
+
+        if dagPath is None:
+            continue
+
+        apiType = dagPath.apiType()
+
+        if apiType != om2.MFn.kTransform:
+            continue
+
+        for c in xrange(dagPath.childCount()):
+            child = dagPath.child(c)
+
+            if child.apiType() != om2.MFn.kMesh:
+                continue
+
+            path = dagPath.getAPathTo(child)
+            mesh = om2.MFnMesh(path)
+
+            if not mesh.findPlug('intermediateObject', True).asBool():
+                meshPath.append(path)
+                break
+
+    return meshPath
+
+
+def concatenatePointLists(meshPaths):
+    retval = np.empty([0, 3])
+    for path in meshPaths:
+        mesh = om2.MFnMesh(path)
+        points = mesh.getPoints(om.MSpace.kWorld)
+        points = np.array([[p.x, p.y, p.z] for p in points])
+        retval = np.append(retval, points.reshape(-1, 3), axis=0)
+    return retval
+

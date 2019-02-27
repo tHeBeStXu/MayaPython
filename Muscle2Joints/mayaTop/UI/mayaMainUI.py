@@ -122,7 +122,7 @@ class MainUI(QtWidgets.QDialog):
         self.defaultAngleSpinBox = QtWidgets.QDoubleSpinBox()
         self.defaultAngleSpinBox.setValue(30)
         self.defaultAngleSpinBox.setSingleStep(5)
-        self.defaultAngleSpinBox.setRange(0, 60)
+        self.defaultAngleSpinBox.setRange(0, 180)
 
         defaultAngleLayout.addWidget(defaultAngleLabel)
         defaultAngleLayout.addWidget(self.defaultAngleSpinBox)

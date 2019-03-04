@@ -113,14 +113,14 @@ class RiggingMainUI(QtWidgets.QWidget):
         Build the Main UI
         :return: None
         """
-        self.setFixedSize(250, 750)
+        self.setFixedSize(250, 720)
         self.mainLayout = QtWidgets.QVBoxLayout()
         self.setLayout(self.mainLayout)
 
         # tabWidget
         self.mainWidget = QtWidgets.QTabWidget()
 
-        self.mainWidget.setFixedSize(250, 680)
+        self.mainWidget.setFixedSize(250, 650)
         self.layout().addWidget(self.mainWidget)
 ########################################################################################################################
         # geoCheck Widget
@@ -136,7 +136,7 @@ class RiggingMainUI(QtWidgets.QWidget):
 
         # Bad Geo Frame
         self.badGeoFrame = QtWidgets.QFrame()
-        self.badGeoFrame.setFixedSize(230, 315)
+        # self.badGeoFrame.setFixedSize(230, 315)
         self.badGeoFrame.setFrameShadow(QtWidgets.QFrame.Plain)
         self.badGeoFrame.setFrameStyle(QtWidgets.QFrame.StyledPanel)
         self.badGeoFrameLayout = QtWidgets.QVBoxLayout()
@@ -203,7 +203,7 @@ class RiggingMainUI(QtWidgets.QWidget):
         self.jointFrame.setFrameShadow(QtWidgets.QFrame.Plain)
         self.jointFrame.setFrameStyle(QtWidgets.QFrame.StyledPanel)
         self.geoTabLayout.addWidget(self.jointFrame, 3, 0, 1, 3)
-        self.jointFrame.setFixedSize(230, 250)
+        # self.jointFrame.setFixedSize(230, 250)
         self.jointFrameLayout = QtWidgets.QVBoxLayout()
         self.jointFrame.setLayout(self.jointFrameLayout)
 

@@ -76,8 +76,8 @@ class Base():
             cmds.addAttr(self.Move_Ctrl.C, ln='MoveCtrl', at='message')
 
         # add Attr
-        if not cmds.attributeQuery('slaveJoint', node=self.Move_Ctrl.C, exists=1):
-            cmds.addAttr(self.Move_Ctrl.C, ln='slaveJoint', at='message')
+        # if not cmds.attributeQuery('slaveJoint', node=self.Move_Ctrl.C, exists=1):
+            # cmds.addAttr(self.Move_Ctrl.C, ln='slaveJoint', at='message')
 
         if not cmds.attributeQuery('rootJoint', node=self.Move_Ctrl.C, exists=1):
             cmds.addAttr(self.Move_Ctrl.C, ln='rootJoint', at='message')
@@ -118,8 +118,8 @@ class Module():
     def addAttr(cls, group):
         # query and add attribute
         if group:
-            if not cmds.attributeQuery('slaveJoint', node=group, exists=1):
-                cmds.addAttr(group, longName='slaveJoint', at='message')
+            # if not cmds.attributeQuery('slaveJoint', node=group, exists=1):
+                # cmds.addAttr(group, longName='slaveJoint', at='message')
 
             if not cmds.attributeQuery('settingGrp', node=group, exists=1):
                 cmds.addAttr(group, longName='settingGrp', at='message')

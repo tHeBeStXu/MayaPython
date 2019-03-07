@@ -16,7 +16,7 @@ jointList = cmds.skinCluster(skinCluster, q=1, inf=1)
 
 
 meshMselection = om.MSelectionList()
-meshMselection.add(geometry)
+meshMselection.add(geometry[0])
 meshMDagPath = meshMselection.getDagPath(0)
 
 meshMFn = om.MFnMesh(meshMDagPath)

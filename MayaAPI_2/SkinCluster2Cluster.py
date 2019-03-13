@@ -10,7 +10,7 @@ if currentJoints:
 
             # Get skin cluster MObject
             skinClusterSelection = om.MSelectionList()
-            skinClusterSelection.add(currentSkinCluster)
+            skinClusterSelection.add(currentSkinCluster[0])
             skinClusterMObject = skinClusterSelection.getDependNode(0)
 
             # Get joint MDagPath
@@ -36,7 +36,7 @@ if currentJoints:
             vertexList = verticesMSelection.getSelectionStrings()
 
             # create new cluster
-            cluster = cmds.cluster(vertexList, n='%s + _Cls' % joint)
+            cluster = cmds.cluster(vertexList, n='%s_Cls' % joint)
 
             # set cluster weights
             for index in range(len(vertexIndexList)):

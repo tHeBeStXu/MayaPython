@@ -275,7 +275,7 @@ class RiggingMainUI(QtWidgets.QWidget):
                     self.widget.rigArgs = properties[key]['rigArgs']
                     self.widget.rigPartLineEdit.setText(str(key))
                     # Be sural to set the rig Part Name of each widget
-                    self.widget.setRigPartName()
+                    # self.widget.setRigPartName()
 
             logger.info('import %s rig log file.' % fileName[0])
 

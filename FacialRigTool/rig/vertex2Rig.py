@@ -86,3 +86,4 @@ def createRig(vertexList,
         # set default keyframe
         cmds.setDrivenKeyframe()
 
+    cmds.select(cl=1)

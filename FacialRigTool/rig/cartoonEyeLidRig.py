@@ -408,3 +408,5 @@ def createRig(upperVertexList,
     # final
     cmds.parent(upperLidRigModule.topGrp, eyeLidRigModule.topGrp)
     cmds.parent(lowerLidRigModule.topGrp, eyeLidRigModule.topGrp)
+
+    cmds.select(cl=1)

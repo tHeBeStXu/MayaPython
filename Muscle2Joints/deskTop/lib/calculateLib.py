@@ -22,3 +22,31 @@ def getSkinMatrix(bindMatrix, globalTransMatrix):
     bindMatrixInverse = np.linalg.inv(bindMatrix)
 
     return np.dot(bindMatrixInverse, globalTransMatrix)
+
+
+def initialize(iniPos, samples, vertices, numJoints, numMaxInfluence):
+    # Initialize Weights
+
+    # for jnt in numJoints:
+    #     Inset Joint
+    #     UpdateWeights():
+    #     updateTransform():
+    pass
+
+
+def updateWeights():
+    pass
+
+
+def updateTransform():
+    pass
+
+
+def build():
+    # initialize
+
+    # Skin decomposition
+
+    pass
+
+

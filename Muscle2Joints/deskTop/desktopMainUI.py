@@ -5,7 +5,7 @@ import sys
 
 from PyQt5 import QtWidgets, QtCore, QtGui
 
-import lib.calculateLib as calculateLib
+import lib.calculateLib as calLib
 
 
 class MainUI(QtWidgets.QMainWindow):
@@ -21,8 +21,8 @@ class MainUI(QtWidgets.QMainWindow):
 
         self.data = None
 
-        self.vertexTransBindPose = dict()
-        self.primaryJntsBindPose = dict()
+        self.vertexTransAtBindPose = None
+        self.primaryJntsAtBindPose = dict()
         self.vertexWorldTransAtDiffPoses = dict()
         self.primaryJntsWorldTransAtDiffPoses = dict()
 
@@ -107,12 +107,11 @@ class MainUI(QtWidgets.QMainWindow):
         if self.data:
             # keys
             # 'vertexTransBindPose'
-            for vertex in self.data['vertexTransBindPose'].keys():
-                self.vertexTransBindPose[vertex] = self.data['vertexTransBindPose'][vertex]
+            self.vertexTransAtBindPose = calLib.concatenatePointLists(dict=self.data['vertexTransBindPose'])
 
             # 'primaryJntsBindPose'
             for jnt in self.data['primaryJntsBindPose'].keys():
-                self.primaryJntsBindPose[jnt] = calculateLib.getMatrixAsNpArray(self.data['primaryJntsBindPose'][jnt])
+                self.primaryJntsAtBindPose[jnt] = calLib.getMatrixAsNpArray(self.data['primaryJntsBindPose'][jnt])
 
             # 'vertexWorldTransAtDiffPoses'
             for pose in self.data['vertexWorldTransAtDiffPoses'].keys():
@@ -122,16 +121,18 @@ class MainUI(QtWidgets.QMainWindow):
             for pose in self.data['primaryJntsWorldTransAtDiffPoses'].keys():
                 self.primaryJntsWorldTransAtDiffPoses[pose] = dict()
                 for jnt in self.data['primaryJntsWorldTransAtDiffPoses'][pose]:
-                    self.primaryJntsWorldTransAtDiffPoses[pose][jnt] = calculateLib.getMatrixAsNpArray(self.data['primaryJntsWorldTransAtDiffPoses'][pose][jnt])
+                    self.primaryJntsWorldTransAtDiffPoses[pose][jnt] = calLib.getMatrixAsNpArray(self.data['primaryJntsWorldTransAtDiffPoses'][pose][jnt])
+
+
 
             # log message
             self.textEditLine.append('Data file Dir: \n' + fileName[0] + '\n')
 
-            numVertexStr = "Num Vertex: %s \n" % len(self.vertexTransBindPose.keys())
-            primaryJntsStr = "Num Primary Joints: %s \n" % len(self.primaryJntsBindPose.keys())
+            numVertexStr = "Num Vertex: %s \n" % len(self.data['vertexTransBindPose'].keys())
+            primaryJntsStr = "Num Primary Joints: %s \n" % len(self.primaryJntsAtBindPose.keys())
             vertexWorldStr = "Num Poses: %s \n" % len(self.vertexWorldTransAtDiffPoses.keys())
 
-            if self.vertexWorldTransAtDiffPoses and self.primaryJntsBindPose and self.vertexTransBindPose and self.primaryJntsWorldTransAtDiffPoses:
+            if self.vertexWorldTransAtDiffPoses and self.primaryJntsAtBindPose and self.vertexTransAtBindPose and self.primaryJntsWorldTransAtDiffPoses:
                 self.recordStatusAndTime('Input Data Ready!')
 
             text = numVertexStr + primaryJntsStr + vertexWorldStr

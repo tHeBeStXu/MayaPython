@@ -50,3 +50,12 @@ def build():
     pass
 
 
+def concatenatePointLists(dict):
+    returnVal = np.empty([0, 3])
+
+    for key in dict.keys():
+        points = np.array([[p[0], p[1], p[2]]for p in dict[key]])
+
+        returnVal = np.append(returnVal, points.reshape(-1, 3), axis=0)
+
+    return returnVal

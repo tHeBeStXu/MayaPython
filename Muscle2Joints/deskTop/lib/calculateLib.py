@@ -1,4 +1,5 @@
 import numpy as np
+import quadprog
 
 
 def getMatrixAsNpArray(tempMatrix):
@@ -59,3 +60,38 @@ def concatenatePointLists(dict):
         returnVal = np.append(returnVal, points.reshape(-1, 3), axis=0)
 
     return returnVal
+
+
+def solveQP(P, q, G=None, h=None, A=None, b=None):
+    """
+    Solve Quadratic Programming(QP) problem.
+    :param P:
+    :param q:
+    :param G:
+    :param h:
+    :param A:
+    :param b:
+    :return:
+    """
+    qp_G = .5 * (P + P.T)   # make sure P is symmetric
+    qp_a = -q
+    if A is not None:
+        qp_C = -np.vstack([A, G]).T
+        qp_b = -np.hstack([b, h])
+        meq = A.shape[0]
+    else:  # no equality constraint
+        qp_C = -G.T
+        qp_b = -h
+        meq = 0
+    return quadprog.solve_qp(qp_G, qp_a, qp_C, qp_b, meq)[0]
+
+
+def testQP():
+    A = np.array([[1., 2., 0.], [-8., 3., 2.], [0., 1., 1.]])
+    b = np.array([3., 2., 3.])
+    G = np.array([[1., 2., 1.], [2., 0., 1.], [-1., 2., -1.]])
+    h = np.array([3., 2., -2.])
+
+    P = np.dot(A.T, A)
+    q = np.dot(b.T, A)
+    return solveQP(P=P, q=q, G=G, h=h)

@@ -80,7 +80,7 @@ def solveQP(A, b, G, h, G_eq, h_eq):
     # 1/2 x.T *     P   * x +    q.T  * x
     # 1/2 x.T * A.T * A * x - b.T * A * x
     # More details: https://scaron.info/blog/quadratic-programming-in-python.html
-    # Also see test QP.
+    # Also see func testQP().
     P = np.dot(A.T, A)
     q = -np.dot(A.T, b)
 

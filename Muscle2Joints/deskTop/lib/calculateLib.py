@@ -62,8 +62,29 @@ def concatenatePointLists(dict):
     return returnVal
 
 
-def solveQP(P, q, G, h, A, b, solver):
-    qpsolvers.solve_qp(P=P, q=q, G=G, h=h, A=A, b=b, solver=solver)
+def solveQP(A, b, G, h, G_eq, h_eq):
+    """
+    Solve           ||A x - b||_2 ^2    least squares problem in QP form.
+    Subject to      G * x <= h
+                    G_eq * x = h_eq
+    :param A: numpy.array, Matrix A
+    :param b: numpy.array, array
+    :param G: numpy.array, Matrix G for inequality constraint
+    :param h: numpy.array, array h for inequality constraint
+    :param G_eq: numpy.array, Matrix G_eq for equality constraint
+    :param h_eq: numpy.array, array h_eq for equality constraint
+    :return: numpy array, x for optimized
+    """
+    # ||A x - b||_2 ^2
+    # in standard QP Problem form.
+    # 1/2 x.T *     P   * x +    q.T  * x
+    # 1/2 x.T * A.T * A * x - b.T * A * x
+    # More details: https://scaron.info/blog/quadratic-programming-in-python.html
+    # Also see test QP.
+    P = np.dot(A.T, A)
+    q = -np.dot(A.T, b)
+
+    return qpsolvers.solve_qp(P, q, G, h, G_eq, h_eq)
 
 
 def testQP():
@@ -73,5 +94,5 @@ def testQP():
     h = np.array([3., 2., -2.])
 
     P = np.dot(A.T, A)
-    q = np.dot(b.T, A)
-    return solveQP(P=P, q=q, G=G, h=h)
+    q = -np.dot(A.T, b)
+    return qpsolvers.solve_qp(P=P, q=q, G=G, h=h)

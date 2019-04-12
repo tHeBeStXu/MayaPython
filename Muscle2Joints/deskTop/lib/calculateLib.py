@@ -35,7 +35,7 @@ def initialize(iniPos, samples, vertices, numJoints, numMaxInfluence):
     pass
 
 
-def updateWeights():
+def updateSkinWeight():
     pass
 
 
@@ -60,6 +60,19 @@ def concatenatePointLists(dict):
         returnVal = np.append(returnVal, points.reshape(-1, 3), axis=0)
 
     return returnVal
+
+
+def selectMostElement(weightArray, maxNum):
+    """
+    Get the most effect weights indices for further solveQP()
+    :param weightArray: numpy.array, rough weight array
+    :param maxNum: int, maximum number of the weight, which is equal to max influence number.
+    :return: numpy.array, index of the most effect joint
+    """
+
+    indexArray = weightArray.argsort()[-maxNum:][::-1]
+
+    return indexArray
 
 
 def solveQP(A, b, G, h, G_eq, h_eq):
@@ -96,3 +109,58 @@ def testQP():
     P = np.dot(A.T, A)
     q = -np.dot(A.T, b)
     return qpsolvers.solve_qp(P=P, q=q, G=G, h=h)
+
+
+def updateMatrix(matrix, indices):
+    """
+    Get selected matrix element with indices and make a new matrix.
+    :param matrix: numpy.array, input matrix for update.
+    :param indices: numpy.array, indices of the element.
+    :return: numpy.array, selected element matrix.
+    """
+    newArray = np.empty([len(indices), -1])
+
+    for i in xrange(len(indices)):
+        newArray[i] = matrix[indices[i]]
+
+    return newArray
+
+
+def updateSkinWeightPerVertex(A, b,
+                              maxInfluence):
+    """
+    Update skin weight per vertex
+    :param A: numpy.array, input matrix A.
+    :param b: numpy.array, input matrix b.
+    :param maxInfluence: int, number of joints which each vertex is influenced by
+    :return: numpy.array, skin weight for each vertex.
+    """
+    # step0: prepare parameters
+    G = -np.eye(A.shape[0])
+    h = np.zeros(A.shape[0])
+    G_eq = np.ones(A.shape[0])
+    h_eq = 1
+
+    # step1: solve QP for all joint weight
+    roughWeights = solveQP(A=A, b=b, G=G, h=h, G_eq=G_eq, h_eq=h_eq)
+
+    # step2: select Most effect weight and change
+    weightIndices = selectMostElement(roughWeights, maxInfluence)
+    selected_A = updateMatrix(A, weightIndices)
+    selected_b = updateMatrix(b, weightIndices)
+    selected_G = -np.eye(len(weightIndices))
+    selected_h = np.zeros(len(weightIndices))
+    selected_G_eq = np.ones(len(weightIndices))
+
+    # step3: solveQP for selected weights
+    validWeights = solveQP(A=selected_A,
+                           b=selected_b,
+                           G=selected_G,
+                           h=selected_h,
+                           G_eq=selected_G_eq,
+                           h_eq=h_eq)
+
+    # step4: refresh the weight
+    finalWeights = np.zeros(roughWeights.shape)
+    for i in xrange(len(weightIndices)):
+        finalWeights[weightIndices[i]] = validWeights[i]

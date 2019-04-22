@@ -118,10 +118,12 @@ def updateMatrix(matrix, indices):
     :param indices: numpy.array, indices of the element.
     :return: numpy.array, selected element matrix.
     """
-    newArray = np.empty([len(indices), -1])
+    newArray = np.empty([len(indices) * 3, ])
 
     for i in xrange(len(indices)):
-        newArray[i] = matrix[indices[i]]
+        newArray[i + 0] = matrix[indices[i + 0]]
+        newArray[i + 1] = matrix[indices[i + 1]]
+        newArray[i + 2] = matrix[indices[i + 2]]
 
     return newArray
 

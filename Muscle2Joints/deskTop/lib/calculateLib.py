@@ -121,9 +121,9 @@ def updateMatrix(matrix, indices):
     newArray = np.empty([len(indices) * 3, ])
 
     for i in xrange(len(indices)):
-        newArray[i + 0] = matrix[indices[i + 0]]
-        newArray[i + 1] = matrix[indices[i + 1]]
-        newArray[i + 2] = matrix[indices[i + 2]]
+        newArray[i * 3 + 0] = matrix[indices[i] * 3 + 0]
+        newArray[i * 3 + 1] = matrix[indices[i] * 3 + 1]
+        newArray[i * 3 + 2] = matrix[indices[i] * 3 + 2]
 
     return newArray
 

@@ -3,6 +3,10 @@ Basics of OpenMaya
 """
 import maya.OpenMaya as openmaya
 
+
+import maya.api.OpenMaya as om2
+
+
 # Create a MSelectionList instance and add the target object "pPlane1"
 mSel = openmaya.MSelectionList()
 mSel.add("pPlane1")
@@ -77,6 +81,50 @@ mplug_subheight = mFnDependNode2.findPlug("subdivisionsHeight")
 # Use the plug to set the attribute
 mplug_subwidth.setInt(15)
 mplug_subheight.setInt(20)
+
+#######################################
+# Maya Python API 2.0 Get Matrix Data #
+#######################################
+selectionList = om2.MSelectionList()
+selectionList.add('locator1')
+
+locatorMObj = selectionList.getDependNode(0)
+
+MFndependencyNode = om2.MFnDependencyNode(locatorMObj)
+worldMatrixAttr = MFndependencyNode.attribute('worldMatrix')
+
+matrixPlug = om2.MPlug(locatorMObj, worldMatrixAttr)
+
+matrixPlug = matrixPlug.elementByLogicalIndex(0)
+
+matrixObject = matrixPlug.asMObject()
+
+worldMatrixData = om2.MFnMatrixData(matrixObject)
+
+worldMatrix = worldMatrixData.matrix()
+
+
+#######################################
+# Maya Python API 1.0 GET Matrix Data #
+#######################################
+mSelectionList = openmaya.MSelectionList()
+
+mSelectionList.add('locator1')
+
+mobj = openmaya.MObject()
+mSelectionList.getDependNode(0, mobj)
+
+worldMatrixAttr = openmaya.MFnDependencyNode(mobj).attribute('worldMatrix')
+matrixPlug = openmaya.MPlug(mobj, worldMatrixAttr)
+matrixPlugIndex0 = matrixPlug.elementByLogicalIndex(0)
+
+matrixMObject = matrixPlugIndex0.asMObject()
+
+worldMatrixData = openmaya.MFnMatrixData(matrixMObject)
+worldMatrix = worldMatrixData.matrix()
+
+
+print worldMatrix(3, 0)
 
 
 

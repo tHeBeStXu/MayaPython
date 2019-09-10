@@ -1,3 +1,16 @@
+"""
+Note:
+    This node is used for Legacy 1.0 renderer
+How to use:
+1. download the python file to your disk and remember the directory
+2. Run Maya and select the legacy renderer.
+3. Input the following command:
+    import maya.cmds as cmds
+    cmds.loadPlugin(r'X:WHERE\YOU\PUT\THE\FILE')
+    cmds.createNode('PoseReader')
+4. Select the target object and connect its worldMatrix attribute to the PoseReader's inputWorldMatrix attribute
+5. Connect PoseReader's worldMatrix attribute to the selfWorldMatrix attribute
+"""
 import maya.OpenMaya as om
 import maya.OpenMayaMPx as ompx
 import maya.OpenMayaRender as omrd
@@ -85,8 +98,9 @@ class poseReaderNode(ompx.MPxLocatorNode):
         # get the input and output value
         thisNode = self.thisMObject()
         outputValue = om.MPlug(thisNode, poseReaderNode.output).asFloat()
-        # outputValueStr = om.MPlug(thisNode, poseReaderNode.output).asString()
 
+        # reference:
+        # Sphere coordinate: http://mathinsight.org/spherical_coordinates
         rhoValue = om.MPlug(thisNode, poseReaderNode.rho).asFloat()
         phiValue = om.MPlug(thisNode, poseReaderNode.coneAngle).asFloat()
         phiValue = (phiValue / 2.0) / 180 * math.pi

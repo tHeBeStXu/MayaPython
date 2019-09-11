@@ -75,7 +75,7 @@ class poseReaderNode(ompx.MPxLocatorNode):
         vec1Normal = pose2InputobjectMVector.normal()
 
         # get poseReader local Z Axis in world space and normalized it
-        poseReaderNodeZAxisWorldMVector = om.MVector(0.0, 0.0, 1.0) * selfWorldMatrixAttr
+        poseReaderNodeZAxisWorldMVector = om.MVector(1.0, 0.0, 0.0) * selfWorldMatrixAttr
 
         vec2Normal = poseReaderNodeZAxisWorldMVector.normal()
 
@@ -130,6 +130,9 @@ class poseReaderNode(ompx.MPxLocatorNode):
             y1 = rhoValue * math.sin(phiValue) * math.sin(thetaValue1)
             z1 = rhoValue * math.cos(phiValue)
 
+            # rotate around y axis by 90 degrees
+            newVector1 = om.MVector(x1, y1, z1).rotateBy(om.MVector.kYaxis, math.pi / 2.0)
+
             if i == segmentsValue - 1:
                 thetaValue2 = 0 * perSeg
             else:
@@ -139,12 +142,15 @@ class poseReaderNode(ompx.MPxLocatorNode):
             y2 = rhoValue * math.sin(phiValue) * math.sin(thetaValue2)
             z2 = rhoValue * math.cos(phiValue)
 
+            # rotate around y axis by 90 degrees
+            newVector2 = om.MVector(x2, y2, z2).rotateBy(om.MVector.kYaxis, math.pi / 2.0)
+
             # draw each triangle
             glFuncTable.glVertex3f(0.0, 0.0, 0.0)
 
-            glFuncTable.glVertex3f(x1, y1, z1)
+            glFuncTable.glVertex3f(newVector1.x, newVector1.y, newVector1.z)
 
-            glFuncTable.glVertex3f(x2, y2, z2)
+            glFuncTable.glVertex3f(newVector2.x, newVector2.y, newVector2.z)
 
         # Disable blend shape
         glFuncTable.glDisable(omrd.MGL_BLEND)

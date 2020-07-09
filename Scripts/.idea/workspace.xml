@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="505952b8-7139-44bc-98db-ba50d45261ab" name="Default Changelist" comment="" />
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Python Script" />
+      </list>
+    </option>
+  </component>
+  <component name="ProjectId" id="1TSVUu29CvWtdXWCrykHZxc887Y" />
+  <component name="PropertiesComponent">
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$" />
+    <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
+    <property name="nodejs_npm_path_reset_for_default_project" value="true" />
+    <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="505952b8-7139-44bc-98db-ba50d45261ab" name="Default Changelist" comment="" />
+      <created>1571884128705</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1571884128705</updated>
+      <workItem from="1571884131666" duration="9010000" />
+      <workItem from="1571975425231" duration="11086000" />
+      <workItem from="1572231210574" duration="3865000" />
+      <workItem from="1573453507623" duration="288000" />
+      <workItem from="1573453813526" duration="12628000" />
+      <workItem from="1573522784724" duration="2050000" />
+      <workItem from="1573526818651" duration="7170000" />
+      <workItem from="1573720032080" duration="3005000" />
+      <workItem from="1573798856207" duration="10423000" />
+      <workItem from="1574041295023" duration="3072000" />
+      <workItem from="1574045985469" duration="3896000" />
+      <workItem from="1574153872173" duration="2052000" />
+      <workItem from="1574219946896" duration="1981000" />
+      <workItem from="1574318919886" duration="1470000" />
+      <workItem from="1574320773844" duration="1208000" />
+      <workItem from="1574322001097" duration="983000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+</project>
